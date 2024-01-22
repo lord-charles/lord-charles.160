@@ -235,7 +235,10 @@ const dataSet_2023 = async (req, res) => {
     );
     const sort = buildSortObject(sortBy, sortOrder);
 
-    const response = await SchoolData.find(query).sort(sort);
+  const response = await SchoolData.find(query)
+    .sort(sort)
+    .select("state10 county28 payam28 school");
+
 
     res.status(200).json(response);
   } catch (error) {

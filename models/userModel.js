@@ -50,12 +50,12 @@ const userSchema = new mongoose.Schema(
         isAssigned: {
           type: Boolean,
           default: false,
-          required: true,
+          required: false,
         },
         schoolName: {
           type: String,
           default: null,
-          required: true,
+          required: false,
         },
       },
     ],

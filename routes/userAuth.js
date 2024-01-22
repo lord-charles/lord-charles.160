@@ -25,7 +25,7 @@ router.post("/login", logIn);
 router.get("/users/get-all", authMiddleware, isAdmin, getUsers);
 router.get("/users/get/:id", authMiddleware, isAdmin, getUserById);
 router.get("/users/get-email/", authMiddleware, isAdmin, getUserByEmail);
-router.get("/verifyToken", verifyToken);
+router.post("/verifyToken", verifyToken);
 router.delete("/users/delete-user/:id", authMiddleware, isAdmin, deleteUser);
 router.get("/users/get/all/count", authMiddleware, isAdmin, getUserCount);
 router.put(

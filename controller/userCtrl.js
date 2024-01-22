@@ -49,9 +49,10 @@ const logIn = asyncHandler(async (req, res) => {
   const secret = process.env.SECRET;
   const { username, password } = req.body;
   const user = await User.findOne({ username, password });
+  console.log(user);
 
   if (!user) {
-    res.status(404).send("username!");
+    res.status(404).json({ message: "Wrong username!" });
     return;
   }
 
@@ -63,13 +64,16 @@ const logIn = asyncHandler(async (req, res) => {
         statesAsigned: user.statesAsigned,
         dutyAssigned: user.dutyAssigned,
         userType: user.userType,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        username: user.username,
       },
       secret,
       { expiresIn: "1d" }
     );
     res.status(200).send({ user: user.username, token });
   } else {
-    res.status(404).send("Wrong password!");
+    res.status(404).json({ message: "Wrong password!" });
   }
 });
 
