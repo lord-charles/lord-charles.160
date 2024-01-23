@@ -14,18 +14,19 @@ const dataSet = async (req, res) => {
       code,
       schoolName,
       pupilCount,
-      pupilCountOperator, // New parameter for the operator
+      pupilCountOperator,
       sortBy,
       sortOrder,
+      state10, // Add the state10 parameter
     } = req.query;
 
     // Build the query object
     const query = {};
     if (stateCode) query.stateCode = stateCode;
+    if (state10) query.state10 = state10; // Add the state10 parameter to the query
 
     // Case-insensitive search for countyName
     if (countyName) query.countyName = { $regex: new RegExp(countyName, "i") };
-
     if (educationLevel) query.educationLevel = educationLevel;
     if (payamName) query.payamName = payamName;
     if (code) query.code = code;
@@ -34,33 +35,9 @@ const dataSet = async (req, res) => {
     if (schoolName) query.schoolName = { $regex: new RegExp(schoolName, "i") };
 
     // Build the pupilCount query based on the specified operator
-    // Build the pupilCount query based on the specified operator
     if (pupilCount && pupilCountOperator) {
       switch (pupilCountOperator) {
-        case "eq":
-          // Equal to: Matches documents where the pupilCount is equal to the specified value.
-          query.pupilCount = { $eq: pupilCount };
-          break;
-        case "ne":
-          // Not equal to: Matches documents where the pupilCount is not equal to the specified value.
-          query.pupilCount = { $ne: pupilCount };
-          break;
-        case "gt":
-          // Greater than: Matches documents where the pupilCount is greater than the specified value.
-          query.pupilCount = { $gt: pupilCount };
-          break;
-        case "lt":
-          // Less than: Matches documents where the pupilCount is less than the specified value.
-          query.pupilCount = { $lt: pupilCount };
-          break;
-        case "gte":
-          // Greater than or equal to: Matches documents where the pupilCount is greater than or equal to the specified value.
-          query.pupilCount = { $gte: pupilCount };
-          break;
-        case "lte":
-          // Less than or equal to: Matches documents where the pupilCount is less than or equal to the specified value.
-          query.pupilCount = { $lte: pupilCount };
-          break;
+        // ... (your existing pupilCount switch cases)
         default:
           break;
       }
@@ -234,11 +211,46 @@ const dataSet_2023 = async (req, res) => {
       payam10
     );
     const sort = buildSortObject(sortBy, sortOrder);
+    // Specify the fields to exclude in the select method
+    // Specify the fields to include in the select method
+    const projection = {
+      year: 0,
+      state28: 0,
+      stateName28: 0,
+      stateName10: 0,
+      county10: 0,
+      payam10: 0,
+      dob: 0,
+      age: 0,
+      isPending: 0,
+      isDisbursed: 0,
+      over18: 0,
+      reference: 0,
+      eligible: 0,
+      "Learner UniqueID": 0,
+      "Date Validated at School": 0,
+      "CTEF received at SA": 0,
+      "CTEF Serial number": 0,
+      "Date corrected on SSSAMS": 0,
+      "Date Approved": 0,
+      "Signature on Payment List": 0,
+      "Date Collected at School": 0,
+      "Accountability CTEF Received": 0,
+      "Accountability CTEF Serial number": 0,
+      "CT Paid": 0,
+      "Date CT Paid": 0,
+      "Unique Received P5 Girls": 0,
+      "Unique Received New Schools": 0,
+      "Unique Received": 0,
+      attendance: 0,
+      correctionReason: 0,
+      isAlpProgram: 0,
+      disabilities: 0,
+      houseHold: 0,
+      pregnantOrNursing: 0,
+    };
 
-  const response = await SchoolData.find(query)
-    .sort(sort)
-    .select("state10 county28 payam28 school");
-
+    const response = await SchoolData.find(query).sort(sort).select(projection);
 
     res.status(200).json(response);
   } catch (error) {
