@@ -23,6 +23,7 @@ const schoolDataSchema = new mongoose.Schema({
   "first name": String,
   "middle name": String,
   "last name": String,
+  isPromoted: { type: Boolean, default: false },
   isPending: {
     type: Boolean,
     default: false,
