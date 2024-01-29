@@ -417,11 +417,11 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     // Fetch data from the database
     const result = await SchoolData.aggregate([
       {
-        $match: { payam28: payam28 }, // Use payam28 instead of payamName
+        $match: { payam28: payam28 },
       },
       {
         $group: {
-          _id: "$school", // Use school instead of schoolName
+          _id: { school: "$school", code: "$code" },
           totalPupils: { $sum: "$eligible" }, // Use eligible instead of pupilCount
         },
       },
