@@ -558,22 +558,22 @@ const registerStudent2024 = async (req, res) => {
       pregnantOrNursing,
     } = req.body;
 
-     const generateUniqueCode = () => {
-       const currentDate = new Date();
-       const year = String(currentDate.getFullYear()).slice(-2); // Get the last two digits of the year
-       const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-       const day = String(currentDate.getDate()).padStart(2, "0");
-       let hours = String(currentDate.getHours() + 3).padStart(2, "0");
-       const minutes = String(currentDate.getMinutes()).padStart(2, "0");
-       const seconds = String(currentDate.getSeconds()).padStart(2, "0");
+    const generateUniqueCode = () => {
+      const currentDate = new Date();
+      const year = String(currentDate.getFullYear()).slice(-2); // Get the last two digits of the year
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+      const day = String(currentDate.getDate()).padStart(2, "0");
+      let hours = String(currentDate.getHours() + 3).padStart(2, "0");
+      const minutes = String(currentDate.getMinutes()).padStart(2, "0");
+      const seconds = String(currentDate.getSeconds()).padStart(2, "0");
 
-       // Convert hours to 12-hour format
-       if (hours > 12) {
-         hours -= 12;
-       }
+      // Convert hours to 12-hour format
+      if (hours > 12) {
+        hours -= 12;
+      }
 
-       return `${year}${month}${day}${hours}${minutes}${seconds}`;
-     };
+      return `${year}${month}${day}${hours}${minutes}${seconds}`;
+    };
 
     // Create a new instance of the RegistrationData model
     const newRegistration2023 = new SchoolData({
@@ -596,26 +596,6 @@ const registerStudent2024 = async (req, res) => {
       pregnantOrNursing,
       reference: generateUniqueCode(),
     });
-
-    // const newRegistration2024 = new SchoolData2024({
-    //   year,
-    //   state,
-    //   stateName,
-    //   county,
-    //   countryOfOrigin,
-    //   payam,
-    //   school: schoolName,
-    //   education,
-    //   class: studentClass,
-    //   gender,
-    //   dob,
-    //   firstName,
-    //   middleName,
-    //   lastName,
-    //   disabilities,
-    //   houseHold,
-    //   pregnantOrNursing,
-    // });
 
     // Save the registration data to the database
     const reg = await newRegistration2023.save();

@@ -18,7 +18,7 @@ const schoolDataSchema = new mongoose.Schema({
   form: Number,
   formstream: Number,
   gender: String,
-  dob: Date,
+  dob: String,
   age: Number,
   "first name": String,
   "middle name": String,
