@@ -71,7 +71,7 @@ const logIn = asyncHandler(async (req, res) => {
       secret,
       { expiresIn: "1d" }
     );
-    res.status(200).send({ user: user.username, token });
+    res.status(200).json({ user: user.username, token });
   } else {
     res.status(404).json({ message: "Wrong password!" });
   }
