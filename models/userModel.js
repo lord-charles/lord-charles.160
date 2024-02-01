@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     },
     lastname: {
       type: String,
-      required: true,
+      required: false,
     },
     email: {
       type: String,
@@ -41,7 +41,15 @@ const userSchema = new mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ["Teacher", "HeadTeacher", "Secretariate", "SuperAdmin"],
+      enum: [
+        "Teacher",
+        "HeadTeacher",
+        "ClassTeacher",
+        "VolunteerTeacher",
+        "StaffTeacher",
+        "Secretariate",
+        "SuperAdmin",
+      ],
       default: null,
       required: true,
     },
@@ -59,11 +67,35 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+
     statesAsigned: [
       {
         type: String,
       },
     ],
+
+    activetmp: { type: String, required: false },
+    year: { type: String, required: false },
+    source: { type: String, required: false },
+    schoolCode: { type: String, required: false },
+    teacherCode: { type: String, required: false },
+    teacherHrisCode: { type: String, required: false },
+    position: { type: String, required: false },
+    category: { type: String, required: false },
+    workStatus: { type: String, required: false },
+    gender: { type: String, required: false },
+    dob: { type: String, required: false },
+    active: { type: Boolean, default: false },
+    nationalNo: { type: String, required: false },
+    salaryGrade: { type: String, required: false },
+    firstAppointment: { type: String, required: false },
+    refugee: { type: String, required: false },
+    countryOfOrigin: { type: String, required: false },
+    trainingLevel: { type: String, required: false },
+    professionalQual: { type: String, required: false },
+    notes: { type: String, required: false },
+    teacherUniqueID: { type: String, required: false },
+    teachersEstNo: { type: String, required: false },
     dateJoined: {
       type: Date,
       default: Date.now,

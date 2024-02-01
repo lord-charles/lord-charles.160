@@ -27,13 +27,8 @@ router.get("/users/get/:id", authMiddleware, isAdmin, getUserById);
 router.get("/users/get-email/", authMiddleware, isAdmin, getUserByEmail);
 router.post("/verifyToken", verifyToken);
 router.delete("/users/delete-user/:id", authMiddleware, isAdmin, deleteUser);
-router.get("/users/get/all/count", authMiddleware, isAdmin, getUserCount);
-router.put(
-  "/users/update-user-details/:id",
-  authMiddleware,
-  isAdmin,
-  updateUser
-);
+router.get("/users/get/all/count", getUserCount);
+router.patch("/users/update/:id", updateUser);
 
 //for Admin
 router.put("/users/update-user-details", authMiddleware, updateUserDetails); //for loggedin user

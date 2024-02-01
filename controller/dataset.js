@@ -516,6 +516,44 @@ const updateSchoolDataFields_2023 = async (req, res) => {
   }
 };
 
+const updateSchoolDataFieldsBulk = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const updateFields = req.body.updateFields;
+
+    // Validate if any fields are provided in req.body
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid or empty IDs array" });
+    }
+
+    // Validate if any fields are provided in req.body.updateFields
+    if (!updateFields || Object.keys(updateFields).length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No fields to update provided in updateFields" });
+    }
+
+    const bulkOperations = ids.map((id) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: updateFields },
+      },
+    }));
+
+    const result = await SchoolData.bulkWrite(bulkOperations);
+
+    // Check if any documents were modified
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "No school data updated" });
+    }
+
+    res.status(200).json({ message: "School data updated successfully" });
+  } catch (error) {
+    console.error("Error updating school data:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 const getSingleStudents_2023 = async (req, res) => {
   try {
     const { id } = req.params;
@@ -531,7 +569,6 @@ const getSingleStudents_2023 = async (req, res) => {
     res.status(500).json({ message: error });
   }
 };
-
 
 // 2024
 
@@ -657,6 +694,7 @@ module.exports = {
   getSingleStudents_2023,
   registerStudent2024,
   deleteStudentById,
+  updateSchoolDataFieldsBulk,
 };
 
 

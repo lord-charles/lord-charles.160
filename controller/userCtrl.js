@@ -6,7 +6,7 @@ const sendEmail = require("./emailCtl");
 const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
 
-//Register AI CHECKED
+//Register CHECKED
 const createUser = asyncHandler(async (req, res) => {
   const {
     firstname,
@@ -19,6 +19,25 @@ const createUser = asyncHandler(async (req, res) => {
     userType,
     dutyAssigned,
     statesAsigned,
+    year,
+    schoolCode,
+    teacherCode,
+    teacherHrisCode,
+    position,
+    category,
+    workStatus,
+    gender,
+    dob,
+    active,
+    nationalNo,
+    salaryGrade,
+    refugee,
+    countryOfOrigin,
+    trainingLevel,
+    professionalQual,
+    notes,
+    teacherUniqueID,
+    teachersEstNo,
   } = req.body;
 
   const existingUser = await User.findOne({ username });
@@ -37,6 +56,25 @@ const createUser = asyncHandler(async (req, res) => {
     userType,
     dutyAssigned,
     statesAsigned,
+    year,
+    schoolCode,
+    teacherCode,
+    teacherHrisCode,
+    position,
+    category,
+    workStatus,
+    gender,
+    dob,
+    active,
+    nationalNo,
+    salaryGrade,
+    refugee,
+    countryOfOrigin,
+    trainingLevel,
+    professionalQual,
+    notes,
+    teacherUniqueID,
+    teachersEstNo,
   });
 
   await user.save();
@@ -44,7 +82,7 @@ const createUser = asyncHandler(async (req, res) => {
   res.status(200).json({ user, message: "User created" });
 });
 
-//login AI CHECKED
+//login CHECKED
 const logIn = asyncHandler(async (req, res) => {
   const secret = process.env.SECRET;
   const { username, password } = req.body;
@@ -149,26 +187,65 @@ const updateUser = asyncHandler(async (req, res) => {
   const {
     firstname,
     lastname,
-    email,
-    mobile,
-    password,
     username,
-    statesAsigned,
-    dutyAssigned,
-    userType,
+    email,
+    phoneNumber,
+    password,
     isAdmin,
+    userType,
+    dutyAssigned,
+    statesAsigned,
+    year,
+    schoolCode,
+    teacherCode,
+    teacherHrisCode,
+    position,
+    category,
+    workStatus,
+    gender,
+    dob,
+    active,
+    nationalNo,
+    salaryGrade,
+    refugee,
+    countryOfOrigin,
+    trainingLevel,
+    professionalQual,
+    notes,
+    teacherUniqueID,
+    teachersEstNo,
   } = req.body;
   validateMongodbId(id);
   const updatedFields = {
     firstname,
     lastname,
-    email,
-    mobile,
     username,
-    statesAsigned,
-    dutyAssigned,
-    userType,
+    email,
+    phoneNumber,
+    password,
     isAdmin,
+    userType,
+    dutyAssigned,
+    statesAsigned,
+    year,
+    schoolCode,
+    teacherCode,
+    teacherHrisCode,
+    position,
+    category,
+    workStatus,
+    gender,
+    dob,
+    active,
+    nationalNo,
+    salaryGrade,
+    refugee,
+    countryOfOrigin,
+    trainingLevel,
+    professionalQual,
+    notes,
+    teacherUniqueID,
+    teachersEstNo,
     passwordHash: password ? await bcrypt.hash(password, 10) : undefined,
   };
 
