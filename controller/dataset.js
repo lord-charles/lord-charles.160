@@ -414,17 +414,11 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
         .json({ success: false, error: "Payam name is required" });
     }
 
-    // Fetch data from the database
+    // Fetch unique school names and codes from the database using aggregation
     const result = await SchoolData.aggregate([
-      {
-        $match: { payam28: payam28 },
-      },
-      {
-        $group: {
-          _id: { school: "$school", code: "$code" },
-          totalPupils: { $sum: "$eligible" }, // Use eligible instead of pupilCount
-        },
-      },
+      { $match: { payam28: payam28 } },
+      { $group: { _id: { school: "$school", code: "$code" } } },
+      { $project: { _id: 0, school: "$_id.school", code: "$_id.code" } },
     ]);
 
     // Return the result
@@ -434,6 +428,8 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
+
 
 const getStudentsInSchool_2023 = async (req, res) => {
   try {
