@@ -578,6 +578,7 @@ const registerStudent2024 = async (req, res) => {
       county,
       countryOfOrigin,
       payam,
+      code,
       schoolName,
       education,
       class: studentClass,
@@ -613,6 +614,7 @@ const registerStudent2024 = async (req, res) => {
       year,
       state,
       stateName,
+      code,
       county28: county,
       countryOfOrigin,
       payam28: payam,
@@ -634,15 +636,11 @@ const registerStudent2024 = async (req, res) => {
     const reg = await newRegistration2023.save();
     console.log(reg);
 
-    // await newRegistration2024.save();
-
-    // Respond with a success message
     res
       .status(201)
       .json({ success: true, message: "student registered successfully." });
   } catch (error) {
     console.log(error);
-    // Handle errors and respond with an error message
     if (error.code === 79) {
       res
         .status(200)
