@@ -197,7 +197,11 @@ const dataSet_2023 = async (req, res) => {
       state10,
       county10,
       payam10,
+      page, // New parameter to specify the page number
     } = req.query;
+
+    // Calculate the number of documents to skip based on the page number
+    const skip = (page - 1) * 10000;
 
     const query = buildQuery(
       state28,
@@ -234,28 +238,30 @@ const dataSet_2023 = async (req, res) => {
       reference: 1,
     };
 
-    // Limit the number of documents to 10000
+    // Fetch documents based on pagination
     const response = await SchoolData.find(query)
       .sort(sort)
       .select(projection)
-      .limit(10000);
+      .skip(skip) // Skip the appropriate number of documents
+      .limit(10000); // Limit the number of documents per page
 
     // Count the total number of documents matching the query
     const totalCount = await SchoolData.countDocuments(query);
 
-    // Calculate the number of remaining trips to fetch all documents
-    const remainingTrips = Math.ceil((totalCount - 10000) / 10000);
+    // Calculate the total number of pages
+    const totalPages = Math.ceil(totalCount / 10000);
 
     res.status(200).json({
       data: response,
       totalCount: totalCount,
-      remainingTrips: remainingTrips,
+      totalPages: totalPages,
     });
   } catch (error) {
     console.log("Error fetching dataset:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 const buildQuery = (
