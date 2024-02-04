@@ -251,16 +251,25 @@ const dataSet_2023 = async (req, res) => {
     // Calculate the total number of pages
     const totalPages = Math.ceil(totalCount / 10000);
 
+    // Calculate the number of remaining trips
+    const remainingTrips = totalPages - page;
+
+    // Calculate the number of documents remaining after this trip
+    const remainingDocuments = totalCount - page * 10000;
+
     res.status(200).json({
       data: response,
       totalCount: totalCount,
       totalPages: totalPages,
+      remainingTrips: remainingTrips,
+      remainingDocuments: remainingDocuments,
     });
   } catch (error) {
     console.log("Error fetching dataset:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 
