@@ -211,6 +211,7 @@ const dataSet_2023 = async (req, res) => {
       payam10
     );
     const sort = buildSortObject(sortBy, sortOrder);
+
     // Specify the fields to exclude in the select method
     const projection = {
       year: 1,
@@ -233,14 +234,29 @@ const dataSet_2023 = async (req, res) => {
       reference: 1,
     };
 
-    const response = await SchoolData.find(query).sort(sort).select(projection);
+    // Limit the number of documents to 10000
+    const response = await SchoolData.find(query)
+      .sort(sort)
+      .select(projection)
+      .limit(10000);
 
-    res.status(200).json(response);
+    // Count the total number of documents matching the query
+    const totalCount = await SchoolData.countDocuments(query);
+
+    // Calculate the number of remaining trips to fetch all documents
+    const remainingTrips = Math.ceil((totalCount - 10000) / 10000);
+
+    res.status(200).json({
+      data: response,
+      totalCount: totalCount,
+      remainingTrips: remainingTrips,
+    });
   } catch (error) {
     console.log("Error fetching dataset:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 const buildQuery = (
   state28,
@@ -675,3 +691,102 @@ module.exports = {
 };
 
 
+
+
+// const dataSet_2023 = async (req, res) => {
+//   try {
+//     const {
+//       state28,
+//       county28,
+//       education,
+//       payam28,
+//       code,
+//       school,
+//       sortBy,
+//       sortOrder,
+//       state10,
+//       county10,
+//       payam10,
+//     } = req.query;
+
+//     const query = buildQuery(
+//       state28,
+//       county28,
+//       education,
+//       payam28,
+//       code,
+//       school,
+//       state10,
+//       county10,
+//       payam10
+//     );
+//     const sort = buildSortObject(sortBy, sortOrder);
+//     // Specify the fields to exclude in the select method
+//     const projection = {
+//       year: 1,
+//       state28: 1,
+//       county28: 1,
+//       payam28: 1,
+//       state10: 1,
+//       school: 1,
+//       class: 1,
+//       code: 1,
+//       education: 1,
+//       gender: 1,
+//       dob: 1,
+//       firstName: 1,
+//       middleName: 1,
+//       lastName: 1,
+//       isPromoted: 1,
+//       isDroppedOut: 1,
+//       learnerUniqueID: 1,
+//       reference: 1,
+//     };
+
+//     const response = await SchoolData.find(query).sort(sort).select(projection);
+
+//     res.status(200).json(response);
+//   } catch (error) {
+//     console.log("Error fetching dataset:", error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
+
+// const buildQuery = (
+//   state28,
+//   county28,
+//   education,
+//   payam28,
+//   code,
+//   school,
+//   state10,
+//   county10,
+//   payam10
+// ) => {
+//   const query = {};
+
+//   // Helper function to add a query condition
+//   const addQueryCondition = (field, value) => {
+//     if (value) {
+//       query[field] = { $regex: new RegExp(value, "i") };
+//     }
+//   };
+
+//   addQueryCondition("state28", state28);
+//   addQueryCondition("county28", county28);
+//   addQueryCondition("education", education);
+//   addQueryCondition("payam28", payam28);
+//   addQueryCondition("code", code);
+//   addQueryCondition("school", school);
+//   addQueryCondition("state10", state10);
+//   addQueryCondition("county10", county10);
+//   addQueryCondition("payam10", payam10);
+
+//   return query;
+// };
+
+// const buildSortObject = (sortBy, sortOrder) => {
+//   const sort = {};
+//   if (sortBy) sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+//   return sort;
+// };
