@@ -212,49 +212,32 @@ const dataSet_2023 = async (req, res) => {
     );
     const sort = buildSortObject(sortBy, sortOrder);
     // Specify the fields to exclude in the select method
-    // Specify the fields to include in the select method
     const projection = {
-      year: 0,
-      state28: 0,
-      stateName28: 0,
-      stateName10: 0,
-      county10: 0,
-      payam10: 0,
-      dob: 0,
-      age: 0,
-      isPending: 0,
-      isDisbursed: 0,
-      over18: 0,
-      reference: 0,
-      eligible: 0,
-      "Learner UniqueID": 0,
-      "Date Validated at School": 0,
-      "CTEF received at SA": 0,
-      "CTEF Serial number": 0,
-      "Date corrected on SSSAMS": 0,
-      "Date Approved": 0,
-      "Signature on Payment List": 0,
-      "Date Collected at School": 0,
-      "Accountability CTEF Received": 0,
-      "Accountability CTEF Serial number": 0,
-      "CT Paid": 0,
-      "Date CT Paid": 0,
-      "Unique Received P5 Girls": 0,
-      "Unique Received New Schools": 0,
-      "Unique Received": 0,
-      attendance: 0,
-      correctionReason: 0,
-      isAlpProgram: 0,
-      disabilities: 0,
-      houseHold: 0,
-      pregnantOrNursing: 0,
+      year: 1,
+      state28: 1,
+      county28: 1,
+      payam28: 1,
+      state10: 1,
+      school: 1,
+      class: 1,
+      code: 1,
+      education: 1,
+      gender: 1,
+      dob: 1,
+      firstName: 1,
+      middleName: 1,
+      lastName: 1,
+      isPromoted: 1,
+      isDroppedOut: 1,
+      learnerUniqueID: 1,
+      reference: 1,
     };
 
     const response = await SchoolData.find(query).sort(sort).select(projection);
 
     res.status(200).json(response);
   } catch (error) {
-    console.error("Error fetching dataset:", error);
+    console.log("Error fetching dataset:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };

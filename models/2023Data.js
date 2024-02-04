@@ -20,9 +20,9 @@ const schoolDataSchema = new mongoose.Schema({
   gender: String,
   dob: String,
   age: Number,
-  "first name": String,
-  "middle name": String,
-  "last name": String,
+  firstName: String,
+  middleName: String,
+  lastName: String,
   isPromoted: { type: Boolean, default: false },
   isDroppedOut: { type: Boolean, default: false },
   isPending: {
