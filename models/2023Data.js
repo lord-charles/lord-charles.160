@@ -87,12 +87,12 @@ const schoolDataSchema = new mongoose.Schema({
   ],
   disabilities: [
     {
-      difficultyHearing: { type: String, required: false },
-      difficultyRecalling: { type: String, required: false },
-      difficultySeeing: { type: String, required: false },
-      difficultySelfCare: { type: String, required: false },
-      difficultyTalking: { type: String, required: false },
-      difficultyWalking: { type: String, required: false },
+      difficultyHearing: { type: Number, required: false },
+      difficultyRecalling: { type: Number, required: false },
+      difficultySeeing: { type: Number, required: false },
+      difficultySelfCare: { type: Number, required: false },
+      difficultyTalking: { type: Number, required: false },
+      difficultyWalking: { type: Number, required: false },
     },
   ],
   houseHold: [
