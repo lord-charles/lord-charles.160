@@ -626,8 +626,8 @@ const registerStudent2024 = async (req, res) => {
     // Create a new instance of the RegistrationData model
     const newRegistration2023 = new SchoolData({
       year,
-      state,
       stateName,
+      state10: state,
       code,
       county28: county,
       countryOfOrigin,
