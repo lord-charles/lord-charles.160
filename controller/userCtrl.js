@@ -11,15 +11,21 @@ const createUser = asyncHandler(async (req, res) => {
   const {
     firstname,
     lastname,
-    username,
     email,
+    username,
     phoneNumber,
-    password,
     isAdmin,
+    address,
     userType,
     dutyAssigned,
     statesAsigned,
+    county28,
+    payam28,
+    state10,
+    school,
+    code,
     year,
+    source,
     schoolCode,
     teacherCode,
     teacherHrisCode,
@@ -75,6 +81,13 @@ const createUser = asyncHandler(async (req, res) => {
     notes,
     teacherUniqueID,
     teachersEstNo,
+    address,
+    county28,
+    payam28,
+    state10,
+    school,
+    code,
+    source,
   });
 
   await user.save();
@@ -115,41 +128,112 @@ const logIn = asyncHandler(async (req, res) => {
   }
 });
 
-//get users
-const getUsers = asyncHandler(async (req, res) => {
-  const { sort } = req.query;
-  const sortOptions = {};
+const getUsers = async (req, res) => {
+  try {
+    const {
+      firstname,
+      lastname,
+      username,
+      phoneNumber,
+      isAdmin,
+      userType,
+      county28,
+      payam28,
+      state10,
+      school,
+      code,
+      position,
+      category,
+      workStatus,
+      gender,
+      dob,
+      active,
+      dateJoined,
+    } = req.body;
 
-  if (
-    sort &&
-    [
-      "firstname",
-      "lastname",
-      "email",
-      "mobile",
-      "dateJoined",
-      "isAdmin",
-      "isBlocked",
-    ].includes(sort)
-  ) {
-    sortOptions[sort] = 1;
-  } else {
-    sortOptions["dateJoined"] = -1;
+    // Create the query object
+    const query = buildQuery(
+      firstname,
+      lastname,
+      username,
+      phoneNumber,
+      isAdmin,
+      userType,
+      county28,
+      payam28,
+      state10,
+      school,
+      code,
+      position,
+      category,
+      workStatus,
+      gender,
+      dob,
+      active,
+      dateJoined
+    );
+
+    // Fetch documents based on the query
+    const response = await User.find(query);
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.log("Error fetching dataset:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
   }
+};
 
-  let users = await User.find({}, "-__v -passwordHash")
-    .sort(sortOptions)
-    .lean();
+// Function to build the query object
+const buildQuery = (
+  firstname,
+  lastname,
+  username,
+  phoneNumber,
+  isAdmin,
+  userType,
+  county28,
+  payam28,
+  state10,
+  school,
+  code,
+  position,
+  category,
+  workStatus,
+  gender,
+  dob,
+  active,
+  dateJoined
+) => {
+  const query = {};
 
-  if (sort === "isAdmin") {
-    users = users.filter((user) => user[sort]); // filter based on sort field
-  }
+  // Helper function to add a query condition
+  const addQueryCondition = (field, value) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query[field] = value;
+    }
+  };
 
-  if (sort === "isBlocked") {
-    users = users.filter((user) => user[sort]); // filter based on sort field
-  }
-  res.status(200).json(users);
-});
+  addQueryCondition("firstname", firstname);
+  addQueryCondition("lastname", lastname);
+  addQueryCondition("username", username);
+  addQueryCondition("phoneNumber", phoneNumber);
+  addQueryCondition("isAdmin", isAdmin);
+  addQueryCondition("userType", userType);
+  addQueryCondition("county28", county28);
+  addQueryCondition("payam28", payam28);
+  addQueryCondition("state10", state10);
+  addQueryCondition("school", school);
+  addQueryCondition("code", code);
+  addQueryCondition("position", position);
+  addQueryCondition("category", category);
+  addQueryCondition("workStatus", workStatus);
+  addQueryCondition("gender", gender);
+  addQueryCondition("dob", dob);
+  addQueryCondition("active", active);
+  addQueryCondition("dateJoined", dateJoined);
+
+  return query;
+};
 
 //get users by id
 const getUserById = asyncHandler(async (req, res) => {
@@ -161,6 +245,53 @@ const getUserById = asyncHandler(async (req, res) => {
   }
   res.status(200).json(user);
 });
+
+const getUsersBySchool = async (req, res) => {
+  try {
+    const { school } = req.query;
+
+    // Check if the school parameter is provided
+    if (!school) {
+      return res
+        .status(400)
+        .json({ success: false, message: "School parameter is required." });
+    }
+
+    // Create a query object to find users by school
+    const query = {
+      school: school,
+    };
+
+    // Specify the fields to include in the projection
+    const projection = {
+      firstname: 1,
+      lastname: 1,
+      username: 1,
+      userType: 1,
+      dutyAssigned: 1,
+      statesAsigned: 1,
+      county28: 1,
+      payam28: 1,
+      state10: 1,
+      school: 1,
+      code: 1,
+      year: 1,
+      workStatus: 1,
+      gender: 1,
+      salaryGrade: 1,
+      trainingLevel: 1,
+      professionalQual: 1,
+    };
+
+    // Fetch users based on the query and projection
+    const users = await User.find(query).select(projection).lean().exec(); // Using lean() for better performance
+
+    res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    console.error("Error fetching users by school:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
 
 //get users by id
 const getUserByEmail = asyncHandler(async (req, res) => {
@@ -187,15 +318,21 @@ const updateUser = asyncHandler(async (req, res) => {
   const {
     firstname,
     lastname,
-    username,
     email,
+    username,
     phoneNumber,
-    password,
     isAdmin,
+    address,
     userType,
     dutyAssigned,
     statesAsigned,
+    county28,
+    payam28,
+    state10,
+    school,
+    code,
     year,
+    source,
     schoolCode,
     teacherCode,
     teacherHrisCode,
@@ -219,15 +356,21 @@ const updateUser = asyncHandler(async (req, res) => {
   const updatedFields = {
     firstname,
     lastname,
-    username,
     email,
+    username,
     phoneNumber,
-    password,
     isAdmin,
+    address,
     userType,
     dutyAssigned,
     statesAsigned,
+    county28,
+    payam28,
+    state10,
+    school,
+    code,
     year,
+    source,
     schoolCode,
     teacherCode,
     teacherHrisCode,
@@ -469,4 +612,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   saveAddress,
+  getUsersBySchool,
 };
