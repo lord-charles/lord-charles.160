@@ -146,6 +146,6 @@ const schoolDataSchema = new mongoose.Schema({
 });
 
 // Create a Mongoose model based on the schema
-const SchoolData = mongoose.model("schooldata2023", schoolDataSchema);
+const SchoolData = mongoose.model("schooldatas", schoolDataSchema);
 
 module.exports = SchoolData;

@@ -690,26 +690,93 @@ const deleteStudentById = async (req, res) => {
 
 //downloads
 
+// const payamSchoolDownload = async (req, res) => {
+//   try {
+//     // Extract state and payam28 from the request body
+//     const { state10, payam28, page = 1 } = req.body;
+
+//     // Validate if state10 and payam28 are provided
+//     if (!state10 || !payam28) {
+//       return res
+//         .status(400)
+//         .json({ success: false, error: "State and payam28 are required" });
+//     }
+
+//     // Calculate the number of documents to skip based on the page number
+//     const skip = (page - 1) * 1000;
+
+//     // Build query to fetch data based on state10 and payam28
+//     const query = { state10, payam28 };
+
+//     // Specify the fields to exclude in the select method
+//     const projection = {
+//       year: 1,
+//       state28: 1,
+//       county28: 1,
+//       payam28: 1,
+//       state10: 1,
+//       school: 1,
+//       class: 1,
+//       code: 1,
+//       education: 1,
+//       gender: 1,
+//       dob: 1,
+//       firstName: 1,
+//       middleName: 1,
+//       lastName: 1,
+//       isPromoted: 1,
+//       isDroppedOut: 1,
+//       learnerUniqueID: 1,
+//       reference: 1,
+//       disabilities: 1,
+//       houseHold: 1,
+//       pregnantOrNursing: 1,
+//     };
+
+//     // Fetch school data from MongoDB based on the specified query
+//     const schoolData = await SchoolData.find(query)
+//       .select(projection)
+//       .skip(skip)
+//       .limit(1000); // Limit the number of documents per page
+
+//     // Count the total number of documents matching the query
+//     const totalCount = await SchoolData.countDocuments(query);
+
+//     // Calculate the total number of pages
+//     const totalPages = Math.ceil(totalCount / 1000);
+
+//     // Calculate the number of remaining trips
+//     const remainingTrips = totalPages - page;
+
+ 
+
+//     // Return the fetched data along with pagination metadata
+//     res.status(200).json({
+//       success: true,
+//       data: schoolData,
+//       totalCount: totalCount,
+//       totalPages: totalPages,
+//       remainingTrips: remainingTrips,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching school data:", error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
+
 const payamSchoolDownload = async (req, res) => {
   try {
-    // Extract state and payam28 from the request body
-    const { state10, payam28, page = 1 } = req.body;
+    const { payam28, page } = req.body;
 
-    // Validate if state10 and payam28 are provided
-    if (!state10 || !payam28) {
+    // Input validation
+    if (!payam28) {
       return res
         .status(400)
-        .json({ success: false, error: "State and payam28 are required" });
+        .json({ success: false, error: "payam28 is required" });
     }
 
-    // Calculate the number of documents to skip based on the page number
-    const skip = (page - 1) * 1000;
-
-    // Build query to fetch data based on state10 and payam28
-    const query = { state10, payam28 };
-
-    // Specify the fields to exclude in the select method
-    const projection = {
+    const PAGE_SIZE = 1000;
+    const PROJECTION_FIELDS = {
       year: 1,
       state28: 1,
       county28: 1,
@@ -733,36 +800,43 @@ const payamSchoolDownload = async (req, res) => {
       pregnantOrNursing: 1,
     };
 
-    // Fetch school data from MongoDB based on the specified query
-    const schoolData = await SchoolData.find(query)
-      .select(projection)
-      .skip(skip)
-      .limit(1000); // Limit the number of documents per page
+    // Calculate skip value based on pagination
+    const skip = (page - 1) * PAGE_SIZE;
+
+    // Aggregation pipeline to match, project, skip, and limit documents
+    const pipeline = [
+      { $match: { payam28 } },
+      { $project: PROJECTION_FIELDS },
+      { $skip: skip },
+      { $limit: PAGE_SIZE },
+    ];
+
+    // Execute the aggregation pipeline
+    const schoolData = await SchoolData.aggregate(pipeline);
 
     // Count the total number of documents matching the query
-    const totalCount = await SchoolData.countDocuments(query);
+    const totalCount = await SchoolData.countDocuments({ payam28 });
 
     // Calculate the total number of pages
-    const totalPages = Math.ceil(totalCount / 1000);
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
     // Calculate the number of remaining trips
     const remainingTrips = totalPages - page;
 
- 
-
-    // Return the fetched data along with pagination metadata
     res.status(200).json({
       success: true,
       data: schoolData,
-      totalCount: totalCount,
-      totalPages: totalPages,
-      remainingTrips: remainingTrips,
+      totalCount,
+      totalPages,
+      remainingTrips,
     });
   } catch (error) {
     console.error("Error fetching school data:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
+
 
 
 
