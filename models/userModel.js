@@ -9,14 +9,9 @@ const userSchema = new mongoose.Schema(
     },
     lastname: String,
     email: String,
-    username: {
-      type: String,
-    },
+    username: String,
     phoneNumber: String,
-    passwordHash: {
-      type: String,
-      required: false,
-    },
+    passwordHash: String,
     isAdmin: {
       type: Boolean,
       default: false,
@@ -37,8 +32,6 @@ const userSchema = new mongoose.Schema(
         "Secretariate",
         "SuperAdmin",
       ],
-      default: null,
-      required: true,
     },
     dutyAssigned: [
       {
@@ -49,100 +42,38 @@ const userSchema = new mongoose.Schema(
         schoolName: String,
       },
     ],
-    statesAsigned: [
-      {
-        type: String,
-      },
-    ],
-
-    county28: {
-      type: "String",
-    },
-    payam28: {
-      type: "String",
-    },
-    state10: {
-      type: "String",
-    },
-    stateName10: {
-      type: "String",
-    },
-
-    school: {
-      type: "String",
-    },
-    code: {
-      type: "String",
-    },
-    activetmp: {
-      type: "String",
-    },
-    year: {
-      type: "String",
-    },
-    source: {
-      type: "String",
-    },
-    schoolCode: {
-      type: "String",
-    },
-    teacherCode: {
-      type: "String",
-    },
-    teacherHrisCode: {
-      type: "String",
-    },
-    position: {
-      type: "String",
-    },
-    category: {
-      type: "String",
-    },
-    workStatus: {
-      type: "String",
-    },
-    gender: {
-      type: "String",
-    },
-    dob: {
-      type: "String",
-    },
-    nationalNo: {
-      type: "String",
-    },
-    salaryGrade: {
-      type: "String",
-    },
-    firstAppointment: {
-      type: "String",
-    },
-    refugee: {
-      type: "String",
-    },
-    countryOfOrigin: {
-      type: "String",
-    },
-    trainingLevel: {
-      type: "String",
-    },
-    professionalQual: {
-      type: "String",
-    },
-    notes: {
-      type: "String",
-    },
-    teacherUniqueID: {
-      type: "String",
-    },
-    teachersEstNo: {
-      type: "String",
-    },
-
+    statesAsigned: [String],
+    county28: String,
+    payam28: String,
+    state10: String,
+    stateName10: String,
+    school: String,
+    code: String,
+    activetmp: String,
+    year: String,
+    source: String,
+    schoolCode: String,
+    teacherCode: String,
+    teacherHrisCode: String,
+    position: String,
+    category: String,
+    workStatus: String,
+    gender: String,
+    dob: String,
+    nationalNo: String,
+    salaryGrade: String,
+    firstAppointment: String,
+    refugee: String,
+    countryOfOrigin: String,
+    trainingLevel: String,
+    professionalQual: String,
+    notes: String,
+    teacherUniqueID: String,
+    teachersEstNo: String,
     active: {
       type: Boolean,
       default: true,
     },
-
     dateJoined: {
       type: Date,
       default: Date.now,
@@ -156,6 +87,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+// Method to create a password reset token
 userSchema.methods.createPasswordResetToken = function () {
   const resetToken = Math.floor(1000 + Math.random() * 9000).toString();
   this.passwordResetToken = crypto
