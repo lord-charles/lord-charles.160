@@ -11,7 +11,6 @@ const userSchema = new mongoose.Schema(
     email: String,
     username: {
       type: String,
-      unique: false,
     },
     phoneNumber: String,
     passwordHash: {
