@@ -44,6 +44,7 @@ const createUser = asyncHandler(async (req, res) => {
     notes,
     teacherUniqueID,
     teachersEstNo,
+    password,
   } = req.body;
 
   // const existingUser = await User.findOne({ username });
