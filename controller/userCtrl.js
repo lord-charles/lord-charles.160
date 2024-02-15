@@ -46,10 +46,10 @@ const createUser = asyncHandler(async (req, res) => {
     teachersEstNo,
   } = req.body;
 
-  const existingUser = await User.findOne({ username });
-  if (existingUser) {
-    return res.status(400).json({ message: "User already exists" });
-  }
+  // const existingUser = await User.findOne({ username });
+  // if (existingUser) {
+  //   return res.status(400).json({ message: "User already exists" });
+  // }
 
   const user = new User({
     firstname,
