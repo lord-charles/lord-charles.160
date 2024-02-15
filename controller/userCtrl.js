@@ -54,10 +54,10 @@ const createUser = asyncHandler(async (req, res) => {
   const user = new User({
     firstname,
     lastname,
-    username,
+    // username,
     email,
     phoneNumber,
-    passwordHash: password ? await bcrypt.hash(password, 10) : null,
+    // passwordHash: password ? await bcrypt.hash(password, 10) : null,
     isAdmin,
     userType,
     dutyAssigned,

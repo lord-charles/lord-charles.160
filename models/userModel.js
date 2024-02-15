@@ -11,12 +11,12 @@ const userSchema = new mongoose.Schema(
     email: String,
     username: {
       type: String,
-      // unique: true,
+      unique: false,
     },
     phoneNumber: String,
     passwordHash: {
       type: String,
-      // required: true,
+      required: false,
     },
     isAdmin: {
       type: Boolean,
