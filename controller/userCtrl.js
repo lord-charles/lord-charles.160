@@ -57,7 +57,7 @@ const createUser = asyncHandler(async (req, res) => {
     username,
     email,
     phoneNumber,
-    passwordHash: await bcrypt.hash(password, 10),
+    passwordHash: password ? await bcrypt.hash(password, 10) : null,
     isAdmin,
     userType,
     dutyAssigned,
