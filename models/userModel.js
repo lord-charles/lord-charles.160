@@ -55,40 +55,94 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    state28: String,
-    county28: String,
-    payam28: String,
-    state10: String,
-    stateName10: String,
-    county10: String,
-    payam10: String,
-    school: String,
-    code: String,
-    activetmp: String,
-    year: String,
-    source: String,
-    schoolCode: String,
-    teacherCode: String,
-    teacherHrisCode: String,
-    position: String,
-    category: String,
-    workStatus: String,
-    gender: String,
-    dob: String,
+    county28: {
+      type: "String",
+    },
+    payam28: {
+      type: "String",
+    },
+    state10: {
+      type: "String",
+    },
+    stateName10: {
+      type: "String",
+    },
+
+    school: {
+      type: "String",
+    },
+    code: {
+      type: "String",
+    },
+    activetmp: {
+      type: "String",
+    },
+    year: {
+      type: "String",
+    },
+    source: {
+      type: "String",
+    },
+    schoolCode: {
+      type: "String",
+    },
+    teacherCode: {
+      type: "String",
+    },
+    teacherHrisCode: {
+      type: "String",
+    },
+    position: {
+      type: "String",
+    },
+    category: {
+      type: "String",
+    },
+    workStatus: {
+      type: "String",
+    },
+    gender: {
+      type: "String",
+    },
+    dob: {
+      type: "String",
+    },
+    nationalNo: {
+      type: "String",
+    },
+    salaryGrade: {
+      type: "String",
+    },
+    firstAppointment: {
+      type: "String",
+    },
+    refugee: {
+      type: "String",
+    },
+    countryOfOrigin: {
+      type: "String",
+    },
+    trainingLevel: {
+      type: "String",
+    },
+    professionalQual: {
+      type: "String",
+    },
+    notes: {
+      type: "String",
+    },
+    teacherUniqueID: {
+      type: "String",
+    },
+    teachersEstNo: {
+      type: "String",
+    },
+
     active: {
       type: Boolean,
       default: true,
     },
-    nationalNo: String,
-    salaryGrade: String,
-    firstAppointment: String,
-    refugee: String,
-    countryOfOrigin: String,
-    trainingLevel: String,
-    professionalQual: String,
-    notes: String,
-    teacherUniqueID: String,
-    teachersEstNo: String,
+
     dateJoined: {
       type: Date,
       default: Date.now,
