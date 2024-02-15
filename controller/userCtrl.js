@@ -597,6 +597,74 @@ const saveAddress = asyncHandler(async (req, res) => {
   res.json(updatedUser);
 });
 
+const payamSchoolDownload = async (req, res) => {
+  try {
+    const { payam28, page } = req.body;
+
+    // Input validation
+    if (!payam28) {
+      return res
+        .status(400)
+        .json({ success: false, error: "payam28 is required" });
+    }
+
+    const PAGE_SIZE = 1000;
+    const PROJECTION_FIELDS = {
+      firstname: 1,
+      lastname: 1,
+      username: 1,
+      userType: 1,
+      dutyAssigned: 1,
+      statesAsigned: 1,
+      county28: 1,
+      payam28: 1,
+      state10: 1,
+      school: 1,
+      code: 1,
+      year: 1,
+      workStatus: 1,
+      gender: 1,
+      salaryGrade: 1,
+      trainingLevel: 1,
+      professionalQual: 1,
+    };
+
+    // Calculate skip value based on pagination
+    const skip = (page - 1) * PAGE_SIZE;
+
+    // Aggregation pipeline to match, project, skip, and limit documents
+    const pipeline = [
+      { $match: { payam28 } },
+      { $project: PROJECTION_FIELDS },
+      { $skip: skip },
+      { $limit: PAGE_SIZE },
+    ];
+
+    // Execute the aggregation pipeline
+    const schoolData = await User.aggregate(pipeline);
+
+    // Count the total number of documents matching the query
+    const totalCount = await User.countDocuments({ payam28 });
+
+    // Calculate the total number of pages
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+    // Calculate the number of remaining trips
+    const remainingTrips = totalPages - page;
+
+    res.status(200).json({
+      success: true,
+      data: schoolData,
+      totalCount,
+      totalPages,
+      remainingTrips,
+    });
+  } catch (error) {
+    console.error("Error fetching school data:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   createUser,
   logIn,
@@ -614,4 +682,5 @@ module.exports = {
   resetPassword,
   saveAddress,
   getUsersBySchool,
+  payamSchoolDownload,
 };

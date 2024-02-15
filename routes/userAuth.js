@@ -18,6 +18,7 @@ const {
   resetPassword,
   saveAddress,
   getUsersBySchool,
+  payamSchoolDownload,
 } = require("../controller/userCtrl");
 
 // User endpoints
@@ -31,6 +32,8 @@ router.post("/verifyToken", verifyToken);
 router.delete("/users/delete-user/:id", deleteUser);
 router.get("/users/get/all/count", getUserCount);
 router.patch("/users/update/:id", updateUser);
+router.post("/download/payams/schools", payamSchoolDownload);
+
 
 //for Admin
 router.put("/users/update-user-details", authMiddleware, updateUserDetails); //for loggedin user
