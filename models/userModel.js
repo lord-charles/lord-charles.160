@@ -42,7 +42,11 @@ const userSchema = new mongoose.Schema(
         schoolName: String,
       },
     ],
-    statesAsigned: [String],
+    statesAsigned: [
+      {
+        type: String,
+      },
+    ],
     county28: String,
     payam28: String,
     state10: String,
@@ -70,6 +74,19 @@ const userSchema = new mongoose.Schema(
     notes: String,
     teacherUniqueID: String,
     teachersEstNo: String,
+    modifiedBy: String,
+    disabilities: [
+      {
+        disabilities: {
+          difficultyHearing: { type: Number, required: false },
+          difficultyRecalling: { type: Number, required: false },
+          difficultySeeing: { type: Number, required: false },
+          difficultySelfCare: { type: Number, required: false },
+          difficultyTalking: { type: Number, required: false },
+          difficultyWalking: { type: Number, required: false },
+        },
+      },
+    ],
     active: {
       type: Boolean,
       default: true,
@@ -82,6 +99,7 @@ const userSchema = new mongoose.Schema(
     passwordResetToken: String,
     passwordResetExpires: Date,
   },
+
   {
     timestamps: true,
   }
