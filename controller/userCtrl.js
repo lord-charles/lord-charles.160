@@ -279,6 +279,7 @@ const getUsersBySchool = async (req, res) => {
     const projection = {
       firstname: 1,
       lastname: 1,
+      middleName: 1,
       username: 1,
       userType: 1,
       dutyAssigned: 1,
@@ -294,6 +295,11 @@ const getUsersBySchool = async (req, res) => {
       salaryGrade: 1,
       trainingLevel: 1,
       professionalQual: 1,
+      disabilities: 1,
+      dob: 1,
+      nationalNo: 1,
+      teacherCode: 1,
+      position: 1,
     };
 
     // Fetch users based on the query and projection
@@ -646,6 +652,11 @@ const payamSchoolDownload = async (req, res) => {
       salaryGrade: 1,
       trainingLevel: 1,
       professionalQual: 1,
+      disabilities: 1,
+      dob: 1,
+      nationalNo: 1,
+      teacherCode: 1,
+      position: 1,
     };
 
     // Calculate skip value based on pagination
