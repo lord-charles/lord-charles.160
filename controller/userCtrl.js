@@ -45,12 +45,15 @@ const createUser = asyncHandler(async (req, res) => {
     teacherUniqueID,
     teachersEstNo,
     password,
+    middleName,
+    modifiedBy,
+    disabilities,
   } = req.body;
 
-  // const existingUser = await User.findOne({ username });
-  // if (existingUser) {
-  //   return res.status(400).json({ message: "User already exists" });
-  // }
+  const existingUser = await User.findOne({ username });
+  if (existingUser) {
+    return res.status(400).json({ message: "User already exists" });
+  }
 
   const user = new User({
     firstname,
@@ -89,6 +92,9 @@ const createUser = asyncHandler(async (req, res) => {
     school,
     code,
     source,
+    middleName,
+    modifiedBy,
+    disabilities,
   });
 
   await user.save();
@@ -150,6 +156,9 @@ const getUsers = async (req, res) => {
       dob,
       active,
       dateJoined,
+      middleName,
+      modifiedBy,
+      disabilities,
     } = req.body;
 
     // Create the query object
@@ -171,7 +180,10 @@ const getUsers = async (req, res) => {
       gender,
       dob,
       active,
-      dateJoined
+      dateJoined,
+      middleName,
+      modifiedBy,
+      disabilities
     );
 
     // Fetch documents based on the query
@@ -352,6 +364,9 @@ const updateUser = asyncHandler(async (req, res) => {
     notes,
     teacherUniqueID,
     teachersEstNo,
+    middleName,
+    modifiedBy,
+    disabilities,
   } = req.body;
   validateMongodbId(id);
   const updatedFields = {
@@ -390,6 +405,9 @@ const updateUser = asyncHandler(async (req, res) => {
     notes,
     teacherUniqueID,
     teachersEstNo,
+    middleName,
+    modifiedBy,
+    disabilities,
     passwordHash: password ? await bcrypt.hash(password, 10) : undefined,
   };
 
@@ -612,6 +630,7 @@ const payamSchoolDownload = async (req, res) => {
     const PROJECTION_FIELDS = {
       firstname: 1,
       lastname: 1,
+      middleName: 1,
       username: 1,
       userType: 1,
       dutyAssigned: 1,

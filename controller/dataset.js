@@ -607,6 +607,7 @@ const registerStudent2024 = async (req, res) => {
       disabilities,
       houseHold,
       pregnantOrNursing,
+      modifiedBy,
     } = req.body;
 
     const generateUniqueCode = () => {
@@ -647,6 +648,7 @@ const registerStudent2024 = async (req, res) => {
       houseHold,
       pregnantOrNursing,
       reference: generateUniqueCode(),
+      modifiedBy,
     });
 
     // Save the registration data to the database
