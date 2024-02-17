@@ -239,6 +239,7 @@ const dataSet_2023 = async (req, res) => {
       disabilities: 1,
       houseHold: 1,
       pregnantOrNursing: 1,
+      modifiedBy: 1,
     };
 
     // Fetch documents based on pagination
