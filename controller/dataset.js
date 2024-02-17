@@ -531,8 +531,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
 
 const updateSchoolDataFieldsBulk = async (req, res) => {
   try {
-    const { ids } = req.body;
-    const updateFields = req.body.updateFields;
+    const { ids, loggedInUser, updateFields } = req.body;
 
     // Validate if any fields are provided in req.body
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
@@ -549,7 +548,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     const bulkOperations = ids.map((id) => ({
       updateOne: {
         filter: { _id: id },
-        update: { $set: updateFields },
+        update: { $set: { ...updateFields, modifiedBy: loggedInUser } },
       },
     }));
 
@@ -566,6 +565,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 const getSingleStudents_2023 = async (req, res) => {
   try {
