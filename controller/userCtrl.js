@@ -408,7 +408,7 @@ const updateUser = asyncHandler(async (req, res) => {
     middleName,
     modifiedBy,
     disabilities,
-    passwordHash: password ? await bcrypt.hash(password, 10) : undefined,
+    // passwordHash: password ? await bcrypt.hash(password, 10) : undefined,
   };
 
   const user = await User.findByIdAndUpdate(id, updatedFields, { new: true });
