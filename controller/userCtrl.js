@@ -373,6 +373,7 @@ const updateUser = asyncHandler(async (req, res) => {
     middleName,
     modifiedBy,
     disabilities,
+    isDroppedOut,
   } = req.body;
   validateMongodbId(id);
   const updatedFields = {
@@ -414,6 +415,7 @@ const updateUser = asyncHandler(async (req, res) => {
     middleName,
     modifiedBy,
     disabilities,
+    isDroppedOut,
     // passwordHash: password ? await bcrypt.hash(password, 10) : undefined,
   };
 
