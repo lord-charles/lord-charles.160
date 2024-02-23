@@ -707,6 +707,7 @@ const payamSchoolDownload = async (req, res) => {
       nationalNo: 1,
       teacherCode: 1,
       position: 1,
+      isDroppedOut: 1,
     };
 
     // Calculate skip value based on pagination
