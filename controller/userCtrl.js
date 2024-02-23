@@ -11,6 +11,7 @@ const createUser = asyncHandler(async (req, res) => {
   const {
     firstname,
     lastname,
+    middleName,
     email,
     username,
     phoneNumber,
@@ -45,7 +46,6 @@ const createUser = asyncHandler(async (req, res) => {
     teacherUniqueID,
     teachersEstNo,
     password,
-    middleName,
     modifiedBy,
     disabilities,
   } = req.body;
@@ -58,6 +58,7 @@ const createUser = asyncHandler(async (req, res) => {
   const user = new User({
     firstname,
     lastname,
+    middleName,
     username,
     email,
     phoneNumber,
@@ -92,7 +93,6 @@ const createUser = asyncHandler(async (req, res) => {
     school,
     code,
     source,
-    middleName,
     modifiedBy,
     disabilities,
   });
@@ -706,6 +706,7 @@ const payamSchoolDownload = async (req, res) => {
       dob: 1,
       nationalNo: 1,
       teacherCode: 1,
+      teachersEstNo: 1,
       position: 1,
       isDroppedOut: 1,
     };
