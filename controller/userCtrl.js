@@ -310,6 +310,7 @@ const getUsersBySchool = async (req, res) => {
       nationalNo: 1,
       teacherCode: 1,
       position: 1,
+      isDroppedOut: 1,
     };
 
     // Fetch users based on the query and projection
