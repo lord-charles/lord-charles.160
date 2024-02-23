@@ -19,6 +19,7 @@ const {
   saveAddress,
   getUsersBySchool,
   payamSchoolDownload,
+  updateUsersFieldsBulk,
 } = require("../controller/userCtrl");
 
 // User endpoints
@@ -33,6 +34,8 @@ router.delete("/users/delete-user/:id", deleteUser);
 router.get("/users/get/all/count", getUserCount);
 router.patch("/users/update/:id", updateUser);
 router.post("/download/payams/schools", payamSchoolDownload);
+router.patch("/update/bulk", updateUsersFieldsBulk);
+
 
 
 //for Admin

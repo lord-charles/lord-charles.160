@@ -135,59 +135,69 @@ const logIn = asyncHandler(async (req, res) => {
   }
 });
 
+// const getUsers = async (req, res) => {
+//   try {
+//     const {
+//       firstname,
+//       lastname,
+//       username,
+//       phoneNumber,
+//       isAdmin,
+//       userType,
+//       county28,
+//       payam28,
+//       state10,
+//       school,
+//       code,
+//       position,
+//       category,
+//       workStatus,
+//       gender,
+//       dob,
+//       active,
+//       dateJoined,
+//       middleName,
+//       modifiedBy,
+//       disabilities,
+//     } = req.body;
+
+//     // Create the query object
+//     const query = buildQuery(
+//       firstname,
+//       lastname,
+//       username,
+//       phoneNumber,
+//       isAdmin,
+//       userType,
+//       county28,
+//       payam28,
+//       state10,
+//       school,
+//       code,
+//       position,
+//       category,
+//       workStatus,
+//       gender,
+//       dob,
+//       active,
+//       dateJoined,
+//       middleName,
+//       modifiedBy,
+//       disabilities
+//     );
+
+//     // Fetch documents based on the query
+//     const response = await User.find(query);
+
+//     res.status(200).json(response);
+//   } catch (error) {
+//     console.log("Error fetching dataset:", error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
 const getUsers = async (req, res) => {
   try {
-    const {
-      firstname,
-      lastname,
-      username,
-      phoneNumber,
-      isAdmin,
-      userType,
-      county28,
-      payam28,
-      state10,
-      school,
-      code,
-      position,
-      category,
-      workStatus,
-      gender,
-      dob,
-      active,
-      dateJoined,
-      middleName,
-      modifiedBy,
-      disabilities,
-    } = req.body;
-
-    // Create the query object
-    const query = buildQuery(
-      firstname,
-      lastname,
-      username,
-      phoneNumber,
-      isAdmin,
-      userType,
-      county28,
-      payam28,
-      state10,
-      school,
-      code,
-      position,
-      category,
-      workStatus,
-      gender,
-      dob,
-      active,
-      dateJoined,
-      middleName,
-      modifiedBy,
-      disabilities
-    );
-
-    // Fetch documents based on the query
-    const response = await User.find(query);
+    const response = await User.find().limit(10);
 
     res.status(200).json(response);
   } catch (error) {
@@ -427,6 +437,43 @@ const updateUser = asyncHandler(async (req, res) => {
 
   res.status(200).json(user);
 });
+
+const updateUsersFieldsBulk = async (req, res) => {
+  try {
+    const { ids, loggedInUser, updateFields } = req.body;
+
+    // Validate if any fields are provided in req.body
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid or empty IDs array" });
+    }
+
+    // Validate if any fields are provided in req.body.updateFields
+    if (!updateFields || Object.keys(updateFields).length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No fields to update provided in updateFields" });
+    }
+
+    const bulkOperations = ids.map((id) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { ...updateFields, modifiedBy: loggedInUser } },
+      },
+    }));
+
+    const result = await User.bulkWrite(bulkOperations);
+
+    // Check if any documents were modified
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "No users data updated" });
+    }
+
+    res.status(200).json({ message: "users data updated successfully" });
+  } catch (error) {
+    console.error("Error updating users data:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 //delete users
 const deleteUser = asyncHandler(async (req, res) => {
@@ -715,4 +762,5 @@ module.exports = {
   saveAddress,
   getUsersBySchool,
   payamSchoolDownload,
+  updateUsersFieldsBulk,
 };
