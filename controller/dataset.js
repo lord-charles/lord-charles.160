@@ -764,10 +764,33 @@ const payamSchoolDownload = async (req, res) => {
   }
 };
 
+const bulkUpdateStateFields = async (req, res) => {
+  try {
+    const { state10, county28, state } = req.body;
 
+    // Retrieve documents that match the criteria
+    const documentsToUpdate = await SchoolData.find({
+      state10,
+      county28,
+    });
 
+    // Update all
+    await Promise.all(
+      documentsToUpdate.map(async (doc) => {
+        doc.state10 = state;
+        await doc.save();
+      })
+    );
 
-
+    res.status(200).json({
+      success: true,
+      message: `Successfully renamed state10 to ${state} `,
+    });
+  } catch (error) {
+    console.log("Error renaming state10:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
 
 module.exports = {
   dataSet,
@@ -788,6 +811,7 @@ module.exports = {
   deleteStudentById,
   updateSchoolDataFieldsBulk,
   payamSchoolDownload,
+  bulkUpdateStateFields,
 };
 
 

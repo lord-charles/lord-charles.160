@@ -19,6 +19,7 @@ const {
   deleteStudentById,
   updateSchoolDataFieldsBulk,
   payamSchoolDownload,
+  bulkUpdateStateFields,
 } = require("../controller/dataset");
 
 router.get("/", dataSet);
@@ -45,6 +46,8 @@ router.post(
 router.get("/2023_data/students/:id", getSingleStudents_2023);
 router.patch("/2023_data/students/:id", updateSchoolDataFields_2023);
 router.patch("/2023_data/update/bulk", updateSchoolDataFieldsBulk);
+router.patch("/2023_data/update/bulkStates", bulkUpdateStateFields);
+
 
 //2024 student registration
 router.post("/register-student-2024", registerStudent2024);
