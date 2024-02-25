@@ -567,8 +567,8 @@ const updateUserDetails = asyncHandler(async (req, res) => {
 
 //forgotPassword
 const forgotPassword = asyncHandler(async (req, res) => {
-  const email = req.body.email;
-  const user = await User.findOne({ email });
+  const username = req.body.username;
+  const user = await User.findOne({ username });
   if (!user) {
     res.status(404).json({ message: "User not found." });
   } else {
@@ -577,57 +577,57 @@ const forgotPassword = asyncHandler(async (req, res) => {
     // const resetUrl = `${req.protocol}://${req.get(
     //   "host"
     // )}/users/resetPassword/${token}`;
-    const data = {
-      to: email,
-      subject: "Password Reset Request",
-      html: `
-          <html>
-            <head>
-              <style>
-                h1 {
-                  font-size: 16px;
-                  font-weight: 600;
-                  margin: 0;
-                  padding: 0;
-                }
-                h4 {
-                  font-size: 14px;
-                  font-weight: 400;
-                  margin: 0;
-                  padding: 0;
-                }
-                p {
-                  font-size: 14px;
-                  font-weight: 400;
-                  margin: 0;
-                  padding: 0;
-                }
-                a {
-                  color: #0366d6;
-                  text-decoration: none;
-                }
-              </style>
-            </head>
-            <body>
-              <h1>Dear ${email},</h1>
-              <p>
-                We hope this email finds you well. Our records indicate that you recently requested a password reset. 
-                To reset your password, please follow the Code below:
-              </p>
-             <h4><a href="">${token}</a></h4>
-              <p>
-                If you did not request this password reset, please ignore this email and your password will remain unchanged. 
-                Your account security is our top priority, and we are committed to ensuring that all user information remains confidential.
-              </p>
-              <h4>
-                If you have any questions or concerns, please do not hesitate to reach out to our support team. 
-                They are available 24/7 and will be happy to assist you.
-              </h4>
-            </body>
-          </html>
-        `,
-    };
-    sendEmail(data);
+    // const data = {
+    //   to: email,
+    //   subject: "Password Reset Request",
+    //   html: `
+    //       <html>
+    //         <head>
+    //           <style>
+    //             h1 {
+    //               font-size: 16px;
+    //               font-weight: 600;
+    //               margin: 0;
+    //               padding: 0;
+    //             }
+    //             h4 {
+    //               font-size: 14px;
+    //               font-weight: 400;
+    //               margin: 0;
+    //               padding: 0;
+    //             }
+    //             p {
+    //               font-size: 14px;
+    //               font-weight: 400;
+    //               margin: 0;
+    //               padding: 0;
+    //             }
+    //             a {
+    //               color: #0366d6;
+    //               text-decoration: none;
+    //             }
+    //           </style>
+    //         </head>
+    //         <body>
+    //           <h1>Dear ${email},</h1>
+    //           <p>
+    //             We hope this email finds you well. Our records indicate that you recently requested a password reset.
+    //             To reset your password, please follow the Code below:
+    //           </p>
+    //          <h4><a href="">${token}</a></h4>
+    //           <p>
+    //             If you did not request this password reset, please ignore this email and your password will remain unchanged.
+    //             Your account security is our top priority, and we are committed to ensuring that all user information remains confidential.
+    //           </p>
+    //           <h4>
+    //             If you have any questions or concerns, please do not hesitate to reach out to our support team.
+    //             They are available 24/7 and will be happy to assist you.
+    //           </h4>
+    //         </body>
+    //       </html>
+    //     `,
+    // };
+    // sendEmail(data);
     res.status(200).json({
       success: true,
       message: "Password reset email sent.",

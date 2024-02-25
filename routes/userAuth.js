@@ -42,8 +42,8 @@ router.patch("/update/bulk", updateUsersFieldsBulk);
 router.put("/users/update-user-details", authMiddleware, updateUserDetails); //for loggedin user
 router.put("/users/:id/block", blockUser);
 router.put("/users/:id/unblock", unblockUser);
-router.post("/users/forgot-password", authMiddleware, forgotPassword);
-router.put("/reset-password/:token", authMiddleware, resetPassword);
+router.post("/users/forgot-password", forgotPassword);
+router.put("/reset-password/:token", resetPassword);
 router.put("/address", authMiddleware, saveAddress);
 
 module.exports = router;
