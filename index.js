@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 8000;
 const dbConnect = require("./config/dbConnect");
 const dataSet = require("./routes/dataset");
 const usersRouter = require("./routes/userAuth");
-const payment = require("./routes/payment");
 
 dbConnect();
 // apply middlewares
@@ -19,7 +18,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use("/express/data-set", dataSet);
 app.use("/express/user", usersRouter);
-app.use("/express/payment", payment);
 
 
 
