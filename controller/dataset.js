@@ -1041,6 +1041,45 @@ const trackSchool = async (req, res) => {
   }
 };
 
+// dashboard
+const stateMaleFemaleStat = async (req, res) => {
+  try {
+    const pipeline = [
+      {
+        $group: {
+          _id: "$state10",
+          totalPupils: { $sum: 1 },
+          totalFemale: {
+            $sum: { $cond: [{ $in: ["$gender", ["Female", "F"]] }, 1, 0] },
+          },
+          totalMale: {
+            $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
+          },
+          ids: { $push: "$_id" }, // Include the MongoDB _id in an array
+        },
+      },
+      {
+        $project: {
+          state: "$_id",
+          totalPupils: 1,
+          totalFemale: 1,
+          totalMale: 1,
+          _id: 0,
+          id: { $arrayElemAt: ["$ids", 0] }, // Use $arrayElemAt to get the first element of the ids array
+        },
+      },
+    ];
+
+    const result = await SchoolData.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching state pupil totals:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+
 
 module.exports = {
   dataSet,
@@ -1067,6 +1106,7 @@ module.exports = {
   trackCounty,
   trackPayam,
   trackSchool,
+  stateMaleFemaleStat,
 };
 
 // const dataSet_2023 = async (req, res) => {

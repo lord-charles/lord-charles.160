@@ -25,6 +25,7 @@ const {
   trackCounty,
   trackPayam,
   trackSchool,
+  stateMaleFemaleStat,
 } = require("../controller/dataset");
 
 router.get("/", dataSet);
@@ -66,6 +67,10 @@ router.post("/track/state", trackState);
 router.post("/track/state/county", trackCounty);
 router.post("/track/state/county/payam", trackPayam);
 router.post("/track/state/county/payam/school", trackSchool);
+
+// dashboard
+router.get("/state/gender", stateMaleFemaleStat);
+
 
 
 
