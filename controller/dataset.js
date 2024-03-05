@@ -1044,7 +1044,18 @@ const trackSchool = async (req, res) => {
 // dashboard
 const stateMaleFemaleStat = async (req, res) => {
   try {
+    let year;
+    if (req.body && req.body.year) {
+      year = req.body.year;
+    } else {
+      // Get the current year if no year is provided
+      year = new Date().getFullYear();
+    }
+
     const pipeline = [
+      {
+        $match: { year: year }, // Filter documents by the specified year
+      },
       {
         $group: {
           _id: "$state10",
@@ -1055,7 +1066,7 @@ const stateMaleFemaleStat = async (req, res) => {
           totalMale: {
             $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
           },
-          ids: { $push: "$_id" }, // Include the MongoDB _id in an array
+          ids: { $push: "$_id" },
         },
       },
       {
@@ -1065,7 +1076,7 @@ const stateMaleFemaleStat = async (req, res) => {
           totalFemale: 1,
           totalMale: 1,
           _id: 0,
-          id: { $arrayElemAt: ["$ids", 0] }, // Use $arrayElemAt to get the first element of the ids array
+          id: { $arrayElemAt: ["$ids", 0] },
         },
       },
     ];
