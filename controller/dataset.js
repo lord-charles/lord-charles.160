@@ -274,9 +274,6 @@ const dataSet_2023 = async (req, res) => {
   }
 };
 
-
-
-
 const buildQuery = (
   state28,
   county28,
@@ -291,12 +288,11 @@ const buildQuery = (
   const query = {};
 
   // Helper function to add a query condition
-const addQueryCondition = (field, value) => {
-  if (value) {
-    query[field] = { $regex: new RegExp(value, "i") };
-  }
-};
-
+  const addQueryCondition = (field, value) => {
+    if (value) {
+      query[field] = { $regex: new RegExp(value, "i") };
+    }
+  };
 
   addQueryCondition("state28", state28);
   addQueryCondition("county28", county28);
@@ -447,8 +443,6 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
   }
 };
 
-
-
 const getStudentsInSchool_2023 = async (req, res) => {
   try {
     // Extract schoolName from the request body
@@ -484,14 +478,14 @@ const getStudentsInClass_2023 = async (req, res) => {
         .json({ success: false, error: "School name is required" });
     }
 
-     if (!form) {
-       return res
-         .status(400)
-         .json({ success: false, error: "Form name is required" });
-     }
+    if (!form) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Form name is required" });
+    }
 
     // Use the find method to get documents matching the schoolName
-    const result = await SchoolData.find({ school: schoolName, form:form });
+    const result = await SchoolData.find({ school: schoolName, form: form });
 
     // Return the formatted result
     res.status(200).json(result);
@@ -500,7 +494,6 @@ const getStudentsInClass_2023 = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
-
 
 const updateSchoolDataFields_2023 = async (req, res) => {
   try {
@@ -566,7 +559,6 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 const getSingleStudents_2023 = async (req, res) => {
   try {
@@ -691,7 +683,6 @@ const deleteStudentById = async (req, res) => {
   }
 };
 
-
 const payamSchoolDownload = async (req, res) => {
   try {
     const { payam28, page } = req.body;
@@ -792,6 +783,265 @@ const bulkUpdateStateFields = async (req, res) => {
   }
 };
 
+//track
+
+const trackOverall = async (req, res) => {
+  try {
+    const { startDateStr, endDateStr } = req.body;
+
+    // Validate input dates
+    if (!startDateStr || !endDateStr) {
+      return res
+        .status(400)
+        .json({ error: "Start date and end date are required" });
+    }
+
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Check if startDate and endDate are valid dates
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+
+    // Total count
+    const totalCount = await SchoolData.countDocuments();
+
+    // Total new enrollments
+    const newEnrollmentsCount = await SchoolData.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
+    // Total dropouts
+    const dropoutCount = await SchoolData.countDocuments({
+      isDroppedOut: true,
+      updatedAt: { $gte: startDate, $lte: endDate },
+    });
+
+    res.status(200).json({
+      totalCount,
+      newEnrollmentsCount,
+      dropoutCount,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const trackState = async (req, res) => {
+  try {
+    const { state10, startDateStr, endDateStr } = req.body;
+
+    // Input Validation
+    if (!state10 || !startDateStr || !endDateStr) {
+      return res
+        .status(400)
+        .json({ error: "state10, startDateStr, and endDateStr are required" });
+    }
+
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Check if startDate and endDate are valid dates
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+
+    // Total count
+    const totalCount = await SchoolData.countDocuments({ state10 });
+
+    // Total new enrollments
+    const newEnrollmentsCount = await SchoolData.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+      state10,
+    });
+
+    // Total dropouts
+    const dropoutCount = await SchoolData.countDocuments({
+      isDroppedOut: true,
+      updatedAt: { $gte: startDate, $lte: endDate },
+      state10,
+    });
+
+    res.status(200).json({
+      totalCount,
+      newEnrollmentsCount,
+      dropoutCount,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const trackCounty = async (req, res) => {
+  try {
+    const { state10, county28, startDateStr, endDateStr } = req.body;
+
+    // Input Validation
+    if (!state10 || !county28 || !startDateStr || !endDateStr) {
+      return res.status(400).json({
+        error: "state10, county28, startDateStr, and endDateStr are required",
+      });
+    }
+
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Check if startDate and endDate are valid dates
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+
+    // Total count
+    const totalCount = await SchoolData.countDocuments({ state10, county28 });
+
+    // Total new enrollments
+    const newEnrollmentsCount = await SchoolData.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+      state10,
+      county28,
+    });
+
+    // Total dropouts
+    const dropoutCount = await SchoolData.countDocuments({
+      isDroppedOut: true,
+      updatedAt: { $gte: startDate, $lte: endDate },
+      state10,
+      county28,
+    });
+
+    res.status(200).json({
+      totalCount,
+      newEnrollmentsCount,
+      dropoutCount,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const trackPayam = async (req, res) => {
+  try {
+    const { state10, county28, payam28, startDateStr, endDateStr } = req.body;
+
+    // Input Validation
+    if (!state10 || !county28 || !payam28 || !startDateStr || !endDateStr) {
+      return res.status(400).json({
+        error:
+          "state10, county28, payam28, startDateStr, and endDateStr are required",
+      });
+    }
+
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Check if startDate and endDate are valid dates
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+
+    // Total count
+    const totalCount = await SchoolData.countDocuments({
+      state10,
+      county28,
+      payam28,
+    });
+
+    // Total new enrollments
+    const newEnrollmentsCount = await SchoolData.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+      state10,
+      county28,
+      payam28,
+    });
+
+    // Total dropouts
+    const dropoutCount = await SchoolData.countDocuments({
+      isDroppedOut: true,
+      updatedAt: { $gte: startDate, $lte: endDate },
+      state10,
+      county28,
+      payam28,
+    });
+
+    res.status(200).json({
+      totalCount,
+      newEnrollmentsCount,
+      dropoutCount,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const trackSchool = async (req, res) => {
+  try {
+    const { state10, county28, payam28, school, startDateStr, endDateStr } =
+      req.body;
+
+    // Input Validation
+    if (
+      !state10 ||
+      !county28 ||
+      !payam28 ||
+      !school ||
+      !startDateStr ||
+      !endDateStr
+    ) {
+      return res.status(400).json({ error: "All parameters are required" });
+    }
+
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Check if startDate and endDate are valid dates
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+
+    // Total count
+    const totalCount = await SchoolData.countDocuments({
+      state10,
+      county28,
+      payam28,
+      school,
+    });
+
+    // Total new enrollments
+    const newEnrollmentsCount = await SchoolData.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+      state10,
+      county28,
+      payam28,
+      school,
+    });
+
+    // Total dropouts
+    const dropoutCount = await SchoolData.countDocuments({
+      isDroppedOut: true,
+      updatedAt: { $gte: startDate, $lte: endDate },
+      state10,
+      county28,
+      payam28,
+      school,
+    });
+
+    res.status(200).json({
+      totalCount,
+      newEnrollmentsCount,
+      dropoutCount,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 module.exports = {
   dataSet,
   countyPupilTotal,
@@ -812,10 +1062,12 @@ module.exports = {
   updateSchoolDataFieldsBulk,
   payamSchoolDownload,
   bulkUpdateStateFields,
+  trackOverall,
+  trackState,
+  trackCounty,
+  trackPayam,
+  trackSchool,
 };
-
-
-
 
 // const dataSet_2023 = async (req, res) => {
 //   try {

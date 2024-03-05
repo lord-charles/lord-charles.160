@@ -20,6 +20,11 @@ const {
   updateSchoolDataFieldsBulk,
   payamSchoolDownload,
   bulkUpdateStateFields,
+  trackOverall,
+  trackState,
+  trackCounty,
+  trackPayam,
+  trackSchool,
 } = require("../controller/dataset");
 
 router.get("/", dataSet);
@@ -48,13 +53,24 @@ router.patch("/2023_data/students/:id", updateSchoolDataFields_2023);
 router.patch("/2023_data/update/bulk", updateSchoolDataFieldsBulk);
 router.patch("/2023_data/update/bulkStates", bulkUpdateStateFields);
 
-
 //2024 student registration
 router.post("/register-student-2024", registerStudent2024);
 router.delete("/student/delete/:id", deleteStudentById);
 
 //downloads
 router.post("/download/payams/schools", payamSchoolDownload);
+
+//track new students
+router.post("/track/overall", trackOverall);
+router.post("/track/state", trackState);
+router.post("/track/state/county", trackCounty);
+router.post("/track/state/county/payam", trackPayam);
+router.post("/track/state/county/payam/school", trackSchool);
+
+
+
+
+
 
 
 module.exports = router;
