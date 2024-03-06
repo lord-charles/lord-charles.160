@@ -640,7 +640,7 @@ const registerStudent2024 = async (req, res) => {
       disabilities,
       houseHold,
       pregnantOrNursing,
-      reference: "23GVHVHG",
+      reference: generateUniqueCode(),
       modifiedBy,
     });
 
@@ -1089,6 +1089,7 @@ const trackSchool = async (req, res) => {
 //     res.status(500).json({ success: false, error: "Internal Server Error" });
 //   }
 // };
+
 
 const stateMaleFemaleStat = async (req, res) => {
   try {
