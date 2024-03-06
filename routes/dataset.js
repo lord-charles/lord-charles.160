@@ -69,7 +69,7 @@ router.post("/track/state/county/payam", trackPayam);
 router.post("/track/state/county/payam/school", trackSchool);
 
 // dashboard
-router.get("/state/gender", stateMaleFemaleStat);
+router.post("/state/gender", stateMaleFemaleStat);
 
 
 
