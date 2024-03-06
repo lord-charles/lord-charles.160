@@ -640,7 +640,7 @@ const registerStudent2024 = async (req, res) => {
       disabilities,
       houseHold,
       pregnantOrNursing,
-      reference: generateUniqueCode(),
+      reference: "23GVHVHG",
       modifiedBy,
     });
 
@@ -1042,19 +1042,71 @@ const trackSchool = async (req, res) => {
 };
 
 // dashboard
+// const stateMaleFemaleStat = async (req, res) => {
+//   try {
+//     let year;
+//     if (req.body && req.body.year) {
+//       year = req.body.year;
+//     } else {
+//       // Get the current year if no year is provided
+//       year = new Date().getFullYear();
+//     }
+
+//     const pipeline = [
+//       {
+//         $match: { year: year }, // Filter documents by the specified year
+//       },
+//       {
+//         $group: {
+//           _id: "$state10",
+//           totalPupils: { $sum: 1 },
+//           totalFemale: {
+//             $sum: { $cond: [{ $in: ["$gender", ["Female", "F"]] }, 1, 0] },
+//           },
+//           totalMale: {
+//             $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
+//           },
+//           ids: { $push: "$_id" },
+//         },
+//       },
+//       {
+//         $project: {
+//           state: "$_id",
+//           totalPupils: 1,
+//           totalFemale: 1,
+//           totalMale: 1,
+//           _id: 0,
+//           id: { $arrayElemAt: ["$ids", 0] },
+//         },
+//       },
+//     ];
+
+//     const result = await SchoolData.aggregate(pipeline);
+
+//     res.status(200).json(result);
+//   } catch (error) {
+//     console.error("Error fetching state pupil totals:", error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
+
 const stateMaleFemaleStat = async (req, res) => {
   try {
-    let year;
+    let regexYear;
     if (req.body && req.body.year) {
-      year = req.body.year;
+      regexYear = req.body.year.toString().slice(-2);
+      console.log(regexYear);
     } else {
-      // Get the current year if no year is provided
-      year = new Date().getFullYear();
+      regexYear = new Date().getFullYear().toString().slice(-2);
     }
+
+    const regexPattern = new RegExp(`^(${regexYear})`);
 
     const pipeline = [
       {
-        $match: { year: year }, // Filter documents by the specified year
+        $match: {
+          reference: { $regex: regexPattern }, // Match references starting with the determined year
+        },
       },
       {
         $group: {
@@ -1089,6 +1141,7 @@ const stateMaleFemaleStat = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 
