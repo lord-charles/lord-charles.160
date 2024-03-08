@@ -1211,6 +1211,15 @@ const trackSchoolEnrollment = async (req, res) => {
           schools: { $setUnion: ["$noEnrollment", "$maxTenStudents"] }, // Combine schools from both conditions
         },
       },
+      {
+        $unwind: "$schools",
+      },
+      {
+        $replaceRoot: { newRoot: "$schools" },
+      },
+      {
+        $limit: 20, // Limit the number of documents returned to 5
+      },
     ];
 
     // Execute the aggregation pipeline
@@ -1219,6 +1228,26 @@ const trackSchoolEnrollment = async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching schools:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+const fetchSchoolsPerState = async (req, res) => {
+  try {
+    const pipeline = [
+      {
+        $group: {
+          _id: "$state10",
+          schoolCount: { $sum: 1 },
+        },
+      },
+    ];
+
+    const result = await SchoolData.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching schools per state:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
@@ -1250,6 +1279,7 @@ module.exports = {
   trackSchool,
   stateMaleFemaleStat,
   trackSchoolEnrollment,
+  fetchSchoolsPerState,
 };
 
 // const dataSet_2023 = async (req, res) => {

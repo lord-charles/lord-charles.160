@@ -78,6 +78,7 @@ const userSchema = new mongoose.Schema(
     teacherUniqueID: String,
     teachersEstNo: String,
     modifiedBy: String,
+    yearJoined: Number,
     disabilities: [
       {
         disabilities: {

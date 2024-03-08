@@ -20,6 +20,8 @@ const {
   getUsersBySchool,
   payamSchoolDownload,
   updateUsersFieldsBulk,
+  fetchUsersPerState,
+  stateMaleFemaleStat,
 } = require("../controller/userCtrl");
 
 // User endpoints
@@ -36,8 +38,6 @@ router.patch("/users/update/:id", updateUser);
 router.post("/download/payams/schools", payamSchoolDownload);
 router.patch("/update/bulk", updateUsersFieldsBulk);
 
-
-
 //for Admin
 router.put("/users/update-user-details", authMiddleware, updateUserDetails); //for loggedin user
 router.put("/users/:id/block", blockUser);
@@ -45,5 +45,13 @@ router.put("/users/:id/unblock", unblockUser);
 router.post("/users/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 router.put("/address", authMiddleware, saveAddress);
+
+//dashboard
+
+router.post("/fetchUsersPerState", fetchUsersPerState);
+router.post("/stateMaleFemaleStat", stateMaleFemaleStat);
+
+
+
 
 module.exports = router;
