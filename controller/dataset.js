@@ -1218,7 +1218,7 @@ const trackSchoolEnrollment = async (req, res) => {
         $replaceRoot: { newRoot: "$schools" },
       },
       {
-        $limit: 20, // Limit the number of documents returned to 5
+        $limit: 5, // Limit the number of documents returned to 5
       },
     ];
 
