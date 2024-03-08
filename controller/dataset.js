@@ -1217,9 +1217,9 @@ const trackSchoolEnrollment = async (req, res) => {
       {
         $replaceRoot: { newRoot: "$schools" },
       },
-      {
-        $limit: 5, // Limit the number of documents returned to 5
-      },
+      // {
+      //   $limit: 5, // Limit the number of documents returned to 5
+      // },
     ];
 
     // Execute the aggregation pipeline
