@@ -1252,6 +1252,172 @@ const fetchSchoolsPerState = async (req, res) => {
   }
 };
 
+const totalNewStudentsPerState = async (req, res) => {
+  try {
+    // Determine the last two digits of the year
+    let regexYear;
+    if (req.body && req.body.year) {
+      regexYear = req.body.year.toString().slice(-2);
+    } else {
+      regexYear = new Date().getFullYear().toString().slice(-2);
+    }
+
+    // Construct the regular expression pattern for references starting with '24'
+    const regexPattern = new RegExp(`^${regexYear}`);
+
+    // Aggregation pipeline to count documents per state10 where reference matches the regex
+    const pipeline = [
+      {
+        $match: {
+          reference: { $regex: regexPattern },
+        },
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id",
+          count: 1,
+        },
+      },
+    ];
+
+    // Execute the aggregation pipeline
+    const result = await SchoolData.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching schools:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+const totalNewStudentsPerStateDroppedOut = async (req, res) => {
+  try {
+    // Determine the last two digits of the year
+    let regexYear;
+    if (req.body && req.body.year) {
+      regexYear = req.body.year.toString().slice(-2);
+    } else {
+      regexYear = new Date().getFullYear().toString().slice(-2);
+    }
+
+    // Construct the regular expression pattern for references starting with '24'
+    const regexPattern = new RegExp(`^${regexYear}`);
+
+    // Aggregation pipeline to count documents per state10 where reference matches the regex and isDroppedOut is true
+    const pipeline = [
+      {
+        $match: {
+          reference: { $regex: regexPattern },
+          isDroppedOut: true, // Add filter for isDroppedOut
+        },
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id",
+          count: 1,
+        },
+      },
+    ];
+
+    // Execute the aggregation pipeline
+    const result = await SchoolData.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching schools:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+const totalNewStudentsPerStateDisabled = async (req, res) => {
+  try {
+    let regexYear;
+    if (req.body && req.body.year) {
+      regexYear = req.body.year.toString().slice(-2);
+    } else {
+      regexYear = new Date().getFullYear().toString().slice(-2);
+    }
+
+    const regexPattern = new RegExp(`^${regexYear}`);
+
+    const pipeline = [
+      {
+        $match: {
+          reference: { $regex: regexPattern },
+        },
+      },
+      {
+        $project: {
+          state10: 1,
+          disabilities: 1,
+        },
+      },
+      {
+        $addFields: {
+          totalDisabilities: {
+            $reduce: {
+              input: "$disabilities",
+              initialValue: 0,
+              in: {
+                $sum: [
+                  "$$value",
+                  {
+                    $size: {
+                      $filter: {
+                        input: { $objectToArray: "$$this.disabilities" },
+                        cond: { $gt: ["$$this.v", 1] }, // Check if disability count is greater than 1
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          totalDisabilities: { $gt: 0 }, // Filter out students with disabilities
+        },
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id",
+          count: 1,
+        },
+      },
+    ];
+
+    const result = await SchoolData.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching schools:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   dataSet,
   countyPupilTotal,
@@ -1280,6 +1446,9 @@ module.exports = {
   stateMaleFemaleStat,
   trackSchoolEnrollment,
   fetchSchoolsPerState,
+  totalNewStudentsPerState,
+  totalNewStudentsPerStateDroppedOut,
+  totalNewStudentsPerStateDisabled,
 };
 
 // const dataSet_2023 = async (req, res) => {

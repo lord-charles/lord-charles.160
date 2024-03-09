@@ -28,6 +28,9 @@ const {
   stateMaleFemaleStat,
   trackSchoolEnrollment,
   fetchSchoolsPerState,
+  totalNewStudentsPerState,
+  totalNewStudentsPerStateDroppedOut,
+  totalNewStudentsPerStateDisabled,
 } = require("../controller/dataset");
 
 router.get("/", dataSet);
@@ -74,6 +77,17 @@ router.post("/track/state/county/payam/school", trackSchool);
 router.post("/state/gender", stateMaleFemaleStat);
 router.post("/track/schools-enrollment", trackSchoolEnrollment);
 router.post("/fetchSchoolsPerState", fetchSchoolsPerState);
+router.post("/totalNewStudentsPerState", totalNewStudentsPerState);
+router.post(
+  "/totalNewStudentsPerStateDroppedOut",
+  totalNewStudentsPerStateDroppedOut
+);
+router.post(
+  "/totalNewStudentsPerStateDisabled",
+  totalNewStudentsPerStateDisabled
+);
+
+
 
 
 
