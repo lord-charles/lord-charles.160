@@ -1429,18 +1429,38 @@ const SchoolData = require("../models/2023Data");
 
    const fetchSchoolsEnrollmentToday = async (req, res) => {
      try {
-       const startDate = moment.utc();
-       const endDate = moment.utc().add(24, "hours");
+       // Get the current date in UTC
+       const currentDate = new Date();
 
-       console.log(
-         "Start Date (Nairobi Time - 3 hours):",
-         startDate.toISOString()
+       // Set the start of the day (00:00:00) in UTC time
+       const startOfDayUTC = new Date(
+         currentDate.getUTCFullYear(),
+         currentDate.getUTCMonth(),
+         currentDate.getUTCDate(),
+         0,
+         0,
+         0,
+         0
        );
-       console.log("End Date (Nairobi Time - 3 hours):", endDate.toISOString());
+
+       // Set the end of the day (23:59:59) in UTC time
+       const endOfDayUTC = new Date(
+         currentDate.getUTCFullYear(),
+         currentDate.getUTCMonth(),
+         currentDate.getUTCDate(),
+         23,
+         59,
+         59,
+         999
+       );
+
+       console.log("Start of the day (UTC):", startOfDayUTC.toISOString());
+       console.log("End of the day (UTC):", endOfDayUTC.toISOString());
+
        const pipeline = [
          {
            $match: {
-             createdAt: { $gte: startDate, $lte: endDate }, // Filter documents by enrollment date
+             createdAt: { $gte: startOfDayUTC, $lte: endOfDayUTC }, // Filter documents by enrollment date
            },
          },
          {
