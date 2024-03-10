@@ -1429,30 +1429,19 @@ const SchoolData = require("../models/2023Data");
 
    const fetchSchoolsEnrollmentToday = async (req, res) => {
      try {
-       // Get the current date in UTC
-       const currentDate = new Date();
+       const moment = require("moment-timezone");
 
-       // Set the start of the day (00:00:00) in UTC time
-       const startOfDayUTC = new Date(
-         currentDate.getUTCFullYear(),
-         currentDate.getUTCMonth(),
-         currentDate.getUTCDate(),
-         0,
-         0,
-         0,
-         0
-       );
+       // Get the current date in Nairobi time zone
+       const currentDateNairobi = moment().tz("Africa/Nairobi");
 
-       // Set the end of the day (23:59:59) in UTC time
-       const endOfDayUTC = new Date(
-         currentDate.getUTCFullYear(),
-         currentDate.getUTCMonth(),
-         currentDate.getUTCDate(),
-         23,
-         59,
-         59,
-         999
-       );
+       // Convert Nairobi time to UTC
+       const currentDateUTC = currentDateNairobi.clone().utc();
+
+       // Set the start of the current day in UTC
+       const startOfDayUTC = currentDateUTC.clone().startOf("day");
+
+       // Set the end of the current day in UTC
+       const endOfDayUTC = currentDateUTC.clone().endOf("day");
 
        console.log("Start of the day (UTC):", startOfDayUTC.toISOString());
        console.log("End of the day (UTC):", endOfDayUTC.toISOString());
