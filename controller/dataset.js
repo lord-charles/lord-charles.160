@@ -1429,27 +1429,31 @@ const SchoolData = require("../models/2023Data");
 
    const fetchSchoolsEnrollmentToday = async (req, res) => {
      try {
-       const moment = require("moment-timezone");
+       // Get the current date in UTC
+       const currentDateUTC = moment.utc();
 
-       // Get the current date in Nairobi time zone
-       const currentDateNairobi = moment().tz("Africa/Nairobi");
+       // Convert UTC time to Nairobi time zone
+       const currentDateNairobi = currentDateUTC.clone().tz("Africa/Nairobi");
 
-       // Convert Nairobi time to UTC
-       const currentDateUTC = currentDateNairobi.clone().utc();
+       // Set the start of the day in Nairobi time zone and subtract 3 hours
+       const startOfDayNairobi = currentDateNairobi
+         .clone()
+         .startOf("day")
+         .subtract(3, "hours");
 
-       // Set the start of the current day in UTC
-       const startOfDayUTC = currentDateUTC.clone().startOf("day");
+       // Set the end of the day in Nairobi time zone and subtract 3 hours
+       const endOfDayNairobi = currentDateNairobi
+         .clone()
+         .endOf("day")
+         .subtract(3, "hours");
 
-       // Set the end of the current day in UTC
-       const endOfDayUTC = currentDateUTC.clone().endOf("day");
-
-       console.log("Start of the day (UTC):", startOfDayUTC.toISOString());
-       console.log("End of the day (UTC):", endOfDayUTC.toISOString());
+       console.log("Start of the day (Nairobi):", startOfDayNairobi.format());
+       console.log("End of the day (Nairobi):", endOfDayNairobi.format());
 
        const pipeline = [
          {
            $match: {
-             createdAt: { $gte: startOfDayUTC, $lte: endOfDayUTC }, // Filter documents by enrollment date
+             createdAt: { $gte: startOfDayNairobi, $lte: endOfDayNairobi }, // Filter documents by enrollment date
            },
          },
          {
