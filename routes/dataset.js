@@ -31,6 +31,7 @@ const {
   totalNewStudentsPerState,
   totalNewStudentsPerStateDroppedOut,
   totalNewStudentsPerStateDisabled,
+  fetchSchoolsEnrollmentToday,
 } = require("../controller/dataset");
 
 router.get("/", dataSet);
@@ -86,6 +87,9 @@ router.post(
   "/totalNewStudentsPerStateDisabled",
   totalNewStudentsPerStateDisabled
 );
+
+router.post("/fetchSchoolsEnrollmentToday", fetchSchoolsEnrollmentToday);
+
 
 
 

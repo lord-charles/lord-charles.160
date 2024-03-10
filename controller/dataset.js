@@ -1422,7 +1422,69 @@ const totalNewStudentsPerStateDisabled = async (req, res) => {
   }
 };
 
+const fetchSchoolsEnrollmentToday = async (req, res) => {
+  try {
+    // Get the current date
+    const currentDate = new Date();
 
+    // Set the start and end of the current day in MongoDB date format
+    const startDate = new Date(
+      Date.UTC(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate(),
+        0,
+        0,
+        0
+      )
+    );
+    const endDate = new Date(
+      Date.UTC(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate(),
+        23,
+        59,
+        59
+      )
+    );
+
+    const pipeline = [
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate }, // Filter documents by enrollment date
+        },
+      },
+      {
+        $group: {
+          _id: {
+            school: "$school",
+            enumerator: "$modifiedBy",
+          },
+          studentCount: { $sum: 1 }, // Count the number of students registered by each enumerator in each school
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.school",
+          enumerators: {
+            $push: {
+              enumerator: "$_id.enumerator",
+              studentCount: "$studentCount",
+            },
+          },
+        },
+      },
+    ];
+
+    const result = await SchoolData.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log("Error fetching schools enrollment:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
 
 module.exports = {
   dataSet,
@@ -1455,6 +1517,7 @@ module.exports = {
   totalNewStudentsPerState,
   totalNewStudentsPerStateDroppedOut,
   totalNewStudentsPerStateDisabled,
+  fetchSchoolsEnrollmentToday,
 };
 
 // const dataSet_2023 = async (req, res) => {
