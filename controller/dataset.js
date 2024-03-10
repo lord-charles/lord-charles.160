@@ -1436,24 +1436,26 @@ const SchoolData = require("../models/2023Data");
        const currentDateNairobi = currentDateUTC.clone().tz("Africa/Nairobi");
 
        // Set the start of the day in Nairobi time zone and subtract 3 hours
-       const startOfDayNairobi = currentDateNairobi
-         .clone()
-         .startOf("day")
-         .subtract(3, "hours");
+       const startOfDayNairobi = currentDateNairobi.clone().startOf("day");
 
        // Set the end of the day in Nairobi time zone and subtract 3 hours
-       const endOfDayNairobi = currentDateNairobi
-         .clone()
-         .endOf("day")
-         .subtract(3, "hours");
+       const endOfDayNairobi = currentDateNairobi.clone().endOf("day");
 
-       console.log("Start of the day (Nairobi):", startOfDayNairobi.format());
-       console.log("End of the day (Nairobi):", endOfDayNairobi.format());
+       // Format dates to MongoDB format
+       const startOfDayMongoDB = startOfDayNairobi.toISOString();
+       const endOfDayMongoDB = endOfDayNairobi.toISOString();
+
+       console.log(
+         "Start of the day (Nairobi - 3 hours):",
+         startOfDayNairobi,
+         startOfDayMongoDB
+       );
+       console.log("End of the day (Nairobi - 3 hours):", endOfDayMongoDB);
 
        const pipeline = [
          {
            $match: {
-             createdAt: { $gte: startOfDayNairobi, $lte: endOfDayNairobi }, // Filter documents by enrollment date
+             createdAt: { $gte: startOfDayMongoDB, $lte: endOfDayMongoDB }, // Filter documents by enrollment date
            },
          },
          {
