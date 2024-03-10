@@ -153,6 +153,8 @@ const payamSchoolPupilTotals = async (req, res) => {
   }
 };
 
+
+//not used anymore
 const getStudentsInSchool = async (req, res) => {
   try {
     // Extract schoolName from the request parameters
@@ -917,6 +919,8 @@ const trackState = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
 const trackCounty = async (req, res) => {
   try {
     const { state10, county28, startDateStr, endDateStr } = req.body;
@@ -1136,6 +1140,8 @@ const stateMaleFemaleStat = async (req, res) => {
   }
 };
 
+
+//schools pending enrollment(current year)
 const trackSchoolEnrollment = async (req, res) => {
   try {
     // Determine the last two digits of the year
@@ -1232,9 +1238,15 @@ const trackSchoolEnrollment = async (req, res) => {
   }
 };
 
+//enrolled students
 const fetchSchoolsPerState = async (req, res) => {
   try {
     const pipeline = [
+      {
+        $match: {
+          isDroppedOut: false,
+        },
+      },
       {
         $group: {
           _id: "$state10",
@@ -1252,6 +1264,7 @@ const fetchSchoolsPerState = async (req, res) => {
   }
 };
 
+//enrolled in the current year
 const totalNewStudentsPerState = async (req, res) => {
   try {
     // Determine the last two digits of the year
@@ -1297,25 +1310,19 @@ const totalNewStudentsPerState = async (req, res) => {
   }
 };
 
+//dropped in the current year
 const totalNewStudentsPerStateDroppedOut = async (req, res) => {
   try {
-    // Determine the last two digits of the year
-    let regexYear;
-    if (req.body && req.body.year) {
-      regexYear = req.body.year.toString().slice(-2);
-    } else {
-      regexYear = new Date().getFullYear().toString().slice(-2);
-    }
+    const currentYear = new Date().getFullYear(); // Get the current year
 
-    // Construct the regular expression pattern for references starting with '24'
-    const regexPattern = new RegExp(`^${regexYear}`);
-
-    // Aggregation pipeline to count documents per state10 where reference matches the regex and isDroppedOut is true
     const pipeline = [
       {
         $match: {
-          reference: { $regex: regexPattern },
-          isDroppedOut: true, // Add filter for isDroppedOut
+          isDroppedOut: true,
+          updatedAt: {
+            $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`), // Filter for the current year
+            $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`), // Next year's beginning
+          },
         },
       },
       {
@@ -1343,21 +1350,18 @@ const totalNewStudentsPerStateDroppedOut = async (req, res) => {
   }
 };
 
+//disabled in the current year
 const totalNewStudentsPerStateDisabled = async (req, res) => {
   try {
-    let regexYear;
-    if (req.body && req.body.year) {
-      regexYear = req.body.year.toString().slice(-2);
-    } else {
-      regexYear = new Date().getFullYear().toString().slice(-2);
-    }
-
-    const regexPattern = new RegExp(`^${regexYear}`);
+    const currentYear = new Date().getFullYear(); // Get the current year
 
     const pipeline = [
       {
         $match: {
-          reference: { $regex: regexPattern },
+          updatedAt: {
+            $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`), // Filter for the current year
+            $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`), // Next year's beginning
+          },
         },
       },
       {
@@ -1417,6 +1421,8 @@ const totalNewStudentsPerStateDisabled = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
+
 
 module.exports = {
   dataSet,

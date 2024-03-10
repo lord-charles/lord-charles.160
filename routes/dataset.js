@@ -76,7 +76,7 @@ router.post("/track/state/county/payam/school", trackSchool);
 // dashboard
 router.post("/state/gender", stateMaleFemaleStat);
 router.post("/track/schools-enrollment", trackSchoolEnrollment);
-router.post("/fetchSchoolsPerState", fetchSchoolsPerState);
+router.post("/fetchSchoolsPerState", fetchSchoolsPerState); //total new(current)leaners/schools per state
 router.post("/totalNewStudentsPerState", totalNewStudentsPerState);
 router.post(
   "/totalNewStudentsPerStateDroppedOut",
