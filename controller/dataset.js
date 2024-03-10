@@ -1424,30 +1424,33 @@ const totalNewStudentsPerStateDisabled = async (req, res) => {
 
 const fetchSchoolsEnrollmentToday = async (req, res) => {
   try {
-    // Get the current date
-    const currentDate = new Date();
+    // Get the current date in UTC
+    let currentDate = new Date();
 
-    // Set the start and end of the current day in MongoDB date format
+    // Adjust the time for Nairobi time zone (3 hours ahead of UTC)
+    currentDate.setUTCHours(currentDate.getUTCHours() + 3);
+
+    // Set the start and end of the current day in Nairobi time zone
     const startDate = new Date(
-      Date.UTC(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate(),
-        0,
-        0,
-        0
-      )
+      currentDate.getUTCFullYear(),
+      currentDate.getUTCMonth(),
+      currentDate.getUTCDate(),
+      0,
+      0,
+      0
     );
     const endDate = new Date(
-      Date.UTC(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate(),
-        23,
-        59,
-        59
-      )
+      currentDate.getUTCFullYear(),
+      currentDate.getUTCMonth(),
+      currentDate.getUTCDate(),
+      23,
+      59,
+      59
     );
+
+    console.log("Current Date (Nairobi Time):", currentDate);
+    console.log("Start Date (Nairobi Time):", startDate);
+    console.log("End Date (Nairobi Time):", endDate);
 
     const pipeline = [
       {
