@@ -1428,7 +1428,7 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
     let currentDate = new Date();
 
     // Adjust the time for Nairobi time zone (3 hours ahead of UTC)
-    currentDate.setUTCHours(currentDate.getUTCHours() + 3);
+    currentDate.setUTCHours(currentDate.getUTCHours());
 
     // Set the start and end of the current day in Nairobi time zone
     const startDate = new Date(
