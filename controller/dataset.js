@@ -1487,6 +1487,7 @@ const SchoolData = require("../models/2023Data");
                 school: "$school",
                 enumerator: "$modifiedBy",
                 isDroppedOut: "$isDroppedOut",
+                createdAt: "$createdAt",
               },
               studentCount: { $sum: 1 },
             },
@@ -1510,7 +1511,13 @@ const SchoolData = require("../models/2023Data");
               totalStudentsByEnumerator: {
                 $sum: {
                   $cond: [
-                    { $eq: ["$_id.isDroppedOut", false] }, // Only consider documents where isDroppedOut is false
+                    {
+                      $and: [
+                        { $eq: ["$_id.isDroppedOut", false] },
+                        { $gte: ["$_id.createdAt", start] },
+                        { $lte: ["$_id.createdAt", end] },
+                      ],
+                    },
                     "$studentCount",
                     0,
                   ],
