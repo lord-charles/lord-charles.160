@@ -769,40 +769,31 @@ const fetchUsersPerState = async (req, res) => {
   }
 };
 
-const stateMaleFemaleStat = async (req, res) => {
-  try {
-    const pipeline = [
-      {
-        $group: {
-          _id: "$state10", // Group by state10
-          totalUsers: { $sum: 1 },
-          totalFemale: {
-            $sum: { $cond: [{ $in: ["$gender", ["Female", "F"]] }, 1, 0] },
-          },
-          totalMale: {
-            $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
+  const stateMaleFemaleStat = async (req, res) => {
+    try {
+      const pipeline = [
+        {
+          $group: {
+            _id: "$state10", // Group by state10
+            totalFemale: {
+              $sum: { $cond: [{ $in: ["$gender", ["Female", "F"]] }, 1, 0] },
+            },
+            totalMale: {
+              $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
+            },
           },
         },
-      },
-      {
-        $project: {
-          state10: "$_id", // Rename _id to state10
-          totalUsers: 1,
-          totalFemale: 1,
-          totalMale: 1,
-          _id: 0,
-        },
-      },
-    ];
+      ];
 
-    const result = await User.aggregate(pipeline);
+      const result = await User.aggregate(pipeline);
 
-    res.status(200).json(result);
-  } catch (error) {
-    console.error("Error fetching state users totals:", error);
-    res.status(500).json({ success: false, error: "Internal Server Error" });
-  }
-};
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error fetching state users totals:", error);
+      res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+  };
+
 
 module.exports = {
   createUser,

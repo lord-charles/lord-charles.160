@@ -32,6 +32,7 @@ const {
   totalNewStudentsPerStateDroppedOut,
   totalNewStudentsPerStateDisabled,
   fetchSchoolsEnrollmentToday,
+  getUniqueSchoolsPerState10,
 } = require("../controller/dataset");
 
 router.get("/", dataSet);
@@ -77,7 +78,8 @@ router.post("/track/state/county/payam/school", trackSchool);
 // dashboard
 router.post("/state/gender", stateMaleFemaleStat);
 router.post("/track/schools-enrollment", trackSchoolEnrollment);
-router.post("/fetchSchoolsPerState", fetchSchoolsPerState); //total new(current)leaners/schools per state
+router.post("/fetchSchoolsPerState", fetchSchoolsPerState); //enrolled students
+
 router.post("/totalNewStudentsPerState", totalNewStudentsPerState);
 router.post(
   "/totalNewStudentsPerStateDroppedOut",
@@ -89,17 +91,6 @@ router.post(
 );
 
 router.post("/fetchSchoolsEnrollmentToday", fetchSchoolsEnrollmentToday);
-
-
-
-
-
-
-
-
-
-
-
-
+router.post("/getUniqueSchoolsPerState10", getUniqueSchoolsPerState10);
 
 module.exports = router;
