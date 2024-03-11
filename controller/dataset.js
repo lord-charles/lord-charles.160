@@ -1455,7 +1455,7 @@ const SchoolData = require("../models/2023Data");
        const pipeline = [
          {
            $match: {
-             createdAt: { $gte: startOfDayMongoDB, $lte: endOfDayMongoDB }, // Filter documents by enrollment date
+             createdAt: { $gte: startOfDayMongoDB }, // Filter documents by enrollment date
            },
          },
          {
