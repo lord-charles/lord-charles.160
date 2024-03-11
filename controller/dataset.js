@@ -1451,90 +1451,100 @@ const SchoolData = require("../models/2023Data");
      }
    };
 
-   const fetchSchoolsEnrollmentToday = async (req, res) => {
-     try {
-       // Get the current date in UTC
-       const currentDateUTC = moment.utc();
+ const fetchSchoolsEnrollmentToday = async (req, res) => {
+   try {
+     // Get the current date in UTC
+     const currentDateUTC = moment.utc();
 
-       // Convert UTC time to Nairobi time zone
-       const currentDateNairobi = currentDateUTC.clone().tz("Africa/Nairobi");
+     // Convert UTC time to Nairobi time zone
+     const currentDateNairobi = currentDateUTC.clone().tz("Africa/Nairobi");
 
-       // Set the start of the day in Nairobi time zone and subtract 3 hours
-       const startOfDayNairobi = currentDateNairobi.clone().startOf("day");
+     // Set the start of the day in Nairobi time zone and subtract 3 hours
+     const startOfDayNairobi = currentDateNairobi.clone().startOf("day");
 
-       // Set the end of the day in Nairobi time zone and subtract 3 hours
-       const endOfDayNairobi = currentDateNairobi.clone().endOf("day");
+     // Set the end of the day in Nairobi time zone and subtract 3 hours
+     const endOfDayNairobi = currentDateNairobi.clone().endOf("day");
 
-       // Format dates to MongoDB format
-       const start = new Date(startOfDayNairobi);
-       const end = new Date(endOfDayNairobi);
+     // Format dates to MongoDB format
+     const start = new Date(startOfDayNairobi);
+     const end = new Date(endOfDayNairobi);
 
-       console.log(start);
-       console.log(end);
-       const pipeline = [
-         {
-           $match: {
-             updatedAt: { $gte: start, $lte: end },
-           },
+     const pipeline = [
+       {
+         $match: {
+           $or: [
+             { createdAt: { $gte: start, $lte: end } },
+             { updatedAt: { $gte: start, $lte: end } },
+           ],
          },
-
-         {
-           $group: {
-             _id: {
-               school: "$school",
-               enumerator: "$modifiedBy",
-               isDroppedOut: "$isDroppedOut", // Include isDroppedOut field in the _id
+       },
+       {
+         $group: {
+           _id: {
+             school: "$school",
+             enumerator: "$modifiedBy",
+             isDroppedOut: "$isDroppedOut",
+           },
+           studentCount: { $sum: 1 },
+         },
+       },
+       {
+         $group: {
+           _id: {
+             school: "$_id.school",
+             enumerator: "$_id.enumerator",
+           },
+           totalStudents: { $sum: "$studentCount" },
+           totalStudentsDroppedOutByEnumerator: {
+             $sum: {
+               $cond: [
+                 { $eq: ["$_id.isDroppedOut", true] },
+                 "$studentCount",
+                 0,
+               ],
              },
-             studentCount: { $sum: 1 }, // Count the number of students
+           },
+           totalStudentsByEnumerator: {
+             $sum: {
+               $cond: [
+                 { $eq: ["$_id.isDroppedOut", false] },
+                 "$studentCount",
+                 0,
+               ],
+             },
            },
          },
-         {
-           $group: {
-             _id: {
-               school: "$_id.school",
+       },
+       {
+         $group: {
+           _id: "$_id.school",
+           enumerators: {
+             $push: {
                enumerator: "$_id.enumerator",
-             },
-             totalStudents: { $sum: "$studentCount" },
-             totalStudentsDroppedOutByEnumerator: {
-               $sum: {
-                 $cond: [
-                   { $eq: ["$_id.isDroppedOut", true] },
-                   "$studentCount",
-                   0,
-                 ],
-               },
+               totalStudentsByEnumerator: "$totalStudentsByEnumerator",
+               totalStudentsDroppedByEnumerator:
+                 "$totalStudentsDroppedOutByEnumerator",
              },
            },
          },
-         {
-           $group: {
-             _id: "$_id.school",
-             enumerators: {
-               $push: {
-                 enumerator: "$_id.enumerator",
-                 totalStudentsByEnumerator: "$totalStudents",
-                 totalStudentsDroppedByEnumerator:
-                   "$totalStudentsDroppedOutByEnumerator",
-               },
-             },
-           },
+       },
+       {
+         $project: {
+           _id: 1,
+           enumerators: 1,
          },
-         {
-           $project: {
-             _id: 1,
-             enumerators: 1,
-           },
-         },
-       ];
+       },
+     ];
 
-       const result = await SchoolData.aggregate(pipeline);
+     const result = await SchoolData.aggregate(pipeline);
 
-       res.status(200).json(result);
-     } catch (error) {
-       console.log("Error fetching schools enrollment:", error);
-       res.status(500).json({ success: false, error: "Internal Server Error" });
-     }
-   };
+     res.status(200).json(result);
+   } catch (error) {
+     console.log("Error fetching schools enrollment:", error);
+     res.status(500).json({ success: false, error: "Internal Server Error" });
+   }
+ };
+
 
    module.exports = {
      dataSet,
