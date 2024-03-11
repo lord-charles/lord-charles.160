@@ -1474,10 +1474,7 @@ const SchoolData = require("../models/2023Data");
        const pipeline = [
          {
            $match: {
-             $or: [
-               { createdAt: { $gte: start, $lte: end } },
-               { updatedAt: { $gte: start, $lte: end } },
-             ],
+             updatedAt: { $gte: start, $lte: end },
            },
          },
 
