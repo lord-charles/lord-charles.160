@@ -1442,20 +1442,16 @@ const SchoolData = require("../models/2023Data");
        const endOfDayNairobi = currentDateNairobi.clone().endOf("day");
 
        // Format dates to MongoDB format
-       const startOfDayMongoDB = startOfDayNairobi.toISOString();
-       const endOfDayMongoDB = endOfDayNairobi.toISOString();
+       const start = new Date(startOfDayNairobi);
+       const end = new Date(endOfDayNairobi);
 
-       console.log(
-         "Start of the day (Nairobi - 3 hours):",
-         startOfDayNairobi,
-         startOfDayMongoDB
-       );
-       console.log("End of the day (Nairobi - 3 hours):", endOfDayMongoDB);
+       console.log(start);
+       console.log(end);
 
        const pipeline = [
          {
            $match: {
-             createdAt: { $gte: startOfDayMongoDB }, // Filter documents by enrollment date
+             createdAt: { $gte: start, $lte: end }, // Filter documents by enrollment date
            },
          },
          {
