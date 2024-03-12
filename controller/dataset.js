@@ -1147,9 +1147,8 @@ const SchoolData = require("../models/2023Data");
    };
 
    //schools pending enrollment(current year)
-   const trackSchoolEnrollment = async (req, res) => {
-     try {
-     
+  const trackSchoolEnrollment = async (req, res) => {
+    try {
       const regexYear = new Date().getFullYear().toString().slice(-2);
 
       // Construct the regular expression pattern for references starting with '24'
@@ -1181,12 +1180,9 @@ const SchoolData = require("../models/2023Data");
               },
               {
                 $group: {
-                  _id: "$school",
+                  _id: { $toLower: "$school" },
                   count: { $sum: 1 },
                 },
-              },
-              {
-                $project: { _id: 0, school: "$_id", count: 1 },
               },
             ],
             // Find schools where there are no more than 10 students with reference starting with '24'
@@ -1199,15 +1195,12 @@ const SchoolData = require("../models/2023Data");
               },
               {
                 $group: {
-                  _id: "$school",
+                  _id: { $toLower: "$school" },
                   count: { $sum: 1 },
                 },
               },
               {
-                $match: { count: { $lte: 1 } },
-              },
-              {
-                $project: { _id: 0, school: "$_id", count: 1 },
+                $match: { count: { $lte: 10 } },
               },
             ],
           },
@@ -1223,70 +1216,69 @@ const SchoolData = require("../models/2023Data");
         {
           $replaceRoot: { newRoot: "$schools" },
         },
-        // {
-        //   $limit: 5, // Limit the number of documents returned to 5
-        // },
       ];
 
-       // Execute the aggregation pipeline
-       const result = await SchoolData.aggregate(pipeline);
+      // Execute the aggregation pipeline
+      const result = await SchoolData.aggregate(pipeline);
 
-       res.status(200).json(result);
-     } catch (error) {
-       console.error("Error fetching schools:", error);
-       res.status(500).json({ success: false, error: "Internal Server Error" });
-     }
-   };
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error fetching schools:", error);
+      res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+  };
 
-   //enrolled students
-   const fetchSchoolsPerState = async (req, res) => {
-     try {
-       const pipeline = [
-         {
-           $match: {
-             isDroppedOut: false,
-           },
-         },
-         {
-           $group: {
-             _id: "$state10",
-             schoolCount: { $sum: 1 },
-           },
-         },
-       ];
+  //enrolled students
+  const fetchSchoolsPerState = async (req, res) => {
+    try {
+      const pipeline = [
+        {
+          $match: {
+            isDroppedOut: false,
+          },
+        },
+        {
+          $group: {
+            _id: "$state10",
+            schoolCount: { $sum: 1 },
+          },
+        },
+      ];
 
-       const result = await SchoolData.aggregate(pipeline);
+      const result = await SchoolData.aggregate(pipeline);
 
-       res.status(200).json(result);
-     } catch (error) {
-       console.error("Error fetching schools per state:", error);
-       res.status(500).json({ success: false, error: "Internal Server Error" });
-     }
-   };
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error fetching schools per state:", error);
+      res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+  };
 
-   const getUniqueSchoolsPerState10 = async (req, res) => {
-     try {
-       const uniqueSchoolsPerState10 = await SchoolData.aggregate([
-         {
-           $group: {
-             _id: "$state10",
-             uniqueSchools: { $addToSet: "$school" }, // Add schools to a set to get unique values
-           },
-         },
-         {
-           $project: {
-             _id: 1,
-             numberOfUniqueSchools: { $size: "$uniqueSchools" }, // Count the number of unique schools
-           },
-         },
-       ]);
+  const getUniqueSchoolsPerState10 = async (req, res) => {
+    try {
+      const uniqueSchoolsPerState10 = await SchoolData.aggregate([
+        {
+          $group: {
+            _id: "$state10",
+            uniqueSchools: { $addToSet: { $toLower: "$school" } }, // Convert school names to lowercase for case-insensitive comparison and add to set
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            numberOfUniqueSchools: { $size: "$uniqueSchools" }, // Count the number of unique schools
+          },
+        },
+      ]);
 
-       res.status(200).json(uniqueSchoolsPerState10);
-     } catch (error) {
-       console.error("Error fetching unique schools per state10:", error);
-       res.status(500).json({ success: false, error: "Internal Server Error" });
-     }
-   };
+      res.status(200).json(uniqueSchoolsPerState10);
+    } catch (error) {
+      console.error("Error fetching unique schools per state10:", error);
+      res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+  };
+
+
 
    //enrolled in the current year
    const totalNewStudentsPerState = async (req, res) => {
