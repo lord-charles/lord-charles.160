@@ -1149,89 +1149,84 @@ const SchoolData = require("../models/2023Data");
    //schools pending enrollment(current year)
    const trackSchoolEnrollment = async (req, res) => {
      try {
-       // Determine the last two digits of the year
-       let regexYear;
-       if (req.body && req.body.year) {
-         regexYear = req.body.year.toString().slice(-2);
-       } else {
-         regexYear = new Date().getFullYear().toString().slice(-2);
-       }
+     
+      const regexYear = new Date().getFullYear().toString().slice(-2);
 
-       // Construct the regular expression pattern for references starting with '24'
-       const regexPattern = new RegExp(`^${regexYear}`);
+      // Construct the regular expression pattern for references starting with '24'
+      const regexPattern = new RegExp(`^${regexYear}`);
 
-       // Define matching criteria based on provided fields from req.body
-       const matchCriteria = {};
-       if (req.body && req.body.county28) {
-         matchCriteria.county28 = req.body.county28;
-       }
-       if (req.body && req.body.payam28) {
-         matchCriteria.payam28 = req.body.payam28;
-       }
-       if (req.body && req.body.state10) {
-         matchCriteria.state10 = req.body.state10;
-       }
+      // Define matching criteria based on provided fields from req.body
+      const matchCriteria = {};
+      if (req.body && req.body.county28) {
+        matchCriteria.county28 = req.body.county28;
+      }
+      if (req.body && req.body.payam28) {
+        matchCriteria.payam28 = req.body.payam28;
+      }
+      if (req.body && req.body.state10) {
+        matchCriteria.state10 = req.body.state10;
+      }
 
-       // Aggregation pipeline to find schools where enrollment has not happened or has happened with <= 10 students
-       const pipeline = [
-         {
-           $facet: {
-             // Find schools where there are no students with reference starting with '24'
-             noEnrollment: [
-               {
-                 $match: {
-                   reference: { $not: { $regex: regexPattern } },
-                   ...matchCriteria,
-                 },
-               },
-               {
-                 $group: {
-                   _id: "$school",
-                   count: { $sum: 1 },
-                 },
-               },
-               {
-                 $project: { _id: 0, school: "$_id", count: 1 },
-               },
-             ],
-             // Find schools where there are no more than 10 students with reference starting with '24'
-             maxTenStudents: [
-               {
-                 $match: {
-                   reference: { $regex: regexPattern },
-                   ...matchCriteria,
-                 },
-               },
-               {
-                 $group: {
-                   _id: "$school",
-                   count: { $sum: 1 },
-                 },
-               },
-               {
-                 $match: { count: { $lte: 10 } },
-               },
-               {
-                 $project: { _id: 0, school: "$_id", count: 1 },
-               },
-             ],
-           },
-         },
-         {
-           $project: {
-             schools: { $setUnion: ["$noEnrollment", "$maxTenStudents"] }, // Combine schools from both conditions
-           },
-         },
-         {
-           $unwind: "$schools",
-         },
-         {
-           $replaceRoot: { newRoot: "$schools" },
-         },
-         // {
-         //   $limit: 5, // Limit the number of documents returned to 5
-         // },
-       ];
+      // Aggregation pipeline to find schools where enrollment has not happened or has happened with <= 10 students
+      const pipeline = [
+        {
+          $facet: {
+            // Find schools where there are no students with reference starting with '24'
+            noEnrollment: [
+              {
+                $match: {
+                  reference: { $not: { $regex: regexPattern } },
+                  ...matchCriteria,
+                },
+              },
+              {
+                $group: {
+                  _id: "$school",
+                  count: { $sum: 1 },
+                },
+              },
+              {
+                $project: { _id: 0, school: "$_id", count: 1 },
+              },
+            ],
+            // Find schools where there are no more than 10 students with reference starting with '24'
+            maxTenStudents: [
+              {
+                $match: {
+                  reference: { $regex: regexPattern },
+                  ...matchCriteria,
+                },
+              },
+              {
+                $group: {
+                  _id: "$school",
+                  count: { $sum: 1 },
+                },
+              },
+              {
+                $match: { count: { $lte: 1 } },
+              },
+              {
+                $project: { _id: 0, school: "$_id", count: 1 },
+              },
+            ],
+          },
+        },
+        {
+          $project: {
+            schools: { $setUnion: ["$noEnrollment", "$maxTenStudents"] }, // Combine schools from both conditions
+          },
+        },
+        {
+          $unwind: "$schools",
+        },
+        {
+          $replaceRoot: { newRoot: "$schools" },
+        },
+        // {
+        //   $limit: 5, // Limit the number of documents returned to 5
+        // },
+      ];
 
        // Execute the aggregation pipeline
        const result = await SchoolData.aggregate(pipeline);
