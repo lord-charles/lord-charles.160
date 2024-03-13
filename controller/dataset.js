@@ -1232,57 +1232,97 @@ const SchoolData = require("../models/2023Data");
 //   }
 // };
 
+// const trackSchoolEnrollment = async (req, res) => {
+//   try {
+//     const currentYear = new Date().getFullYear();
+
+//     // Define matching criteria based on provided fields from req.body
+//     const matchCriteria = {};
+//     if (req.body && req.body.county28) {
+//       matchCriteria.county28 = req.body.county28;
+//     }
+//     if (req.body && req.body.payam28) {
+//       matchCriteria.payam28 = req.body.payam28;
+//     }
+//     if (req.body && req.body.state10) {
+//       matchCriteria.state10 = req.body.state10;
+//     }
+
+//     // Construct the conditions for the $match stage dynamically based on the requirements
+//     const matchConditions = [
+//       // Condition 1: No students with reference starting with current year and not marked as dropped out in the current year
+//       {
+//         $and: [
+//           {
+//             reference: {
+//               $not: new RegExp(`^${currentYear.toString().slice(-2)}`),
+//             },
+//           },
+//           { isDroppedOut: { $ne: true } },
+//         ],
+//       },
+//       // Condition 2: At least one student marked as dropped out in the current year
+//       {
+//         $and: [
+//           { isDroppedOut: true },
+//           {
+//             updatedAt: {
+//               $gte: new Date(`${currentYear}-01-01`),
+//               $lte: new Date(`${currentYear}-12-31T23:59:59.999Z`),
+//             },
+//           },
+//         ],
+//       },
+//     ];
+
+//     // Add the matching criteria to each condition
+//     matchConditions.forEach((condition) => {
+//       Object.assign(condition, matchCriteria);
+//     });
+
+//     // Aggregation pipeline to find schools where enrollment hasn't started
+//     const pipeline = [
+//       { $match: { $or: matchConditions } },
+//       {
+//         $group: {
+//           _id: { $toLower: "$school" }, // Convert school to lowercase
+//           county28: { $first: "$county28" }, // Preserve county28 value
+//           payam28: { $first: "$payam28" }, // Preserve payam28 value
+//         },
+//       },
+//     ];
+
+//     // Execute the aggregation pipeline
+//     const result = await SchoolData.aggregate(pipeline);
+
+//     res.status(200).json(result);
+//   } catch (error) {
+//     console.error("Error fetching schools:", error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
+
+// trackEnrolledSchools;
+
 const trackSchoolEnrollment = async (req, res) => {
   try {
     const currentYear = new Date().getFullYear();
 
-    // Define matching criteria based on provided fields from req.body
-    const matchCriteria = {};
-    if (req.body && req.body.county28) {
-      matchCriteria.county28 = req.body.county28;
-    }
-    if (req.body && req.body.payam28) {
-      matchCriteria.payam28 = req.body.payam28;
-    }
-    if (req.body && req.body.state10) {
-      matchCriteria.state10 = req.body.state10;
-    }
-
-    // Construct the conditions for the $match stage dynamically based on the requirements
-    const matchConditions = [
-      // Condition 1: No students with reference starting with current year and not marked as dropped out in the current year
-      {
-        $and: [
-          {
-            reference: {
-              $not: new RegExp(`^${currentYear.toString().slice(-2)}`),
-            },
-          },
-          { isDroppedOut: { $ne: true } },
-        ],
-      },
-      // Condition 2: At least one student marked as dropped out in the current year
-      {
-        $and: [
-          { isDroppedOut: true },
-          {
-            updatedAt: {
-              $gte: new Date(`${currentYear}-01-01`),
-              $lte: new Date(`${currentYear}-12-31T23:59:59.999Z`),
-            },
-          },
-        ],
-      },
-    ];
-
-    // Add the matching criteria to each condition
-    matchConditions.forEach((condition) => {
-      Object.assign(condition, matchCriteria);
-    });
-
-    // Aggregation pipeline to find schools where enrollment hasn't started
+    // Construct the aggregation pipeline to find schools where enrollment has already started
     const pipeline = [
-      { $match: { $or: matchConditions } },
+      {
+        $match: {
+          $or: [
+            // Condition 1: Schools with more than 1 student with reference starting with current year (enrolled)
+            {
+              reference: new RegExp(`^${currentYear.toString().slice(-2)}`),
+              isDroppedOut: { $ne: true },
+            },
+            // Condition 2: Schools with at least one student marked as dropped out in the current year
+            { isDroppedOut: true },
+          ],
+        },
+      },
       {
         $group: {
           _id: { $toLower: "$school" }, // Convert school to lowercase
@@ -1297,10 +1337,11 @@ const trackSchoolEnrollment = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error fetching schools:", error);
+    console.error("Error fetching enrolled schools:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 
