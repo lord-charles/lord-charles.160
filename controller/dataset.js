@@ -1389,6 +1389,9 @@ const findNotEnrolledSchools = async (req, res) => {
       {
         $match: {
           isDroppedOut: { $ne: true }, // Filter out schools where any isDroppedOut value is true
+          reference: {
+            $not: new RegExp(`^${currentYear.toString().slice(-2)}`),
+          },
         },
       },
       {
@@ -1716,6 +1719,7 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+// 65f1c0b2375bbf33afed86a1
 
 module.exports = {
   dataSet,
