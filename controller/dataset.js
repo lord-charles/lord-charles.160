@@ -1376,7 +1376,7 @@ const findNotEnrolledSchools = async (req, res) => {
       {
         $match: {
           ...matchCriteria,
-          reference: { $not: /^24/ }, // Exclude references starting with "24"
+          reference: { $not: { $regex: /^24/ } }, // Exclude references starting with "24"
         },
       },
       {
@@ -1408,6 +1408,7 @@ const findNotEnrolledSchools = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 
