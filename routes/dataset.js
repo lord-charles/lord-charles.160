@@ -26,7 +26,8 @@ const {
   trackPayam,
   trackSchool,
   stateMaleFemaleStat,
-  trackSchoolEnrollment,
+  findEnrolledSchools,
+  findNotEnrolledSchools,
   fetchSchoolsPerState,
   totalNewStudentsPerState,
   totalNewStudentsPerStateDroppedOut,
@@ -74,10 +75,11 @@ router.post("/track/state", trackState);
 router.post("/track/state/county", trackCounty);
 router.post("/track/state/county/payam", trackPayam);
 router.post("/track/state/county/payam/school", trackSchool);
-
-// dashboard
-router.post("/state/gender", stateMaleFemaleStat);
-router.post("/track/schools-enrollment", trackSchoolEnrollment);
+    
+    // dashboard
+    router.post("/state/gender", stateMaleFemaleStat);
+router.post("/findEnrolledSchools", findEnrolledSchools);
+router.post("/findNotEnrolledSchools", findNotEnrolledSchools);
 router.post("/fetchSchoolsPerState", fetchSchoolsPerState); //enrolled students
 
 router.post("/totalNewStudentsPerState", totalNewStudentsPerState);
