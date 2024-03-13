@@ -1377,6 +1377,7 @@ const findNotEnrolledSchools = async (req, res) => {
         $match: {
           ...matchCriteria,
           reference: { $not: { $regex: /^24/ } }, // Exclude references starting with "24"
+          isDroppedOut: false, // Ensure isDroppedOut is false
         },
       },
       {
@@ -1384,12 +1385,6 @@ const findNotEnrolledSchools = async (req, res) => {
           _id: "$school",
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
-          isDroppedOut: { $addToSet: "$isDroppedOut" }, // Collect all values of isDroppedOut for each school
-        },
-      },
-      {
-        $match: {
-          isDroppedOut: { $ne: true },
         },
       },
       {
@@ -1408,6 +1403,7 @@ const findNotEnrolledSchools = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 
