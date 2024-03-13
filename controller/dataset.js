@@ -1371,11 +1371,10 @@ const findNotEnrolledSchools = async (req, res) => {
       matchCriteria.state10 = req.body.state10;
     }
 
-    // Get distinct schools where no student has a reference starting with the current year
+    // Aggregation pipeline to find distinct not enrolled schools
     const notEnrolledSchools = await SchoolData.aggregate([
       {
         $match: {
-          isDroppedOut: false,
           ...matchCriteria,
         },
       },
@@ -1384,14 +1383,12 @@ const findNotEnrolledSchools = async (req, res) => {
           _id: "$school",
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
-          references: { $addToSet: "$reference" }, // Collect all references for each school
+          isDroppedOut: { $addToSet: "$isDroppedOut" }, // Collect all values of isDroppedOut for each school
         },
       },
       {
         $match: {
-          references: {
-            $not: new RegExp(`^${currentYear.toString().slice(-2)}`),
-          }, // Check if none of the references start with the current year
+          isDroppedOut: { $ne: true }, // Filter out schools where any isDroppedOut value is true
         },
       },
       {
@@ -1410,6 +1407,7 @@ const findNotEnrolledSchools = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 //enrolled students
 const fetchSchoolsPerState = async (req, res) => {
