@@ -1147,12 +1147,94 @@ const SchoolData = require("../models/2023Data");
    };
 
    //schools pending enrollment(current year)
+// const trackSchoolEnrollment = async (req, res) => {
+//   try {
+//     const regexYear = new Date().getFullYear().toString().slice(-2);
+
+//     // Construct the regular expression pattern for references starting with '24'
+//     const regexPattern = new RegExp(`^${regexYear}`);
+
+//     // Define matching criteria based on provided fields from req.body
+//     const matchCriteria = {};
+//     if (req.body && req.body.county28) {
+//       matchCriteria.county28 = req.body.county28;
+//     }
+//     if (req.body && req.body.payam28) {
+//       matchCriteria.payam28 = req.body.payam28;
+//     }
+//     if (req.body && req.body.state10) {
+//       matchCriteria.state10 = req.body.state10;
+//     }
+
+//     // Aggregation pipeline to find schools where enrollment has not happened or has happened with <= 10 students
+//     const pipeline = [
+//       {
+//         $facet: {
+//           // Find schools where there are no students with reference starting with '24'
+//           noEnrollment: [
+//             {
+//               $match: {
+//                 reference: { $not: { $regex: regexPattern } },
+//                 ...matchCriteria,
+//               },
+//             },
+//             {
+//               $group: {
+//                 _id: { $toLower: "$school" }, // Convert school to lowercase
+//                 county28: { $first: "$county28" }, // Preserve county28 value
+//                 payam28: { $first: "$payam28" }, // Preserve payam28 value
+//                 count: { $sum: 1 },
+//               },
+//             },
+//           ],
+//           // Find schools where there are no more than 10 students with reference starting with '24'
+//           maxTenStudents: [
+//             {
+//               $match: {
+//                 reference: { $regex: regexPattern },
+//                 ...matchCriteria,
+//               },
+//             },
+//             {
+//               $group: {
+//                 _id: { $toLower: "$school" }, // Convert school to lowercase
+//                 county28: { $first: "$county28" }, // Preserve county28 value
+//                 payam28: { $first: "$payam28" }, // Preserve payam28 value
+//                 count: { $sum: 1 },
+//               },
+//             },
+//             {
+//               $match: { count: { $lte: 10 } },
+//             },
+//           ],
+//         },
+//       },
+//       {
+//         $project: {
+//           schools: { $setUnion: ["$noEnrollment", "$maxTenStudents"] }, // Combine schools from both conditions
+//         },
+//       },
+//       {
+//         $unwind: "$schools",
+//       },
+//       {
+//         $replaceRoot: { newRoot: "$schools" },
+//       },
+//     ];
+
+//     // Execute the aggregation pipeline
+//     const result = await SchoolData.aggregate(pipeline);
+
+//     res.status(200).json(result);
+//   } catch (error) {
+//     console.error("Error fetching schools:", error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
+
 const trackSchoolEnrollment = async (req, res) => {
   try {
-    const regexYear = new Date().getFullYear().toString().slice(-2);
-
-    // Construct the regular expression pattern for references starting with '24'
-    const regexPattern = new RegExp(`^${regexYear}`);
+    const currentYear = new Date().getFullYear();
 
     // Define matching criteria based on provided fields from req.body
     const matchCriteria = {};
@@ -1166,59 +1248,47 @@ const trackSchoolEnrollment = async (req, res) => {
       matchCriteria.state10 = req.body.state10;
     }
 
-    // Aggregation pipeline to find schools where enrollment has not happened or has happened with <= 10 students
+    // Construct the conditions for the $match stage dynamically based on the requirements
+    const matchConditions = [
+      // Condition 1: No students with reference starting with current year and not marked as dropped out in the current year
+      {
+        $and: [
+          {
+            reference: {
+              $not: new RegExp(`^${currentYear.toString().slice(-2)}`),
+            },
+          },
+          { isDroppedOut: { $ne: true } },
+        ],
+      },
+      // Condition 2: At least one student marked as dropped out in the current year
+      {
+        $and: [
+          { isDroppedOut: true },
+          {
+            updatedAt: {
+              $gte: new Date(`${currentYear}-01-01`),
+              $lte: new Date(`${currentYear}-12-31T23:59:59.999Z`),
+            },
+          },
+        ],
+      },
+    ];
+
+    // Add the matching criteria to each condition
+    matchConditions.forEach((condition) => {
+      Object.assign(condition, matchCriteria);
+    });
+
+    // Aggregation pipeline to find schools where enrollment hasn't started
     const pipeline = [
+      { $match: { $or: matchConditions } },
       {
-        $facet: {
-          // Find schools where there are no students with reference starting with '24'
-          noEnrollment: [
-            {
-              $match: {
-                reference: { $not: { $regex: regexPattern } },
-                ...matchCriteria,
-              },
-            },
-            {
-              $group: {
-                _id: { $toLower: "$school" }, // Convert school to lowercase
-                county28: { $first: "$county28" }, // Preserve county28 value
-                payam28: { $first: "$payam28" }, // Preserve payam28 value
-                count: { $sum: 1 },
-              },
-            },
-          ],
-          // Find schools where there are no more than 10 students with reference starting with '24'
-          maxTenStudents: [
-            {
-              $match: {
-                reference: { $regex: regexPattern },
-                ...matchCriteria,
-              },
-            },
-            {
-              $group: {
-                _id: { $toLower: "$school" }, // Convert school to lowercase
-                county28: { $first: "$county28" }, // Preserve county28 value
-                payam28: { $first: "$payam28" }, // Preserve payam28 value
-                count: { $sum: 1 },
-              },
-            },
-            {
-              $match: { count: { $lte: 10 } },
-            },
-          ],
+        $group: {
+          _id: { $toLower: "$school" }, // Convert school to lowercase
+          county28: { $first: "$county28" }, // Preserve county28 value
+          payam28: { $first: "$payam28" }, // Preserve payam28 value
         },
-      },
-      {
-        $project: {
-          schools: { $setUnion: ["$noEnrollment", "$maxTenStudents"] }, // Combine schools from both conditions
-        },
-      },
-      {
-        $unwind: "$schools",
-      },
-      {
-        $replaceRoot: { newRoot: "$schools" },
       },
     ];
 
