@@ -1377,10 +1377,7 @@ const findNotEnrolledSchools = async (req, res) => {
         $match: {
           ...matchCriteria,
           reference: {
-            $not: {
-              $regex: `^${currentYear.toString().slice(-2)}`,
-              $options: "g",
-            },
+            $not: new RegExp(`^${currentYear.toString().slice(-2)}`),
           }, // Exclude references starting with the current year
         },
       },
@@ -1413,6 +1410,7 @@ const findNotEnrolledSchools = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 //enrolled students
