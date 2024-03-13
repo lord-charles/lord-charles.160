@@ -1305,57 +1305,92 @@ const SchoolData = require("../models/2023Data");
 // trackEnrolledSchools;
 
 const trackSchoolEnrollment = async (req, res) => {
-try {
-  const currentYear = new Date().getFullYear();
 
-  // Define matching criteria based on provided fields from req.body
-  const matchCriteria = {};
-  if (req.body && req.body.county28) {
-    matchCriteria.county28 = req.body.county28;
-  }
-  if (req.body && req.body.payam28) {
-    matchCriteria.payam28 = req.body.payam28;
-  }
-  if (req.body && req.body.state10) {
-    matchCriteria.state10 = req.body.state10;
-  }
+ try {
+   const currentYear = new Date().getFullYear();
 
-  // Construct the aggregation pipeline to find schools where enrollment has already started
-  const pipeline = [
-    {
-      $match: {
-        $or: [
-          // Condition 1: Schools with more than 1 student with reference starting with current year (enrolled)
-          {
-            reference: new RegExp(`^${currentYear.toString().slice(-2)}`),
-            isDroppedOut: { $ne: true },
-            ...matchCriteria,
-          },
-          // Condition 2: Schools with at least one student marked as dropped out in the current year
-          {
-            isDroppedOut: true,
-            ...matchCriteria,
-          },
-        ],
-      },
-    },
-    {
-      $group: {
-        _id: { $toLower: "$school" }, // Convert school to lowercase
-        county28: { $first: "$county28" }, // Preserve county28 value
-        payam28: { $first: "$payam28" }, // Preserve payam28 value
-      },
-    },
-  ];
+   // Define matching criteria based on provided fields from req.body
+   const matchCriteria = {};
+   if (req.body && req.body.county28) {
+     matchCriteria.county28 = req.body.county28;
+   }
+   if (req.body && req.body.payam28) {
+     matchCriteria.payam28 = req.body.payam28;
+   }
+   if (req.body && req.body.state10) {
+     matchCriteria.state10 = req.body.state10;
+   }
 
-  // Execute the aggregation pipeline
-  const result = await SchoolData.aggregate(pipeline);
+   // Construct the aggregation pipeline to find schools where enrollment has already started
+   const pipeline = [
+     {
+       $match: {
+         $or: [
+           // Condition 1: Schools with more than 1 student with reference starting with current year (enrolled)
+           {
+             reference: new RegExp(`^${currentYear.toString().slice(-2)}`),
+             isDroppedOut: { $ne: true },
+             ...matchCriteria,
+           },
+           // Condition 2: Schools with at least one student marked as dropped out in the current year
+           {
+             isDroppedOut: true,
+             ...matchCriteria,
+           },
+         ],
+       },
+     },
+     {
+       $group: {
+         _id: { $toLower: "$school" }, // Convert school to lowercase
+         county28: { $first: "$county28" }, // Preserve county28 value
+         payam28: { $first: "$payam28" }, // Preserve payam28 value
+       },
+     },
+   ];
 
-  res.status(200).json(result);
-} catch (error) {
-  console.error("Error fetching enrolled schools:", error);
-  res.status(500).json({ success: false, error: "Internal Server Error" });
-}
+   // Execute the aggregation pipeline to find enrolled schools
+   const enrolledResult = await SchoolData.aggregate(pipeline);
+
+   // Construct the aggregation pipeline to find schools where enrollment hasn't started
+   const notEnrolledPipeline = [
+     {
+       $match: {
+         $and: [
+           // Condition 1: No students enrolled with a reference starting with the current year
+           {
+             reference: {
+               $not: new RegExp(`^${currentYear.toString().slice(-2)}`),
+             },
+           },
+           // Condition 2: No students marked as dropped out in the current year
+           {
+             isDroppedOut: { $ne: true },
+           },
+           matchCriteria, // Additional matching criteria
+         ],
+       },
+     },
+     {
+       $group: {
+         _id: { $toLower: "$school" }, // Convert school to lowercase
+         county28: { $first: "$county28" }, // Preserve county28 value
+         payam28: { $first: "$payam28" }, // Preserve payam28 value
+       },
+     },
+   ];
+
+   // Execute the aggregation pipeline to find schools where enrollment hasn't started
+   const notEnrolledResult = await SchoolData.aggregate(notEnrolledPipeline);
+
+   res.status(200).json({
+     enrolledSchools: enrolledResult,
+     notEnrolledSchools: notEnrolledResult,
+   });
+ } catch (error) {
+   console.error("Error fetching enrolled schools:", error);
+   res.status(500).json({ success: false, error: "Internal Server Error" });
+ }
 };
 
 
