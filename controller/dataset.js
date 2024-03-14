@@ -1355,6 +1355,7 @@ const findEnrolledSchools = async (req, res) => {
   }
 };
 
+
 const findNotEnrolledSchools = async (req, res) => {
   try {
     // Define matching criteria based on provided fields from req.body
@@ -1371,20 +1372,26 @@ const findNotEnrolledSchools = async (req, res) => {
 
     // Aggregation pipeline to find distinct schools
     const notEnrolledSchools = await SchoolData.aggregate([
-      // Match documents where the year is less than 2024 and isDroppedOut is false
+      // Match documents where isDroppedOut is false
       {
         $match: {
-          year: { $lt: 2024 },
           isDroppedOut: false,
           ...matchCriteria,
         },
       },
-      // Group documents by school and retain only the first occurrence of payam28 and county28
+      // Group documents by school and ensure that all students have isDroppedOut: false
       {
         $group: {
           _id: "$school",
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
+          years: { $addToSet: "$year" }, // Collect all years for each school
+        },
+      },
+      // Match schools where no student has the year 2024
+      {
+        $match: {
+          years: { $ne: 2024 }, // Check if no student has the year 2024
         },
       },
       // Project the fields and exclude the _id field
