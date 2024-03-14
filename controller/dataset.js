@@ -1358,6 +1358,8 @@ const findEnrolledSchools = async (req, res) => {
 
 const findNotEnrolledSchools = async (req, res) => {
   try {
+    const currentYear = new Date().getFullYear();
+
     // Define matching criteria based on provided fields from req.body
     const matchCriteria = {};
     if (req.body && req.body.county28) {
@@ -1370,37 +1372,35 @@ const findNotEnrolledSchools = async (req, res) => {
       matchCriteria.state10 = req.body.state10;
     }
 
-    // Aggregation pipeline to find distinct schools
+    // Aggregation pipeline to find distinct not enrolled schools
     const notEnrolledSchools = await SchoolData.aggregate([
-      // Match documents where isDroppedOut is false
       {
         $match: {
-          isDroppedOut: false,
           ...matchCriteria,
         },
       },
-      // Group documents by school and ensure that all students have isDroppedOut: false
       {
         $group: {
           _id: "$school",
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
-          years: { $addToSet: "$year" }, // Collect all years for each school
+          years: { $addToSet: "$year" },
+          isDroppedOut: { $addToSet: "$isDroppedOut" },
         },
       },
-      // Match schools where no student has the year 2024
       {
         $match: {
-          years: { $ne: 2024 }, // Check if no student has the year 2024
+          isDroppedOut: { $ne: true },
+          years: { $ne: 2024 },
         },
       },
-      // Project the fields and exclude the _id field
       {
         $project: {
           _id: 0,
           school: "$_id",
           county28: 1,
           payam28: 1,
+          years: 1,
         },
       },
     ]);
@@ -1411,6 +1411,7 @@ const findNotEnrolledSchools = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 
