@@ -1321,7 +1321,7 @@ const findEnrolledSchools = async (req, res) => {
     }
 
     // Aggregation pipeline to find distinct not enrolled schools
-    const notEnrolledSchools = await SchoolData.aggregate([
+    const enrolledSchools = await SchoolData.aggregate([
       {
         $match: {
           ...matchCriteria,
@@ -1333,7 +1333,7 @@ const findEnrolledSchools = async (req, res) => {
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
           state10: { $first: "$state10" },
-          // years: { $addToSet: "$year" },
+          years: { $addToSet: "$year" },
           isDroppedOut: { $addToSet: "$isDroppedOut" },
         },
       },
@@ -1355,7 +1355,7 @@ const findEnrolledSchools = async (req, res) => {
       },
     ]);
 
-    res.status(200).json({ notEnrolledSchools });
+    res.status(200).json({ enrolledSchools });
   } catch (error) {
     console.error("Error finding not enrolled schools:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
