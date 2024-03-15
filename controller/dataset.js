@@ -1340,7 +1340,7 @@ const findEnrolledSchools = async (req, res) => {
       {
         $match: {
           isDroppedOut: { $eq: true },
-          // years: { $lte: currentYear },
+          years: { $lte: currentYear },
         },
       },
       {
