@@ -1320,14 +1320,10 @@ const findEnrolledSchools = async (req, res) => {
       matchCriteria.state10 = req.body.state10;
     }
 
-    // Aggregation pipeline to find distinct enrolled schools
-    const enrolledSchools = await SchoolData.aggregate([
+    // Aggregation pipeline to find distinct not enrolled schools
+    const notEnrolledSchools = await SchoolData.aggregate([
       {
         $match: {
-          $or: [
-            { reference: new RegExp(`^${currentYear.toString().slice(-2)}`) },
-            { isDroppedOut: true },
-          ],
           ...matchCriteria,
         },
       },
@@ -1336,25 +1332,33 @@ const findEnrolledSchools = async (req, res) => {
           _id: "$school",
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
+          years: { $addToSet: "$year" },
+          isDroppedOut: { $addToSet: "$isDroppedOut" },
+        },
+      },
+      {
+        $match: {
+          isDroppedOut: { $eq: true },
+          years: { $lte: currentYear },
         },
       },
       {
         $project: {
-          _id: 0, // Exclude _id field
+          _id: 0,
           school: "$_id",
           county28: 1,
           payam28: 1,
+          years: 1,
         },
       },
     ]);
 
-    res.status(200).json({ enrolledSchools });
+    res.status(200).json({ notEnrolledSchools });
   } catch (error) {
-    console.error("Error finding enrolled schools:", error);
+    console.error("Error finding not enrolled schools:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
-
 
 const findNotEnrolledSchools = async (req, res) => {
   try {
@@ -1411,9 +1415,6 @@ const findNotEnrolledSchools = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
-
-
-
 
 //enrolled students
 const fetchSchoolsPerState = async (req, res) => {
@@ -1623,107 +1624,6 @@ const totalNewStudentsPerStateDisabled = async (req, res) => {
   }
 };
 
-// const fetchSchoolsEnrollmentToday = async (req, res) => {
-//   try {
-//     // Get the current date in UTC
-//     const currentDateUTC = moment.utc();
-
-//     // Convert UTC time to Nairobi time zone
-//     const currentDateNairobi = currentDateUTC.clone().tz("Africa/Nairobi");
-
-//     // Set the start of the day in Nairobi time zone and subtract 3 hours
-//     const startOfDayNairobi = currentDateNairobi.clone().startOf("day");
-
-//     // Set the end of the day in Nairobi time zone and subtract 3 hours
-//     const endOfDayNairobi = currentDateNairobi.clone().endOf("day");
-
-//     // Format dates to MongoDB format
-//     const start = new Date(startOfDayNairobi);
-//     const end = new Date(endOfDayNairobi);
-
-//     console.log(start);
-//     console.log(end);
-
-//     const pipeline = [
-//       {
-//         $match: {
-//           $or: [
-//             { createdAt: { $gte: start, $lte: end } },
-//             { updatedAt: { $gte: start, $lte: end } },
-//           ],
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: {
-//             school: "$school",
-//             enumerator: "$modifiedBy",
-//             isDroppedOut: "$isDroppedOut",
-//             createdAt: "$createdAt",
-//           },
-//           studentCount: { $sum: 1 },
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: {
-//             school: "$_id.school",
-//             enumerator: "$_id.enumerator",
-//           },
-//           totalStudents: { $sum: "$studentCount" },
-//           totalStudentsDroppedOutByEnumerator: {
-//             $sum: {
-//               $cond: [{ $eq: ["$_id.isDroppedOut", true] }, "$studentCount", 0],
-//             },
-//           },
-//           totalStudentsByEnumerator: {
-//             $sum: {
-//               $cond: [
-//                 {
-//                   $and: [
-//                     { $eq: ["$_id.isDroppedOut", false] },
-//                     { $gte: ["$_id.createdAt", start] },
-//                     { $lte: ["$_id.createdAt", end] },
-//                   ],
-//                 },
-//                 "$studentCount",
-//                 0,
-//               ],
-//             },
-//           },
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: "$_id.school",
-//           enumerators: {
-//             $push: {
-//               enumerator: "$_id.enumerator",
-//               totalStudentsByEnumerator: "$totalStudentsByEnumerator",
-//               totalStudentsDroppedByEnumerator:
-//                 "$totalStudentsDroppedOutByEnumerator",
-//             },
-//           },
-//         },
-//       },
-//       {
-//         $project: {
-//           _id: 1,
-//           enumerators: 1,
-//         },
-//       },
-//     ];
-
-//     const result = await SchoolData.aggregate(pipeline);
-
-//     res.status(200).json(result);
-//   } catch (error) {
-//     console.log("Error fetching schools enrollment:", error);
-//     res.status(500).json({ success: false, error: "Internal Server Error" });
-//   }
-// };
-
-
 const fetchSchoolsEnrollmentToday = async (req, res) => {
   try {
     // Get the current date in UTC
@@ -1872,100 +1772,3 @@ module.exports = {
   getUniqueSchoolsPerState10,
 };
 
-// const dataSet_2023 = async (req, res) => {
-//   try {
-//     const {
-//       state28,
-//       county28,
-//       education,
-//       payam28,
-//       code,
-//       school,
-//       sortBy,
-//       sortOrder,
-//       state10,
-//       county10,
-//       payam10,
-//     } = req.query;
-
-//     const query = buildQuery(
-//       state28,
-//       county28,
-//       education,
-//       payam28,
-//       code,
-//       school,
-//       state10,
-//       county10,
-//       payam10
-//     );
-//     const sort = buildSortObject(sortBy, sortOrder);
-//     // Specify the fields to exclude in the select method
-//     const projection = {
-//       year: 1,
-//       state28: 1,
-//       county28: 1,
-//       payam28: 1,
-//       state10: 1,
-//       school: 1,
-//       class: 1,
-//       code: 1,
-//       education: 1,
-//       gender: 1,
-//       dob: 1,
-//       firstName: 1,
-//       middleName: 1,
-//       lastName: 1,
-//       isPromoted: 1,
-//       isDroppedOut: 1,
-//       learnerUniqueID: 1,
-//       reference: 1,
-//     };
-
-//     const response = await SchoolData.find(query).sort(sort).select(projection);
-
-//     res.status(200).json(response);
-//   } catch (error) {
-//     console.log("Error fetching dataset:", error);
-//     res.status(500).json({ success: false, error: "Internal Server Error" });
-//   }
-// };
-
-// const buildQuery = (
-//   state28,
-//   county28,
-//   education,
-//   payam28,
-//   code,
-//   school,
-//   state10,
-//   county10,
-//   payam10
-// ) => {
-//   const query = {};
-
-//   // Helper function to add a query condition
-//   const addQueryCondition = (field, value) => {
-//     if (value) {
-//       query[field] = { $regex: new RegExp(value, "i") };
-//     }
-//   };
-
-//   addQueryCondition("state28", state28);
-//   addQueryCondition("county28", county28);
-//   addQueryCondition("education", education);
-//   addQueryCondition("payam28", payam28);
-//   addQueryCondition("code", code);
-//   addQueryCondition("school", school);
-//   addQueryCondition("state10", state10);
-//   addQueryCondition("county10", county10);
-//   addQueryCondition("payam10", payam10);
-
-//   return query;
-// };
-
-// const buildSortObject = (sortBy, sortOrder) => {
-//   const sort = {};
-//   if (sortBy) sort[sortBy] = sortOrder === "desc" ? -1 : 1;
-//   return sort;
-// };
