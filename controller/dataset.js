@@ -1349,7 +1349,7 @@ const findEnrolledSchools = async (req, res) => {
           school: "$_id",
           county28: 1,
           payam28: 1,
-          years: 1,
+          // years: 1,
           state10: 1,
         },
       },
