@@ -1391,7 +1391,7 @@ const findNotEnrolledSchools = async (req, res) => {
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
           state10: { $first: "$state10" },
-          // years: { $addToSet: "$year" },
+          years: { $addToSet: "$year" },
           isDroppedOut: { $addToSet: "$isDroppedOut" },
         },
       },
