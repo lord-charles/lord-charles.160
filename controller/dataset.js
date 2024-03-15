@@ -1332,7 +1332,8 @@ const findEnrolledSchools = async (req, res) => {
           _id: "$school",
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
-          years: { $addToSet: "$year" },
+          state10: { $first: "$state10" },
+          // years: { $addToSet: "$year" },
           isDroppedOut: { $addToSet: "$isDroppedOut" },
         },
       },
@@ -1348,7 +1349,8 @@ const findEnrolledSchools = async (req, res) => {
           school: "$_id",
           county28: 1,
           payam28: 1,
-          years: 1,
+          // years: 1,
+          state10: 1,
         },
       },
     ]);
@@ -1388,14 +1390,15 @@ const findNotEnrolledSchools = async (req, res) => {
           _id: "$school",
           county28: { $first: "$county28" },
           payam28: { $first: "$payam28" },
-          years: { $addToSet: "$year" },
+          state10: { $first: "$state10" },
+          // years: { $addToSet: "$year" },
           isDroppedOut: { $addToSet: "$isDroppedOut" },
         },
       },
       {
         $match: {
           isDroppedOut: { $ne: true },
-          years: { $ne: 2024 },
+          years: { $ne: currentYear },
         },
       },
       {
@@ -1404,7 +1407,8 @@ const findNotEnrolledSchools = async (req, res) => {
           school: "$_id",
           county28: 1,
           payam28: 1,
-          years: 1,
+          // years: 1,
+          state10: 1,
         },
       },
     ]);
