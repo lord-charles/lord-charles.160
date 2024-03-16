@@ -1740,6 +1740,137 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
   }
 };
 
+
+
+const fetchState10EnrollmentSummary = async (req, res) => {
+  try {
+    // Aggregate pipeline to retrieve state10 summary
+    const state10Summary = await SchoolData.aggregate([
+      // Your existing pipeline stages here...
+      // Match documents with modifiedBy field
+      {
+        $match: {
+          modifiedBy: { $exists: true, $ne: null },
+        },
+      },
+      // Group by state10 to collect unique state10 values
+      {
+        $group: {
+          _id: "$state10",
+          modifiedBy: {
+            $addToSet: "$modifiedBy",
+          },
+        },
+      },
+      // Project stage to shape the output
+      {
+        $project: {
+          _id: 1,
+          modifiedBy: 1,
+        },
+      },
+      // Lookup stage to get details for each modifiedBy
+      {
+        $lookup: {
+          from: "schooldata2023",
+          localField: "_id",
+          foreignField: "state10",
+          as: "details",
+        },
+      },
+      // Unwind the details array
+      {
+        $unwind: "$details",
+      },
+      // Group by state10 and modifiedBy to calculate statistics
+      {
+        $group: {
+          _id: {
+            state10: "$_id",
+            modifiedBy: "$details.modifiedBy",
+          },
+          totalEnrolled: {
+            $sum: {
+              $cond: [{ $not: "$details.isDroppedOut" }, 1, 0],
+            },
+          },
+          totalDropped: {
+            $sum: {
+              $cond: ["$details.isDroppedOut", 1, 0],
+            },
+          },
+          totalSchools: {
+            $addToSet: "$details.school",
+          },
+          uniquePayam28: {
+            $addToSet: "$details.payam28",
+          },
+          uniqueCounty28: {
+            $addToSet: "$details.county28",
+          },
+        },
+      },
+      // Group by state10 to accumulate modifiedBy statistics
+      {
+        $group: {
+          _id: "$_id.state10",
+          state10Details: {
+            $push: {
+              modifiedBy: "$_id.modifiedBy",
+              totalEnrolled: "$totalEnrolled",
+              totalDropped: "$totalDropped",
+              totalSchools: { $size: "$totalSchools" },
+              uniquePayam28: { $size: "$uniquePayam28" },
+              uniqueCounty28: { $size: "$uniqueCounty28" },
+            },
+          },
+        },
+      },
+    ]);
+
+    // Additional pipeline stage to count total documents for each state and each year
+    const stateYearCounts = await SchoolData.aggregate([
+      // Group by state10 and year to count total documents
+      {
+        $group: {
+          _id: {
+            state10: "$state10",
+            year: "$year",
+          },
+          total: { $sum: 1 },
+        },
+      },
+      // Group by state10 to collect year counts
+      {
+        $group: {
+          _id: "$_id.state10",
+          stats: {
+            $push: {
+              year: "$_id.year",
+              total: "$total",
+            },
+          },
+        },
+      },
+    ]);
+
+    // Merge state year counts into state10Summary
+    state10Summary.forEach((state10) => {
+      const stats =
+        stateYearCounts.find((item) => item._id === state10._id)?.stats || [];
+      state10.stats = stats.reduce((acc, curr) => {
+        acc[curr.year] = curr.total;
+        return acc;
+      }, {});
+    });
+
+    res.status(200).json(state10Summary);
+  } catch (error) {
+    console.log("Error fetching state10 summary:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   dataSet,
   countyPupilTotal,
@@ -1774,5 +1905,6 @@ module.exports = {
   totalNewStudentsPerStateDisabled,
   fetchSchoolsEnrollmentToday,
   getUniqueSchoolsPerState10,
+  fetchState10EnrollmentSummary,
 };
 
