@@ -1711,14 +1711,18 @@ const fetchState10EnrollmentSummary = async (req, res) => {
   }
 };
 
+// for a specific modifiedBy if specified
 const getUniqueSchoolsDetailsPayam = async (req, res) => {
   try {
-    const { payam28 } = req.body;
+    const { payam28, modifiedBy } = req.body;
+
+    // Define the match condition for the modifiedBy field
+    const matchCondition = modifiedBy ? { modifiedBy: modifiedBy } : {};
 
     // Aggregate pipeline to retrieve unique schools based on specified payam28
     const uniqueSchools = await SchoolData.aggregate([
       {
-        $match: { payam28: payam28 },
+        $match: { payam28: payam28, ...matchCondition }, // Include the match condition for modifiedBy
       },
       {
         $group: {
@@ -1775,6 +1779,7 @@ const getUniqueSchoolsDetailsPayam = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 module.exports = {
   dataSet,
