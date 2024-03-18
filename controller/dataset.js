@@ -1829,30 +1829,37 @@ const fetchState10EnrollmentSummary = async (req, res) => {
     ]);
 
     // Additional pipeline stage to count total documents for each state and each year
-    const stateYearCounts = await SchoolData.aggregate([
-      // Group by state10 and year to count total documents
-      {
-        $group: {
-          _id: {
-            state10: "$state10",
-            year: "$year",
-          },
-          total: { $sum: 1 },
+const stateYearCounts = await SchoolData.aggregate([
+  // Match documents where isDroppedOut is false
+  {
+    $match: {
+      isDroppedOut: false,
+    },
+  },
+  // Group by state10 and year to count total documents
+  {
+    $group: {
+      _id: {
+        state10: "$state10",
+        year: "$year",
+      },
+      total: { $sum: 1 },
+    },
+  },
+  // Group by state10 to collect year counts
+  {
+    $group: {
+      _id: "$_id.state10",
+      stats: {
+        $push: {
+          year: "$_id.year",
+          total: "$total",
         },
       },
-      // Group by state10 to collect year counts
-      {
-        $group: {
-          _id: "$_id.state10",
-          stats: {
-            $push: {
-              year: "$_id.year",
-              total: "$total",
-            },
-          },
-        },
-      },
-    ]);
+    },
+  },
+]);
+
 
     // Merge state year counts into state10Summary
     state10Summary.forEach((state10) => {
