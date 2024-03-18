@@ -1146,163 +1146,7 @@ const SchoolData = require("../models/2023Data");
      }
    };
 
-   //schools pending enrollment(current year)
-// const trackSchoolEnrollment = async (req, res) => {
-//   try {
-//     const regexYear = new Date().getFullYear().toString().slice(-2);
 
-//     // Construct the regular expression pattern for references starting with '24'
-//     const regexPattern = new RegExp(`^${regexYear}`);
-
-//     // Define matching criteria based on provided fields from req.body
-//     const matchCriteria = {};
-//     if (req.body && req.body.county28) {
-//       matchCriteria.county28 = req.body.county28;
-//     }
-//     if (req.body && req.body.payam28) {
-//       matchCriteria.payam28 = req.body.payam28;
-//     }
-//     if (req.body && req.body.state10) {
-//       matchCriteria.state10 = req.body.state10;
-//     }
-
-//     // Aggregation pipeline to find schools where enrollment has not happened or has happened with <= 10 students
-//     const pipeline = [
-//       {
-//         $facet: {
-//           // Find schools where there are no students with reference starting with '24'
-//           noEnrollment: [
-//             {
-//               $match: {
-//                 reference: { $not: { $regex: regexPattern } },
-//                 ...matchCriteria,
-//               },
-//             },
-//             {
-//               $group: {
-//                 _id: { $toLower: "$school" }, // Convert school to lowercase
-//                 county28: { $first: "$county28" }, // Preserve county28 value
-//                 payam28: { $first: "$payam28" }, // Preserve payam28 value
-//                 count: { $sum: 1 },
-//               },
-//             },
-//           ],
-//           // Find schools where there are no more than 10 students with reference starting with '24'
-//           maxTenStudents: [
-//             {
-//               $match: {
-//                 reference: { $regex: regexPattern },
-//                 ...matchCriteria,
-//               },
-//             },
-//             {
-//               $group: {
-//                 _id: { $toLower: "$school" }, // Convert school to lowercase
-//                 county28: { $first: "$county28" }, // Preserve county28 value
-//                 payam28: { $first: "$payam28" }, // Preserve payam28 value
-//                 count: { $sum: 1 },
-//               },
-//             },
-//             {
-//               $match: { count: { $lte: 10 } },
-//             },
-//           ],
-//         },
-//       },
-//       {
-//         $project: {
-//           schools: { $setUnion: ["$noEnrollment", "$maxTenStudents"] }, // Combine schools from both conditions
-//         },
-//       },
-//       {
-//         $unwind: "$schools",
-//       },
-//       {
-//         $replaceRoot: { newRoot: "$schools" },
-//       },
-//     ];
-
-//     // Execute the aggregation pipeline
-//     const result = await SchoolData.aggregate(pipeline);
-
-//     res.status(200).json(result);
-//   } catch (error) {
-//     console.error("Error fetching schools:", error);
-//     res.status(500).json({ success: false, error: "Internal Server Error" });
-//   }
-// };
-
-// const trackSchoolEnrollment = async (req, res) => {
-//   try {
-//     const currentYear = new Date().getFullYear();
-
-//     // Define matching criteria based on provided fields from req.body
-//     const matchCriteria = {};
-//     if (req.body && req.body.county28) {
-//       matchCriteria.county28 = req.body.county28;
-//     }
-//     if (req.body && req.body.payam28) {
-//       matchCriteria.payam28 = req.body.payam28;
-//     }
-//     if (req.body && req.body.state10) {
-//       matchCriteria.state10 = req.body.state10;
-//     }
-
-//     // Construct the conditions for the $match stage dynamically based on the requirements
-//     const matchConditions = [
-//       // Condition 1: No students with reference starting with current year and not marked as dropped out in the current year
-//       {
-//         $and: [
-//           {
-//             reference: {
-//               $not: new RegExp(`^${currentYear.toString().slice(-2)}`),
-//             },
-//           },
-//           { isDroppedOut: { $ne: true } },
-//         ],
-//       },
-//       // Condition 2: At least one student marked as dropped out in the current year
-//       {
-//         $and: [
-//           { isDroppedOut: true },
-//           {
-//             updatedAt: {
-//               $gte: new Date(`${currentYear}-01-01`),
-//               $lte: new Date(`${currentYear}-12-31T23:59:59.999Z`),
-//             },
-//           },
-//         ],
-//       },
-//     ];
-
-//     // Add the matching criteria to each condition
-//     matchConditions.forEach((condition) => {
-//       Object.assign(condition, matchCriteria);
-//     });
-
-//     // Aggregation pipeline to find schools where enrollment hasn't started
-//     const pipeline = [
-//       { $match: { $or: matchConditions } },
-//       {
-//         $group: {
-//           _id: { $toLower: "$school" }, // Convert school to lowercase
-//           county28: { $first: "$county28" }, // Preserve county28 value
-//           payam28: { $first: "$payam28" }, // Preserve payam28 value
-//         },
-//       },
-//     ];
-
-//     // Execute the aggregation pipeline
-//     const result = await SchoolData.aggregate(pipeline);
-
-//     res.status(200).json(result);
-//   } catch (error) {
-//     console.error("Error fetching schools:", error);
-//     res.status(500).json({ success: false, error: "Internal Server Error" });
-//   }
-// };
-
-// trackEnrolledSchools;
 
 const findEnrolledSchools = async (req, res) => {
   try {
@@ -1732,8 +1576,6 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
   }
 };
 
-
-
 const fetchState10EnrollmentSummary = async (req, res) => {
   try {
     // Aggregate pipeline to retrieve state10 summary
@@ -1821,37 +1663,36 @@ const fetchState10EnrollmentSummary = async (req, res) => {
     ]);
 
     // Additional pipeline stage to count total documents for each state and each year
-const stateYearCounts = await SchoolData.aggregate([
-  // Match documents where isDroppedOut is false
-  {
-    $match: {
-      isDroppedOut: false,
-    },
-  },
-  // Group by state10 and year to count total documents
-  {
-    $group: {
-      _id: {
-        state10: "$state10",
-        year: "$year",
-      },
-      total: { $sum: 1 },
-    },
-  },
-  // Group by state10 to collect year counts
-  {
-    $group: {
-      _id: "$_id.state10",
-      stats: {
-        $push: {
-          year: "$_id.year",
-          total: "$total",
+    const stateYearCounts = await SchoolData.aggregate([
+      // Match documents where isDroppedOut is false
+      {
+        $match: {
+          isDroppedOut: false,
         },
       },
-    },
-  },
-]);
-
+      // Group by state10 and year to count total documents
+      {
+        $group: {
+          _id: {
+            state10: "$state10",
+            year: "$year",
+          },
+          total: { $sum: 1 },
+        },
+      },
+      // Group by state10 to collect year counts
+      {
+        $group: {
+          _id: "$_id.state10",
+          stats: {
+            $push: {
+              year: "$_id.year",
+              total: "$total",
+            },
+          },
+        },
+      },
+    ]);
 
     // Merge state year counts into state10Summary
     state10Summary.forEach((state10) => {
@@ -1866,6 +1707,68 @@ const stateYearCounts = await SchoolData.aggregate([
     res.status(200).json(state10Summary);
   } catch (error) {
     console.log("Error fetching state10 summary:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getUniqueSchoolsDetailsPayam = async (req, res) => {
+  try {
+    const { payam28 } = req.body;
+
+    // Aggregate pipeline to retrieve unique schools based on specified payam28
+    const uniqueSchools = await SchoolData.aggregate([
+      {
+        $match: { payam28: payam28 },
+      },
+      {
+        $group: {
+          _id: {
+            school: "$school",
+            state10: "$state10",
+            payam28: "$payam28",
+            county28: "$county28",
+            year: "$year",
+          },
+          totalStudents: { $sum: 1 },
+          totalDroppedOut: {
+            $sum: { $cond: [{ $eq: ["$isDroppedOut", true] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            school: "$_id.school",
+            state10: "$_id.state10",
+            payam28: "$_id.payam28",
+            county28: "$_id.county28",
+          },
+          yearDetails: {
+            $push: {
+              year: "$_id.year",
+              totalStudents: "$totalStudents",
+              totalDroppedOut: "$totalDroppedOut",
+            },
+          },
+          totalStudents: { $sum: "$totalStudents" }, // Calculate total students for all years
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          school: "$_id.school",
+          state10: "$_id.state10",
+          payam28: "$_id.payam28",
+          county28: "$_id.county28",
+          totalStudents: 1,
+          yearDetails: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(uniqueSchools);
+  } catch (error) {
+    console.log("Error fetching unique schools details:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -1905,5 +1808,6 @@ module.exports = {
   fetchSchoolsEnrollmentToday,
   getUniqueSchoolsPerState10,
   fetchState10EnrollmentSummary,
+  getUniqueSchoolsDetailsPayam,
 };
 

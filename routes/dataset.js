@@ -35,6 +35,7 @@ const {
   fetchSchoolsEnrollmentToday,
   getUniqueSchoolsPerState10,
   fetchState10EnrollmentSummary,
+  getUniqueSchoolsDetailsPayam,
 } = require("../controller/dataset");
 
 router.get("/", dataSet);
@@ -96,5 +97,7 @@ router.post(
 router.post("/fetchSchoolsEnrollmentToday", fetchSchoolsEnrollmentToday);
 router.post("/getUniqueSchoolsPerState10", getUniqueSchoolsPerState10);
 router.post("/fetchState10EnrollmentSummary", fetchState10EnrollmentSummary);
+router.post("/getUniqueSchoolsDetailsPayam", getUniqueSchoolsDetailsPayam);
+
 
 module.exports = router;
