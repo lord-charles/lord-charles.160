@@ -1727,6 +1727,7 @@ const getUniqueSchoolsDetailsPayam = async (req, res) => {
             state10: "$state10",
             payam28: "$payam28",
             county28: "$county28",
+            code: "$code",
             year: "$year",
           },
           totalStudents: { $sum: 1 },
@@ -1742,6 +1743,7 @@ const getUniqueSchoolsDetailsPayam = async (req, res) => {
             state10: "$_id.state10",
             payam28: "$_id.payam28",
             county28: "$_id.county28",
+            code: "$_id.code",
           },
           yearDetails: {
             $push: {
@@ -1762,6 +1764,7 @@ const getUniqueSchoolsDetailsPayam = async (req, res) => {
           county28: "$_id.county28",
           totalStudents: 1,
           yearDetails: 1,
+          code: "$_id.code",
         },
       },
     ]);
