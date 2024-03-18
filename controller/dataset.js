@@ -1473,22 +1473,14 @@ const getUniqueSchoolsPerState10 = async (req, res) => {
 //enrolled in the current year
 const totalNewStudentsPerState = async (req, res) => {
   try {
-    // Determine the last two digits of the year
-    let regexYear;
-    if (req.body && req.body.year) {
-      regexYear = req.body.year.toString().slice(-2);
-    } else {
-      regexYear = new Date().getFullYear().toString().slice(-2);
-    }
-
-    // Construct the regular expression pattern for references starting with '24'
-    const regexPattern = new RegExp(`^${regexYear}`);
+    currentYear = new Date().getFullYear();
 
     // Aggregation pipeline to count documents per state10 where reference matches the regex
     const pipeline = [
       {
         $match: {
-          reference: { $regex: regexPattern },
+          year: currentYear,
+          isDroppedOut: false,
         },
       },
       {
