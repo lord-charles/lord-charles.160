@@ -207,58 +207,6 @@ const getUsers = async (req, res) => {
   }
 };
 
-// Function to build the query object
-const buildQuery = (
-  firstname,
-  lastname,
-  username,
-  phoneNumber,
-  isAdmin,
-  userType,
-  county28,
-  payam28,
-  state10,
-  school,
-  code,
-  position,
-  category,
-  workStatus,
-  gender,
-  dob,
-  active,
-  dateJoined
-) => {
-  const query = {};
-
-  // Helper function to add a query condition
-  const addQueryCondition = (field, value) => {
-    if (value !== undefined && value !== null && value !== "") {
-      query[field] = value;
-    }
-  };
-
-  addQueryCondition("firstname", firstname);
-  addQueryCondition("lastname", lastname);
-  addQueryCondition("username", username);
-  addQueryCondition("phoneNumber", phoneNumber);
-  addQueryCondition("isAdmin", isAdmin);
-  addQueryCondition("userType", userType);
-  addQueryCondition("county28", county28);
-  addQueryCondition("payam28", payam28);
-  addQueryCondition("state10", state10);
-  addQueryCondition("school", school);
-  addQueryCondition("code", code);
-  addQueryCondition("position", position);
-  addQueryCondition("category", category);
-  addQueryCondition("workStatus", workStatus);
-  addQueryCondition("gender", gender);
-  addQueryCondition("dob", dob);
-  addQueryCondition("active", active);
-  addQueryCondition("dateJoined", dateJoined);
-
-  return query;
-};
-
 //get users by id
 const getUserById = asyncHandler(async (req, res) => {
   const userId = req.params.id;
@@ -269,6 +217,84 @@ const getUserById = asyncHandler(async (req, res) => {
   }
   res.status(200).json(user);
 });
+
+//get users by getUserByCriteria
+const getUserByCriteria = async (req, res) => {
+  try {
+    const {
+      username,
+      phoneNumber,
+      userType,
+      county28,
+      payam28,
+      state10,
+      school,
+      code,
+      year,
+      position,
+      workStatus,
+      salaryGrade,
+      trainingLevel,
+      professionalQual,
+      teacherUniqueID,
+    } = req.query;
+
+    // Construct the query object
+    const query = {};
+    if (username) query.username = username;
+    if (phoneNumber) query.phoneNumber = phoneNumber;
+    if (userType) query.userType = userType;
+    if (county28) query.county28 = county28;
+    if (payam28) query.payam28 = payam28;
+    if (state10) query.state10 = state10;
+    if (school) query.school = school;
+    if (code) query.code = code;
+    if (year) query.year = year;
+    if (position) query.position = position;
+    if (workStatus) query.workStatus = workStatus;
+    if (salaryGrade) query.salaryGrade = salaryGrade;
+    if (trainingLevel) query.trainingLevel = trainingLevel;
+    if (professionalQual) query.professionalQual = professionalQual;
+    if (teacherUniqueID) query.teacherUniqueID = teacherUniqueID;
+
+    // Execute the query
+    const users = await User.find(query).select({
+      firstname: 1,
+      lastname: 1,
+      middleName: 1,
+      username: 1,
+      phoneNumber: 1,
+      userType: 1,
+      dutyAssigned: 1,
+      statesAsigned: 1,
+      county28: 1,
+      payam28: 1,
+      state10: 1,
+      school: 1,
+      code: 1,
+      year: 1,
+      teacherCode: 1,
+      position: 1,
+      workStatus: 1,
+      gender: 1,
+      dob: 1,
+      nationalNo: 1,
+      salaryGrade: 1,
+      firstAppointment: 1,
+      trainingLevel: 1,
+      professionalQual: 1,
+      teacherUniqueID: 1,
+      teachersEstNo: 1,
+      active: 1,
+    });
+
+    // Return the results
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
 
 const getUsersBySchool = async (req, res) => {
   try {
@@ -769,31 +795,30 @@ const fetchUsersPerState = async (req, res) => {
   }
 };
 
-  const stateMaleFemaleStat = async (req, res) => {
-    try {
-      const pipeline = [
-        {
-          $group: {
-            _id: "$state10", // Group by state10
-            totalFemale: {
-              $sum: { $cond: [{ $in: ["$gender", ["Female", "F"]] }, 1, 0] },
-            },
-            totalMale: {
-              $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
-            },
+const stateMaleFemaleStat = async (req, res) => {
+  try {
+    const pipeline = [
+      {
+        $group: {
+          _id: "$state10", // Group by state10
+          totalFemale: {
+            $sum: { $cond: [{ $in: ["$gender", ["Female", "F"]] }, 1, 0] },
+          },
+          totalMale: {
+            $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
           },
         },
-      ];
+      },
+    ];
 
-      const result = await User.aggregate(pipeline);
+    const result = await User.aggregate(pipeline);
 
-      res.status(200).json(result);
-    } catch (error) {
-      console.error("Error fetching state users totals:", error);
-      res.status(500).json({ success: false, error: "Internal Server Error" });
-    }
-  };
-
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching state users totals:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
 
 module.exports = {
   createUser,
@@ -816,4 +841,5 @@ module.exports = {
   updateUsersFieldsBulk,
   fetchUsersPerState,
   stateMaleFemaleStat,
+  getUserByCriteria,
 };

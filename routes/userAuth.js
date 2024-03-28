@@ -22,6 +22,7 @@ const {
   updateUsersFieldsBulk,
   fetchUsersPerState,
   stateMaleFemaleStat,
+  getUserByCriteria,
 } = require("../controller/userCtrl");
 
 // User endpoints
@@ -30,6 +31,7 @@ router.post("/login", logIn);
 router.get("/users/get-all", getUsers);
 router.get("/users/get/:id", getUserById);
 router.get("/users/get-email/", getUserByEmail);
+router.get("/getUserByCriteria", getUserByCriteria);
 router.get("/users/school/", getUsersBySchool);
 router.post("/verifyToken", verifyToken);
 router.delete("/users/delete-user/:id", deleteUser);
