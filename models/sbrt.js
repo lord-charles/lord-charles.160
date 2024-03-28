@@ -10,10 +10,10 @@ const SbrtSchema = new mongoose.Schema({
       date: {
         type: String,
       },
-      subCommitteeName: {
-        type: String,
-        required: false,
-      },
+      // subCommitteeName: {
+      //   type: String,
+      //   required: false,
+      // },
       estimatedCost: {
         type: Number,
         required: true,
@@ -57,10 +57,10 @@ const SbrtSchema = new mongoose.Schema({
       date: {
         type: String,
       },
-      subCommitteeName: {
-        type: String,
-        required: false,
-      },
+      // subCommitteeName: {
+      //   type: String,
+      //   required: false,
+      // },
       estimatedCost: {
         type: Number,
         required: true,
@@ -104,10 +104,10 @@ const SbrtSchema = new mongoose.Schema({
       date: {
         type: String,
       },
-      subCommitteeName: {
-        type: String,
-        required: false,
-      },
+      // subCommitteeName: {
+      //   type: String,
+      //   required: false,
+      // },
       estimatedCost: {
         type: Number,
         required: true,

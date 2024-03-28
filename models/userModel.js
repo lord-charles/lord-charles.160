@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema(
           default: false,
         },
         schoolName: String,
+        code: {
+          type: String,
+          default: "",
+        },
       },
     ],
     statesAsigned: [
