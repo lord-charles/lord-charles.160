@@ -5,17 +5,14 @@ const committeSchema = new mongoose.Schema(
   {
     code: {
       type: String,
-      required: true,
     },
     HeadTeacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     DeputyHeadTeacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     SchoolOfficer: [
       {
@@ -36,12 +33,10 @@ const committeSchema = new mongoose.Schema(
     FemaleTeacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     MaleTeacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     FemaleParentRepresentative: [
       {
@@ -78,12 +73,10 @@ const committeSchema = new mongoose.Schema(
     HeadGirl: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "schooldata2023",
-      required: true,
     },
     HeadBoy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "schooldata2023",
-      required: true,
     },
     MaleParentRepresentativelearnerWithDisability: [
       {
