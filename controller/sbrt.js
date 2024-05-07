@@ -22,7 +22,7 @@ const createPhysicalInput = async (req, res) => {
     // Save the new physical input to the database
     const savedPhysicalInput = await newPhysicalInput.save();
 
-    res.status(201).json(savedPhysicalInput);
+    res.status(201).json({ success: true, savedPhysicalInput });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
