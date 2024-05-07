@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const SbrtSchema = new mongoose.Schema({
+const SdpSchema = new mongoose.Schema({
   physicalInput: [
     {
       activityCategory: {
@@ -208,6 +208,6 @@ const SbrtSchema = new mongoose.Schema({
   year: Number,
 });
 
-const Sbrt = mongoose.model("Sbrt", SbrtSchema);
+const Sdp = mongoose.model("Sdp", SdpSchema);
 
-module.exports = Sbrt;
+module.exports = Sdp;

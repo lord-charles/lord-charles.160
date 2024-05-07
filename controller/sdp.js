@@ -1,42 +1,43 @@
-const PhysicalInputs = require("../models/physicalInput");
+const Sdps = require("../models/sdp");
 
-const createPhysicalInput = async (req, res) => {
+const createSdp = async (req, res) => {
   try {
-    const { physicalInput, schoolCode, year, schoolName } = req.body;
+    const { Sdp, schoolCode, year, schoolName, category } = req.body;
 
     // Check if required inputs are provided
-    if (!physicalInput || !schoolCode || !schoolName) {
+    if (!Sdp || !schoolCode || !schoolName) {
       return res.status(400).json({
-        message: "physicalInput, schoolCode, and schoolName are required",
+        message: "Sdp, schoolCode, and schoolName are required",
       });
     }
 
-    // Create a new instance of the PhysicalInputs model
-    const newPhysicalInput = new PhysicalInputs({
-      physicalInput,
+    // Create a new instance of the Sdps model
+    const newSdp = new Sdps({
+      Sdp,
       schoolCode,
       schoolName,
       year,
+      category,
     });
 
     // Save the new physical input to the database
-    const savedPhysicalInput = await newPhysicalInput.save();
+    const savedSdp = await newSdp.save();
 
-    res.status(201).json({ success: true, savedPhysicalInput });
+    res.status(201).json({ success: true, savedSdp });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-const updatePhysicalInput = async (req, res) => {
+const updateSdp = async (req, res) => {
   try {
     const { id } = req.params; // Assuming the ID of the document to update is passed in the URL params
-    const { physicalInput, schoolCode, year } = req.body;
+    const { Sdp, schoolCode, year } = req.body;
 
     // Update the physical input in the database
-    const result = await PhysicalInputs.updateOne(
+    const result = await Sdps.updateOne(
       { _id: id }, // Filter by document ID
-      { physicalInput, schoolCode, year } // New data to update
+      { Sdp, schoolCode, year } // New data to update
     );
 
     if (result.nModified === 0) {
@@ -49,7 +50,7 @@ const updatePhysicalInput = async (req, res) => {
   }
 };
 
-const getAllPhysicalInputsBySchoolAndYear = async (req, res) => {
+const getAllSdpsBySchoolAndYear = async (req, res) => {
   try {
     const { schoolCode } = req.body;
     let { year } = req.body;
@@ -66,16 +67,16 @@ const getAllPhysicalInputsBySchoolAndYear = async (req, res) => {
     }
 
     // Retrieve physical inputs based on the query conditions
-    const physicalInputs = await PhysicalInputs.find(query);
+    const Sdps = await Sdps.find(query);
 
-    res.status(200).json(physicalInputs);
+    res.status(200).json(Sdps);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 module.exports = {
-  createPhysicalInput,
-  updatePhysicalInput,
-  getAllPhysicalInputsBySchoolAndYear,
+  createSdp,
+  updateSdp,
+  getAllSdpsBySchoolAndYear,
 };

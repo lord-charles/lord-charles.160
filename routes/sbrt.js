@@ -1,16 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const {
-  createPhysicalInput,
-  updatePhysicalInput,
-  getAllPhysicalInputsBySchoolAndYear,
-} = require("../controller/sbrt");
+  createSdp,
+  updateSdp,
+  getAllSdpsBySchoolAndYear,
+} = require("../controller/sdp");
 
-router.post("/", createPhysicalInput);
-router.post(
-  "/getAllPhysicalInputsBySchoolAndYear",
-  getAllPhysicalInputsBySchoolAndYear
-);
-router.patch("/:id", updatePhysicalInput);
+router.post("/", createSdp);
+router.post("/getAllSdpsBySchoolAndYear", updateSdp);
+router.patch("/:id", getAllSdpsBySchoolAndYear);
 
 module.exports = router;

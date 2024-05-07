@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const physicalInputchema = new mongoose.Schema(
   {
-    physicalInput: [
+    Sdp: [
       {
         activityCategory: {
           type: String,
@@ -53,6 +53,7 @@ const physicalInputchema = new mongoose.Schema(
         ],
       },
     ],
+    category: String,
     schoolCode: String,
     schoolName: String,
     year: Number,
