@@ -3,6 +3,14 @@ const mongoose = require("mongoose");
 const SbrtSchema = new mongoose.Schema({
   physicalInput: [
     {
+      activityCategory: {
+        type: String,
+        required: true,
+      },
+      activitySubCategory: {
+        type: String,
+        required: true,
+      },
       activityName: {
         type: String,
         required: true,
@@ -10,22 +18,18 @@ const SbrtSchema = new mongoose.Schema({
       date: {
         type: String,
       },
-      // subCommitteeName: {
-      //   type: String,
-      //   required: false,
-      // },
       estimatedCost: {
         type: Number,
         required: true,
       },
-      pwd: {
-        type: String,
-        required: true,
-      },
-      code: {
-        type: String,
-        required: true,
-      },
+      // pwd: {
+      //   type: String,
+      //   required: true,
+      // },
+      // code: {
+      //   type: String,
+      //   required: true,
+      // },
       budget: [
         {
           itemName: {
@@ -40,16 +44,24 @@ const SbrtSchema = new mongoose.Schema({
             type: Number,
             required: true,
           },
-          fundSorce: {
-            type: String,
-            required: true,
-          },
+          // fundSorce: {
+          //   type: String,
+          //   required: true,
+          // },
         },
       ],
     },
   ],
   leaningInclusion: [
     {
+      activityCategory: {
+        type: String,
+        required: true,
+      },
+      activitySubCategory: {
+        type: String,
+        required: true,
+      },
       activityName: {
         type: String,
         required: true,
@@ -57,22 +69,19 @@ const SbrtSchema = new mongoose.Schema({
       date: {
         type: String,
       },
-      // subCommitteeName: {
-      //   type: String,
-      //   required: false,
-      // },
+
       estimatedCost: {
         type: Number,
         required: true,
       },
-      pwd: {
-        type: String,
-        required: true,
-      },
-      code: {
-        type: String,
-        required: true,
-      },
+      // pwd: {
+      //   type: String,
+      //   required: true,
+      // },
+      // code: {
+      //   type: String,
+      //   required: true,
+      // },
       budget: [
         {
           itemName: {
@@ -87,16 +96,25 @@ const SbrtSchema = new mongoose.Schema({
             type: Number,
             required: true,
           },
-          fundSorce: {
-            type: String,
-            required: true,
-          },
+          // fundSorce: {
+          //   type: String,
+          //   required: true,
+          // },
         },
       ],
     },
   ],
+
   generalSupport: [
     {
+      activityCategory: {
+        type: String,
+        required: true,
+      },
+      activitySubCategory: {
+        type: String,
+        required: true,
+      },
       activityName: {
         type: String,
         required: true,
@@ -112,14 +130,14 @@ const SbrtSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
-      pwd: {
-        type: String,
-        required: true,
-      },
-      code: {
-        type: String,
-        required: true,
-      },
+      // pwd: {
+      //   type: String,
+      //   required: true,
+      // },
+      // code: {
+      //   type: String,
+      //   required: true,
+      // },
       budget: [
         {
           itemName: {
@@ -134,16 +152,14 @@ const SbrtSchema = new mongoose.Schema({
             type: Number,
             required: true,
           },
-          fundSorce: {
-            type: String,
-            required: true,
-          },
+          // fundSorce: {
+          //   type: String,
+          //   required: true,
+          // },
         },
       ],
     },
   ],
-  schoolCode: String,
-  year: Number,
   approved: [
     {
       isApproved: {
@@ -188,6 +204,8 @@ const SbrtSchema = new mongoose.Schema({
       },
     },
   ],
+  schoolCode: String,
+  year: Number,
 });
 
 const Sbrt = mongoose.model("Sbrt", SbrtSchema);

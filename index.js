@@ -1,7 +1,7 @@
 const app = require("express")();
 const bodyParser = require("body-parser");
-const morgan = require("morgan"); // import morgan for request logging
-const cors = require("cors"); // import cors for handling Cross-Origin Resource Sharing (CORS)
+const morgan = require("morgan");
+const cors = require("cors"); 
 const { notFound, errorHandler } = require("./middlewares/error-handler");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -10,6 +10,7 @@ const dbConnect = require("./config/dbConnect");
 const dataSet = require("./routes/dataset");
 const usersRouter = require("./routes/userAuth");
 const schoolCommitte = require("./routes/committe");
+const sbrt = require("./routes/sbrt");
 
 dbConnect();
 // apply middlewares
@@ -20,6 +21,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use("/express/data-set", dataSet);
 app.use("/express/user", usersRouter);
 app.use("/express/school-committe", schoolCommitte);
+app.use("/express/sbrt", sbrt);
+
 
 
 
