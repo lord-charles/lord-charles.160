@@ -7,7 +7,7 @@ const {
 } = require("../controller/sdp");
 
 router.post("/", createSdp);
-router.post("/getAllSdpsBySchoolAndYear", updateSdp);
-router.patch("/:id", getAllSdpsBySchoolAndYear);
+router.post("/getAllSdpsBySchoolAndYear", getAllSdpsBySchoolAndYear);
+router.patch("/:id", updateSdp);
 
 module.exports = router;

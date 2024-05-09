@@ -31,20 +31,21 @@ const createSdp = async (req, res) => {
 
 const updateSdp = async (req, res) => {
   try {
-    const { id } = req.params; // Assuming the ID of the document to update is passed in the URL params
-    const { Sdp, schoolCode, year } = req.body;
+    const { id } = req.params;
+    const { Sdp, schoolCode, year, approved } = req.body;
 
     // Update the physical input in the database
     const result = await Sdps.updateOne(
-      { _id: id }, // Filter by document ID
-      { Sdp, schoolCode, year } // New data to update
+      { _id: id },
+      { Sdp, schoolCode, year, approved },
+      { new: true }
     );
 
     if (result.nModified === 0) {
       return res.status(404).json({ message: "Physical input not found" });
     }
 
-    res.status(200).json({ message: "Physical input updated successfully" });
+    res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
