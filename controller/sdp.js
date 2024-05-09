@@ -55,6 +55,7 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
   try {
     const { schoolCode } = req.body;
     let { year } = req.body;
+    let { category } = req.body;
 
     // Validate if schoolCode is provided
     if (!schoolCode) {
@@ -65,6 +66,10 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
     const query = { schoolCode };
     if (year) {
       query.year = year;
+    }
+
+    if (category) {
+      query.category = category;
     }
 
     // Retrieve physical inputs based on the query conditions
