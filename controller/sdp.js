@@ -1,4 +1,4 @@
-const Sdps = require("../models/sdp");
+const SdpInputs = require("../models/sdp");
 
 const createSdp = async (req, res) => {
   try {
@@ -12,7 +12,7 @@ const createSdp = async (req, res) => {
     }
 
     // Create a new instance of the Sdps model
-    const newSdp = new Sdps({
+    const newSdp = new SdpInputs({
       Sdp,
       schoolCode,
       schoolName,
@@ -35,7 +35,7 @@ const updateSdp = async (req, res) => {
     const { Sdp, schoolCode, year, approved } = req.body;
 
     // Update the physical input in the database
-    const result = await Sdps.updateOne(
+    const result = await SdpInputs.updateOne(
       { _id: id },
       { Sdp, schoolCode, year, approved },
       { new: true }
@@ -68,7 +68,7 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
     }
 
     // Retrieve physical inputs based on the query conditions
-    const Sdps = await Sdps.find(query);
+    const Sdps = await SdpInputs.find(query);
 
     res.status(200).json(Sdps);
   } catch (error) {
