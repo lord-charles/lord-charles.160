@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const physicalInputchema = new mongoose.Schema(
+const sdpInputchema = new mongoose.Schema(
   {
     Sdp: [
       {
@@ -57,23 +57,27 @@ const physicalInputchema = new mongoose.Schema(
     schoolCode: String,
     schoolName: String,
     year: Number,
-    approved: [
-      {
-        isApproved: {
-          type: Boolean,
-        },
-        rejectionReason: {
-          type: String,
-        },
-        userName: String,
+    approved: {
+      isApproved: {
+        type: String,
+        enum: ["approved", "pending", "rejected"],
+        default: "pending",
       },
-    ],
+      rejectionReason: {
+        type: String,
+        default: null,
+      },
+      userName: {
+        type: String,
+        default: null,
+      },
+    },
   },
   {
     timestamps: true,
   }
 );
 
-const physicalInputs = mongoose.model("physicalInputs", physicalInputchema);
+const SdpInputs = mongoose.model("SdpInputs", sdpInputchema);
 
-module.exports = physicalInputs;
+module.exports = SdpInputs;
