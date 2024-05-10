@@ -470,34 +470,41 @@ const SchoolData = require("../models/2023Data");
      }
    };
 
-   const getStudentsInClass_2023 = async (req, res) => {
-     try {
-       // Extract schoolName from the request body
-       const { schoolName, form } = req.body;
+  const getStudentsInClass_2023 = async (req, res) => {
+    try {
+      const { schoolName, form, isDroppedOut } = req.body;
 
-       // Validate if schoolName && form is provided
-       if (!schoolName) {
-         return res
-           .status(400)
-           .json({ success: false, error: "School name is required" });
-       }
+      // Validate required fields
+      if (!schoolName || !form) {
+        return res
+          .status(400)
+          .json({ success: false, error: "School name and form are required" });
+      }
 
-       if (!form) {
-         return res
-           .status(400)
-           .json({ success: false, error: "Form name is required" });
-       }
+      // Validate isDroppedOut field if provided
+      if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
+        return res
+          .status(400)
+          .json({ success: false, error: "isDroppedOut must be a boolean" });
+      }
 
-       // Use the find method to get documents matching the schoolName
-       const result = await SchoolData.find({ school: schoolName, form: form });
+      // Construct query
+      const query = { school: schoolName, form: form };
+      if (isDroppedOut !== undefined) {
+        query.isDroppedOut = isDroppedOut;
+      }
 
-       // Return the formatted result
-       res.status(200).json(result);
-     } catch (error) {
-       console.error("Error fetching students in school:", error);
-       res.status(500).json({ success: false, error: "Internal Server Error" });
-     }
-   };
+      // Find matching documents
+      const result = await SchoolData.find(query);
+
+      // Return result
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error fetching students in school:", error);
+      res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+  };
+
 
    const updateSchoolDataFields_2023 = async (req, res) => {
      try {
