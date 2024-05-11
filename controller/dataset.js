@@ -450,7 +450,7 @@ const SchoolData = require("../models/2023Data");
    const getStudentsInSchool_2023 = async (req, res) => {
      try {
        // Extract schoolName from the request body
-       const { schoolName, isDroppedOut } = req.body;
+       const { schoolName, isDroppedOut, isValidated } = req.body;
 
        // Validate if schoolName is provided
        if (!schoolName) {
@@ -469,6 +469,9 @@ const SchoolData = require("../models/2023Data");
        const query = { school: schoolName };
        if (isDroppedOut !== undefined) {
          query.isDroppedOut = isDroppedOut;
+       }
+       if (isValidated !== undefined) {
+         query.isValidated = isValidated;
        }
 
        // Use the find method to get documents matching the schoolName
