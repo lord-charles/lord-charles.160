@@ -26,22 +26,21 @@ const schoolDataSchema = new mongoose.Schema(
     lastName: String,
     isPromoted: { type: Boolean, default: false },
     isDroppedOut: { type: Boolean, default: false },
-    isPending: {
+    isValidated: {
       type: Boolean,
       default: false,
     },
-
     isDisbursed: {
       type: Boolean,
       default: false,
     },
+
+    CTEFSerialNumber: {
+      Number: { type: String },
+      DateIssued: { type: String },
+    },
     learnerUniqueID: Number,
     reference: String,
-    over18: String,
-    eligible: Number,
-    dateValidatedAtSchool: Date,
-    CTEFReceivedAtSA: Date,
-    CTEFSerialNumber: String,
     dateCorrectedOnSSSAMS: Date,
     dateApproved: Date,
     signatureOnPaymentList: Number,
