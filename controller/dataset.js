@@ -450,7 +450,7 @@ const SchoolData = require("../models/2023Data");
    const getStudentsInSchool_2023 = async (req, res) => {
      try {
        // Extract schoolName from the request body
-       const { schoolName } = req.body;
+       const { schoolName, isDroppedOut } = req.body;
 
        // Validate if schoolName is provided
        if (!schoolName) {
@@ -458,9 +458,21 @@ const SchoolData = require("../models/2023Data");
            .status(400)
            .json({ success: false, error: "School name is required" });
        }
+       // Validate isDroppedOut field if provided
+       if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
+         return res
+           .status(400)
+           .json({ success: false, error: "isDroppedOut must be a boolean" });
+       }
+
+       // Construct query
+       const query = { school: schoolName };
+       if (isDroppedOut !== undefined) {
+         query.isDroppedOut = isDroppedOut;
+       }
 
        // Use the find method to get documents matching the schoolName
-       const result = await SchoolData.find({ school: schoolName });
+       const result = await SchoolData.find(query);
 
        // Return the formatted result
        res.status(200).json(result);
