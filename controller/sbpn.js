@@ -155,13 +155,13 @@ Thank you.`;
       // }
 
       try {
-        await axios.post("https://sms.textsms.co.ke/api/services/sendsms/", {
-          apikey: "9d97e98deaa48d145fec88150ff28203",
-          partnerID: "7848",
-          message: message,
-          shortcode: "TextSMS",
-          mobile: account,
-        });
+        // await axios.post("https://sms.textsms.co.ke/api/services/sendsms/", {
+        //   apikey: "9d97e98deaa48d145fec88150ff28203",
+        //   partnerID: "7848",
+        //   message: message,
+        //   shortcode: "TextSMS",
+        //   mobile: account,
+        // });
 
         // Create a new instance of the Voucher model with the webhook data
         // const voucher = new Vouchers({
@@ -178,13 +178,13 @@ Thank you.`;
         // const voucherres = await voucher.save();
         // console.log(voucherres);
 
-        // await axios.post("https://sms.savvybulksms.com/api/services/sendsms/", {
-        //   apikey: "0c53f737571fcf0eb3b60a8a9bcbfd83",
-        //   partnerID: "8816",
-        //   message: message,
-        //   shortcode: "Savvy_sms",
-        //   mobile: account,
-        // });
+        await axios.post("https://sms.savvybulksms.com/api/services/sendsms/", {
+          apikey: "0c53f737571fcf0eb3b60a8a9bcbfd83",
+          partnerID: "8816",
+          message: message,
+          shortcode: "Savvy_sms",
+          mobile: account,
+        });
       } catch (error) {
         console.log("Error sending SMS:", error);
       }
@@ -237,11 +237,19 @@ Thank you.`;
       // }
 
       try {
-        await axios.post("https://sms.textsms.co.ke/api/services/sendsms/", {
-          apikey: "9d97e98deaa48d145fec88150ff28203",
-          partnerID: "7848",
+        // await axios.post("https://sms.textsms.co.ke/api/services/sendsms/", {
+        //   apikey: "9d97e98deaa48d145fec88150ff28203",
+        //   partnerID: "7848",
+        //   message: message,
+        //   shortcode: "TextSMS",
+        //   mobile: account,
+        // });
+
+        await axios.post("https://sms.savvybulksms.com/api/services/sendsms/", {
+          apikey: "0c53f737571fcf0eb3b60a8a9bcbfd83",
+          partnerID: "8816",
           message: message,
-          shortcode: "TextSMS",
+          shortcode: "Savvy_sms",
           mobile: account,
         });
       } catch (error) {
