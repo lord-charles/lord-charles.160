@@ -7,6 +7,8 @@ const getEnrollmentReport = async (req, res) => {
     return res.status(400).json({ error: "State is required" });
   }
 
+  const currentYear = new Date().getFullYear();
+
   try {
     const report = await SchoolData.aggregate([
       { $match: { state28 } },
@@ -14,14 +16,18 @@ const getEnrollmentReport = async (req, res) => {
         $facet: {
           promotedMale: [
             {
-              $match: { gender: "Male", isPromoted: true, isDroppedOut: false },
+              $match: {
+                $or: [{ gender: "Male" }, { gender: "M" }],
+                isPromoted: true,
+                isDroppedOut: false,
+              },
             },
             { $count: "count" },
           ],
           promotedFemale: [
             {
               $match: {
-                gender: "Female",
+                $or: [{ gender: "Female" }, { gender: "F" }],
                 isPromoted: true,
                 isDroppedOut: false,
               },
@@ -29,19 +35,41 @@ const getEnrollmentReport = async (req, res) => {
             { $count: "count" },
           ],
           newMale: [
-            { $match: { gender: "Male", year: 2024, isDroppedOut: false } },
+            {
+              $match: {
+                $or: [{ gender: "Male" }, { gender: "M" }],
+                year: currentYear,
+                isDroppedOut: false,
+              },
+            },
             { $count: "count" },
           ],
           newFemale: [
-            { $match: { gender: "Female", year: 2024, isDroppedOut: false } },
+            {
+              $match: {
+                $or: [{ gender: "Female" }, { gender: "F" }],
+                year: currentYear,
+                isDroppedOut: false,
+              },
+            },
             { $count: "count" },
           ],
           droppedOutMale: [
-            { $match: { gender: "Male", isDroppedOut: true } },
+            {
+              $match: {
+                $or: [{ gender: "Male" }, { gender: "M" }],
+                isDroppedOut: true,
+              },
+            },
             { $count: "count" },
           ],
           droppedOutFemale: [
-            { $match: { gender: "Female", isDroppedOut: true } },
+            {
+              $match: {
+                $or: [{ gender: "Female" }, { gender: "F" }],
+                isDroppedOut: true,
+              },
+            },
             { $count: "count" },
           ],
           aggregatedData: [
@@ -49,7 +77,9 @@ const getEnrollmentReport = async (req, res) => {
               $group: {
                 _id: { code: "$code", county: "$county28", payam: "$payam28" },
                 totalPromoted: { $sum: { $cond: ["$isPromoted", 1, 0] } },
-                totalNew: { $sum: { $cond: [{ $eq: ["$year", 2024] }, 1, 0] } },
+                totalNew: {
+                  $sum: { $cond: [{ $eq: ["$year", currentYear] }, 1, 0] },
+                },
                 totalDroppedOut: { $sum: { $cond: ["$isDroppedOut", 1, 0] } },
               },
             },

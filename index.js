@@ -25,7 +25,7 @@ app.use("/express/user", usersRouter);
 app.use("/express/school-committe", schoolCommitte);
 app.use("/express/sbrt", sbrt);
 app.use("/express/sb/pn", sbpn);
-app.use("/report", reportRoutes);
+app.use("/express/report", reportRoutes);
 
 
 
