@@ -12,6 +12,7 @@ const usersRouter = require("./routes/userAuth");
 const schoolCommitte = require("./routes/committe");
 const sbrt = require("./routes/sbrt");
 const sbpn = require("./routes/sbpn");
+const reportRoutes = require("./routes/report");
 
 dbConnect();
 // apply middlewares
@@ -24,6 +25,7 @@ app.use("/express/user", usersRouter);
 app.use("/express/school-committe", schoolCommitte);
 app.use("/express/sbrt", sbrt);
 app.use("/express/sb/pn", sbpn);
+app.use("/report", reportRoutes);
 
 
 
