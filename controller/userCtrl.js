@@ -105,7 +105,7 @@ const createUser = asyncHandler(async (req, res) => {
 
 //login CHECKED
 const logIn = asyncHandler(async (req, res) => {
-  const secret = process.env.SECRET;
+  const secret = "charles-works-smart";
   const { username, password } = req.body;
   const user = await User.findOne({ username, password });
   console.log(user);
