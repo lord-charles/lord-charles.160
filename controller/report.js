@@ -1,5 +1,6 @@
 const SchoolData = require("../models/2023Data");
 
+
 const getEnrollmentReport = async (req, res) => {
   const { state28 } = req.query; // Get the state from the query parameters
 
@@ -13,13 +14,6 @@ const getEnrollmentReport = async (req, res) => {
       {
         $group: {
           _id: { code: "$code", county: "$county28", payam: "$payam28" },
-          totalPromoted: { $sum: { $cond: ["$isPromoted", 1, 0] } },
-          totalNew: {
-            $sum: {
-              $cond: [{ $eq: ["$year", new Date().getFullYear()] }, 1, 0],
-            },
-          },
-          totalDroppedOut: { $sum: { $cond: ["$isDroppedOut", 1, 0] } },
           totalPromotedMale: {
             $sum: {
               $cond: [
@@ -116,9 +110,15 @@ const getEnrollmentReport = async (req, res) => {
           code: "$_id.code",
           county: "$_id.county",
           payam: "$_id.payam",
-          totalPromoted: 1,
-          totalNew: 1,
-          totalDroppedOut: 1,
+          totalPromoted: {
+            $sum: ["$totalPromotedMale", "$totalPromotedFemale"],
+          },
+          totalNew: {
+            $sum: ["$totalNewMale", "$totalNewFemale"],
+          },
+          totalDroppedOut: {
+            $sum: ["$totalDroppedOutMale", "$totalDroppedOutFemale"],
+          },
           totalPromotedMale: 1,
           totalPromotedFemale: 1,
           totalNewMale: 1,
@@ -134,8 +134,5 @@ const getEnrollmentReport = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
-
 
 module.exports = { getEnrollmentReport };
