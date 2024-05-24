@@ -3,7 +3,7 @@ const dbConnect = () => {
   //connection to db
   mongoose.set("strictQuery", true);
   mongoose
-    .connect("mongodb://localhost:27017")
+    .connect("mongodb://127.0.0.1:27017/")
     .then(() => {
       console.log("connection to db sucessfully...");
     })
