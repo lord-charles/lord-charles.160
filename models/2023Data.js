@@ -27,8 +27,8 @@ const schoolDataSchema = new mongoose.Schema(
     isDroppedOut: { type: Boolean, default: false },
     isValidated: {
       type: Boolean,
-      default: false,
     },
+    invalidationReason: { type: String },
     isDisbursed: {
       type: Boolean,
       default: false,
