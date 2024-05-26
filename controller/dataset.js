@@ -205,7 +205,7 @@ const SchoolData = require("../models/2023Data");
        } = req.query;
 
        // Calculate the number of documents to skip based on the page number
-       const skip = (page - 1) * 10000;
+       const skip = (page - 1) * 5000;
 
        const query = buildQuery(
          state28,
@@ -251,19 +251,19 @@ const SchoolData = require("../models/2023Data");
          .sort(sort)
          .select(projection)
          .skip(skip) // Skip the appropriate number of documents
-         .limit(10000); // Limit the number of documents per page
+         .limit(5000); // Limit the number of documents per page
 
        // Count the total number of documents matching the query
        const totalCount = await SchoolData.countDocuments(query);
 
        // Calculate the total number of pages
-       const totalPages = Math.ceil(totalCount / 10000);
+       const totalPages = Math.ceil(totalCount / 5000);
 
        // Calculate the number of remaining trips
        const remainingTrips = totalPages - page;
 
        // Calculate the number of documents remaining after this trip
-       const remainingDocuments = totalCount - page * 10000;
+       const remainingDocuments = totalCount - page * 5000;
 
        res.status(200).json({
          data: response,
