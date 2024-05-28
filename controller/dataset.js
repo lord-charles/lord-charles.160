@@ -744,6 +744,7 @@ const SchoolData = require("../models/2023Data");
          houseHold: 1,
          pregnantOrNursing: 1,
          isValidated: 1,
+         CTEFSerialNumber: 1,
        };
 
        // Calculate skip value based on pagination
