@@ -743,6 +743,7 @@ const SchoolData = require("../models/2023Data");
          disabilities: 1,
          houseHold: 1,
          pregnantOrNursing: 1,
+         isValidated: 1,
        };
 
        // Calculate skip value based on pagination
