@@ -34,10 +34,12 @@ const schoolDataSchema = new mongoose.Schema(
       default: false,
     },
 
-    CTEFSerialNumber: {
-      Number: { type: String },
-      DateIssued: { type: String },
-    },
+    CTEFSerialNumber: [
+      {
+        Number: { type: String },
+        DateIssued: { type: String },
+      },
+    ],
     dateCTEFPaid: { type: String },
     learnerUniqueID: Number,
     reference: String,
