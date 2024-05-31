@@ -26,7 +26,7 @@ const {
 } = require("../controller/userCtrl");
 
 // User endpoints
-router.post("/register", createUser);
+// router.post("/register", createUser);
 router.post("/login", logIn);
 router.get("/users/get-all", getUsers);
 router.get("/users/get/:id", getUserById);
