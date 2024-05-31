@@ -672,7 +672,9 @@ const SchoolData = require("../models/2023Data");
 
        // Save the registration data to the database
        const reg = await newRegistration2023.save();
-       console.log(reg);
+       console.log(
+         `${reg.firstName} in state ${reg.state10}, county${reg.county28} payam ${reg.payam28}, school ${reg.school} registered`
+       );
 
        res
          .status(201)
