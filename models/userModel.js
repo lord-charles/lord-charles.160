@@ -33,6 +33,8 @@ const userSchema = new mongoose.Schema(
         "Secretariate",
         "SuperAdmin",
         "SeniorTeacher",
+        "lwd",
+        "ct",
       ],
     },
     dutyAssigned: [
