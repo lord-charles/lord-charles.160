@@ -44,6 +44,7 @@ const userSchema = new mongoose.Schema(
           default: false,
         },
         schoolName: String,
+        schoolType: String,
         code: {
           type: String,
           default: "",
