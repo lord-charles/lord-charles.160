@@ -487,13 +487,13 @@ const SchoolData = require("../models/2023Data");
 
   const getStudentsInClass_2023 = async (req, res) => {
     try {
-      const { schoolName, form, isDroppedOut } = req.body;
+      const { schoolName, Class, isDroppedOut } = req.body;
 
       // Validate required fields
-      if (!schoolName || !form) {
+      if (!schoolName) {
         return res
           .status(400)
-          .json({ success: false, error: "School name and form are required" });
+          .json({ success: false, error: "School name is required" });
       }
 
       // Validate isDroppedOut field if provided
@@ -504,9 +504,13 @@ const SchoolData = require("../models/2023Data");
       }
 
       // Construct query
-      const query = { school: schoolName, form: form };
+      const query = { school: schoolName };
       if (isDroppedOut !== undefined) {
         query.isDroppedOut = isDroppedOut;
+      }
+
+      if (Class) {
+        query.class = Class;
       }
 
       // Find matching documents

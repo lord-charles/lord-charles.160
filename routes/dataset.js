@@ -42,7 +42,7 @@ router.get("/", dataSet);
 router.get("/get/county", countyPupilTotal);
 router.post("/get/county/payam", countyPayamPupilTotals);
 router.post("/get/county/payam/schools", payamSchoolPupilTotals);
-router.post("/get/county/payam/schools/students", getStudentsInSchool);
+router.post("/get/county/payam/schools/students", getStudentsInClass_2023);
 
 // 2023 dataset
 
