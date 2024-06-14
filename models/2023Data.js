@@ -54,10 +54,12 @@ const schoolDataSchema = new mongoose.Schema(
     uniqueReceivedP5Girls: Number,
     uniqueReceivedNewSchools: Number,
     uniqueReceived: Number,
-    attendance: {
-      type: String,
-      required: false,
-    },
+    attendance: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Attendance",
+      },
+    ],
     correctionReason: {
       type: String,
       required: false,
