@@ -8,6 +8,6 @@ const {
 
 router.post("/markAttendanceBulk", markAttendanceBulk);
 router.post("/getStudentsAttendance", getStudentsAttendance);
-router.delete("/deleteAttendanceForDay", deleteAttendanceForDay);
+router.post("/deleteAttendanceForDay", deleteAttendanceForDay);
 
 module.exports = router;
