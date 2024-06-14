@@ -5,7 +5,7 @@ const cors = require("cors");
 const { notFound, errorHandler } = require("./middlewares/error-handler");
 const dotenv = require("dotenv");
 dotenv.config();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 5000;
 const dbConnect = require("./config/dbConnect");
 const dataSet = require("./routes/dataset");
 const usersRouter = require("./routes/userAuth");
