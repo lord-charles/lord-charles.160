@@ -31,9 +31,7 @@ const markAttendanceBulk = async (req, res) => {
       })
     );
 
-    res
-      .status(200)
-      .json({ message: "Attendance marked successfully", attendanceRecords });
+    res.status(200).json({ message: "Attendance marked successfully" });
   } catch (error) {
     console.error("Error marking attendance:", error.message); // Log specific error message
     res
@@ -120,12 +118,18 @@ const getStudentsAttendance = async (req, res) => {
 
 const deleteAttendanceForDay = async (req, res) => {
   try {
-    const { date } = req.body;
+    const { date, studentIds } = req.body;
 
     if (!date) {
       return res
         .status(400)
         .json({ success: false, error: "Date is required" });
+    }
+
+    if (!Array.isArray(studentIds) || !studentIds.length) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Student IDs are required" });
     }
 
     // Convert date to the beginning of the specified day
@@ -136,8 +140,9 @@ const deleteAttendanceForDay = async (req, res) => {
     const endDate = new Date(date);
     endDate.setHours(23, 59, 59, 999);
 
-    // Delete attendance records for the specified date
+    // Delete attendance records for the specified date and students
     const result = await Attendance.deleteMany({
+      student: { $in: studentIds },
       date: { $gte: startDate, $lte: endDate },
     });
 
@@ -151,6 +156,9 @@ const deleteAttendanceForDay = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
+
+
 
 module.exports = {
   markAttendanceBulk,
