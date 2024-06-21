@@ -2,7 +2,16 @@ const SdpInputs = require("../models/sdp");
 
 const createSdp = async (req, res) => {
   try {
-    const { Sdp, schoolCode, year, schoolName, category } = req.body;
+    const {
+      Sdp,
+      schoolCode,
+      year,
+      schoolName,
+      category,
+      county28,
+      payam28,
+      state10,
+    } = req.body;
 
     // Check if required inputs are provided
     if (!Sdp || !schoolCode || !schoolName) {
@@ -18,6 +27,9 @@ const createSdp = async (req, res) => {
       schoolName,
       year,
       category,
+      county28,
+      payam28,
+      state10,
     });
 
     // Save the new physical input to the database
