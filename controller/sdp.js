@@ -81,8 +81,227 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
   }
 };
 
+
+// const getSchoolsWithAllDocuments = async (req, res) => {
+//   try {
+//     const pipeline = [
+//       {
+//         $group: {
+//           _id: "$schoolCode",
+//           schoolName: { $first: "$schoolName" },
+//           physicalInputs: {
+//             $push: {
+//               $cond: [
+//                 { $eq: ["$category", "physical inputs"] },
+//                 "$$ROOT",
+//                 null,
+//               ],
+//             },
+//           },
+//           generalSupport: {
+//             $push: {
+//               $cond: [
+//                 { $eq: ["$category", "general support"] },
+//                 "$$ROOT",
+//                 null,
+//               ],
+//             },
+//           },
+//           learningQuality: {
+//             $push: {
+//               $cond: [
+//                 { $eq: ["$category", "learning quality"] },
+//                 "$$ROOT",
+//                 null,
+//               ],
+//             },
+//           },
+//         },
+//       },
+//       {
+//         $project: {
+//           schoolCode: "$_id",
+//           schoolName: 1,
+//           physicalInputs: {
+//             $filter: {
+//               input: "$physicalInputs",
+//               as: "doc",
+//               cond: { $ne: ["$$doc", null] },
+//             },
+//           },
+//           generalSupport: {
+//             $filter: {
+//               input: "$generalSupport",
+//               as: "doc",
+//               cond: { $ne: ["$$doc", null] },
+//             },
+//           },
+//           learningQuality: {
+//             $filter: {
+//               input: "$learningQuality",
+//               as: "doc",
+//               cond: { $ne: ["$$doc", null] },
+//             },
+//           },
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "schooldata2023",
+//           localField: "schoolCode",
+//           foreignField: "code",
+//           as: "schoolData",
+//         },
+//       },
+//       {
+//         $addFields: {
+//           schoolData: { $arrayElemAt: ["$schoolData", 0] },
+//         },
+//       },
+//       {
+//         $project: {
+//           schoolCode: 1,
+//           schoolName: 1,
+//           state10: "$schoolData.state10",
+//           payam28: "$schoolData.payam28",
+//           county28: "$schoolData.county28",
+//           physicalInputs: 1,
+//           generalSupport: 1,
+//           learningQuality: 1,
+//         },
+//       },
+//     ];
+
+//     const result = await SdpInputs.aggregate(pipeline).exec();
+//     res.json(result);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+const getSchoolsWithAllDocuments  = async (req, res) => {
+  try {
+    const { state10, payam28, county28 } = req.body;
+    const currentYear = 2024; // Specify the year to filter the documents
+
+    const matchStage = {};
+    if (state10) matchStage['schoolData.state10'] = state10;
+    if (payam28) matchStage['schoolData.payam28'] = payam28;
+    if (county28) matchStage['schoolData.county28'] = county28;
+
+    const pipeline = [
+      {
+        $group: {
+          _id: "$schoolCode",
+          schoolName: { $first: "$schoolName" },
+          physicalInputs: {
+            $push: {
+              $cond: [
+                { $eq: ["$category", "physical inputs"] },
+                "$year",
+                null
+              ]
+            }
+          },
+          generalSupport: {
+            $push: {
+              $cond: [
+                { $eq: ["$category", "general support"] },
+                "$year",
+                null
+              ]
+            }
+          },
+          learningQuality: {
+            $push: {
+              $cond: [
+                { $eq: ["$category", "learning quality"] },
+                "$year",
+                null
+              ]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          schoolName: 1,
+          physicalInputs: {
+            $filter: {
+              input: "$physicalInputs",
+              as: "year",
+              cond: { $eq: ["$$year", currentYear] }
+            }
+          },
+          generalSupport: {
+            $filter: {
+              input: "$generalSupport",
+              as: "year",
+              cond: { $eq: ["$$year", currentYear] }
+            }
+          },
+          learningQuality: {
+            $filter: {
+              input: "$learningQuality",
+              as: "year",
+              cond: { $eq: ["$$year", currentYear] }
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $gt: [{ $size: "$physicalInputs" }, 0] },
+              { $gt: [{ $size: "$generalSupport" }, 0] },
+              { $gt: [{ $size: "$learningQuality" }, 0] }
+            ]
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'schooldata2023',
+          localField: '_id',
+          foreignField: 'code',
+          as: 'schoolData'
+        }
+      },
+      {
+        $addFields: {
+          schoolData: { $arrayElemAt: ['$schoolData', 0] }
+        }
+      },
+      {
+        $project: {
+          schoolCode: "$_id",
+          schoolName: 1,
+          state10: "$schoolData.state10",
+          payam28: "$schoolData.payam28",
+          county28: "$schoolData.county28"
+        }
+      }
+    ];
+
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({
+        $match: matchStage
+      });
+    }
+
+    const result = await SdpInputs.aggregate(pipeline).exec();
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+}
+
 module.exports = {
   createSdp,
   updateSdp,
   getAllSdpsBySchoolAndYear,
+  getSchoolsWithAllDocuments,
 };

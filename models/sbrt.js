@@ -52,6 +52,7 @@ const SdpSchema = new mongoose.Schema({
       ],
     },
   ],
+
   leaningInclusion: [
     {
       activityCategory: {
@@ -160,6 +161,7 @@ const SdpSchema = new mongoose.Schema({
       ],
     },
   ],
+
   approved: [
     {
       isApproved: {
@@ -172,6 +174,7 @@ const SdpSchema = new mongoose.Schema({
       userName: String,
     },
   ],
+
   income: [
     {
       sourceType: {
@@ -191,6 +194,7 @@ const SdpSchema = new mongoose.Schema({
       },
     },
   ],
+
   ledger: [
     {
       expenditure: {
@@ -204,6 +208,7 @@ const SdpSchema = new mongoose.Schema({
       },
     },
   ],
+
   schoolCode: String,
   year: Number,
 });
