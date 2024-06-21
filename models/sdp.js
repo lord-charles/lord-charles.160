@@ -60,6 +60,7 @@ const sdpInputchema = new mongoose.Schema(
     county28: String,
     payam28: String,
     state10: String,
+    schoolType: String,
     approved: {
       isApproved: {
         type: String,

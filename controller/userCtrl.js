@@ -129,6 +129,7 @@ const logIn = asyncHandler(async (req, res) => {
         payam28: user.payam28 || "",
         state10: user.state10 || "",
         county28: user.county28 || "",
+        schoolType: user.schoolType || "",
       },
       secret,
       { expiresIn: "1d" }

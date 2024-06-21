@@ -5,6 +5,7 @@ const createSdp = async (req, res) => {
     const {
       Sdp,
       schoolCode,
+      schoolType,
       year,
       schoolName,
       category,
@@ -24,6 +25,7 @@ const createSdp = async (req, res) => {
     const newSdp = new SdpInputs({
       Sdp,
       schoolCode,
+      schoolType,
       schoolName,
       year,
       category,
@@ -92,7 +94,6 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 // const getSchoolsWithAllDocuments = async (req, res) => {
 //   try {
@@ -194,28 +195,17 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
 
 const getSchoolsWithAllDocuments = async (req, res) => {
   try {
-    const { state10, payam28, county28 } = req.body;
-    const currentYear = 2024; // Specify the year to filter the documents
+    const { state10, payam28, county28, year } = req.body;
+    const specifiedYear = year || new Date().getFullYear(); // Use the provided year or the current year if not specified
 
-    const matchStage = {};
-    if (state10) matchStage["schoolData.state10"] = state10;
-    if (payam28) matchStage["schoolData.payam28"] = payam28;
-    if (county28) matchStage["schoolData.county28"] = county28;
+    const matchStage = {
+      year: specifiedYear,
+      ...(state10 && { state10 }),
+      ...(payam28 && { payam28 }),
+      ...(county28 && { county28 }),
+    };
 
     const pipeline = [
-      {
-        $lookup: {
-          from: "schooldata2023",
-          localField: "schoolCode",
-          foreignField: "code",
-          as: "schoolData",
-        },
-      },
-      {
-        $addFields: {
-          schoolData: { $arrayElemAt: ["$schoolData", 0] },
-        },
-      },
       {
         $match: matchStage,
       },
@@ -223,51 +213,51 @@ const getSchoolsWithAllDocuments = async (req, res) => {
         $group: {
           _id: "$schoolCode",
           schoolName: { $first: "$schoolName" },
-          schoolData: { $first: "$schoolData" },
           physicalInputs: {
             $push: {
-              $cond: [{ $eq: ["$category", "physical inputs"] }, "$year", null],
+              $cond: [{ $eq: ["$category", "physical inputs"] }, "$Sdp", null],
             },
           },
           generalSupport: {
             $push: {
-              $cond: [{ $eq: ["$category", "general support"] }, "$year", null],
+              $cond: [{ $eq: ["$category", "general support"] }, "$Sdp", null],
             },
           },
           learningQuality: {
             $push: {
-              $cond: [
-                { $eq: ["$category", "learning quality"] },
-                "$year",
-                null,
-              ],
+              $cond: [{ $eq: ["$category", "learning quality"] }, "$Sdp", null],
             },
           },
+          state10: { $first: "$state10" },
+          payam28: { $first: "$payam28" },
+          county28: { $first: "$county28" },
         },
       },
       {
         $project: {
           schoolName: 1,
-          schoolData: 1,
+          state10: 1,
+          payam28: 1,
+          county28: 1,
           physicalInputs: {
             $filter: {
               input: "$physicalInputs",
-              as: "year",
-              cond: { $eq: ["$$year", currentYear] },
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
             },
           },
           generalSupport: {
             $filter: {
               input: "$generalSupport",
-              as: "year",
-              cond: { $eq: ["$$year", currentYear] },
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
             },
           },
           learningQuality: {
             $filter: {
               input: "$learningQuality",
-              as: "year",
-              cond: { $eq: ["$$year", currentYear] },
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
             },
           },
         },
@@ -285,11 +275,13 @@ const getSchoolsWithAllDocuments = async (req, res) => {
       },
       {
         $project: {
-          schoolCode: "$_id",
           schoolName: 1,
-          state10: "$schoolData.state10",
-          payam28: "$schoolData.payam28",
-          county28: "$schoolData.county28",
+          state10: 1,
+          payam28: 1,
+          county28: 1,
+          physicalInputs: 1,
+          generalSupport: 1,
+          learningQuality: 1,
         },
       },
     ];
