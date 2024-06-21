@@ -195,14 +195,14 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
 
 const getSchoolsWithAllDocuments = async (req, res) => {
   try {
-    const { state10, payam28, county28, year } = req.body;
-    const specifiedYear = year || new Date().getFullYear(); // Use the provided year or the current year if not specified
-
+    const { state10, payam28, county28, year, schoolType } = req.body;
+    const specifiedYear = year || new Date().getFullYear();
     const matchStage = {
       year: specifiedYear,
       ...(state10 && { state10 }),
       ...(payam28 && { payam28 }),
       ...(county28 && { county28 }),
+      ...(schoolType && { schoolType }),
     };
 
     const pipeline = [
