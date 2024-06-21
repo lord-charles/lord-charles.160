@@ -180,75 +180,85 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
 //   }
 // };
 
-const getSchoolsWithAllDocuments  = async (req, res) => {
+const getSchoolsWithAllDocuments = async (req, res) => {
   try {
     const { state10, payam28, county28 } = req.body;
     const currentYear = 2024; // Specify the year to filter the documents
 
     const matchStage = {};
-    if (state10) matchStage['schoolData.state10'] = state10;
-    if (payam28) matchStage['schoolData.payam28'] = payam28;
-    if (county28) matchStage['schoolData.county28'] = county28;
+    if (state10) matchStage["schoolData.state10"] = state10;
+    if (payam28) matchStage["schoolData.payam28"] = payam28;
+    if (county28) matchStage["schoolData.county28"] = county28;
 
     const pipeline = [
+      {
+        $lookup: {
+          from: "schooldata2023",
+          localField: "schoolCode",
+          foreignField: "code",
+          as: "schoolData",
+        },
+      },
+      {
+        $addFields: {
+          schoolData: { $arrayElemAt: ["$schoolData", 0] },
+        },
+      },
+      {
+        $match: matchStage,
+      },
       {
         $group: {
           _id: "$schoolCode",
           schoolName: { $first: "$schoolName" },
+          schoolData: { $first: "$schoolData" },
           physicalInputs: {
             $push: {
-              $cond: [
-                { $eq: ["$category", "physical inputs"] },
-                "$year",
-                null
-              ]
-            }
+              $cond: [{ $eq: ["$category", "physical inputs"] }, "$year", null],
+            },
           },
           generalSupport: {
             $push: {
-              $cond: [
-                { $eq: ["$category", "general support"] },
-                "$year",
-                null
-              ]
-            }
+              $cond: [{ $eq: ["$category", "general support"] }, "$year", null],
+            },
           },
           learningQuality: {
             $push: {
               $cond: [
                 { $eq: ["$category", "learning quality"] },
                 "$year",
-                null
-              ]
-            }
-          }
-        }
+                null,
+              ],
+            },
+          },
+        },
       },
       {
         $project: {
           schoolName: 1,
+          schoolData: 1,
           physicalInputs: {
             $filter: {
               input: "$physicalInputs",
               as: "year",
-              cond: { $eq: ["$$year", currentYear] }
-            }
+              cond: { $eq: ["$$year", currentYear] },
+            },
           },
           generalSupport: {
             $filter: {
               input: "$generalSupport",
               as: "year",
-              cond: { $eq: ["$$year", currentYear] }
-            }
+              cond: { $eq: ["$$year", currentYear] },
+            },
           },
           learningQuality: {
             $filter: {
               input: "$learningQuality",
               as: "year",
-              cond: { $eq: ["$$year", currentYear] }
-            }
-          }
-        }
+              cond: { $eq: ["$$year", currentYear] },
+            },
+          },
+        },
       },
       {
         $match: {
@@ -256,23 +266,10 @@ const getSchoolsWithAllDocuments  = async (req, res) => {
             $and: [
               { $gt: [{ $size: "$physicalInputs" }, 0] },
               { $gt: [{ $size: "$generalSupport" }, 0] },
-              { $gt: [{ $size: "$learningQuality" }, 0] }
-            ]
-          }
-        }
-      },
-      {
-        $lookup: {
-          from: 'schooldata2023',
-          localField: '_id',
-          foreignField: 'code',
-          as: 'schoolData'
-        }
-      },
-      {
-        $addFields: {
-          schoolData: { $arrayElemAt: ['$schoolData', 0] }
-        }
+              { $gt: [{ $size: "$learningQuality" }, 0] },
+            ],
+          },
+        },
       },
       {
         $project: {
@@ -280,24 +277,20 @@ const getSchoolsWithAllDocuments  = async (req, res) => {
           schoolName: 1,
           state10: "$schoolData.state10",
           payam28: "$schoolData.payam28",
-          county28: "$schoolData.county28"
-        }
-      }
+          county28: "$schoolData.county28",
+        },
+      },
     ];
-
-    if (Object.keys(matchStage).length > 0) {
-      pipeline.push({
-        $match: matchStage
-      });
-    }
 
     const result = await SdpInputs.aggregate(pipeline).exec();
     res.json(result);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
-}
+};
+
+
 
 module.exports = {
   createSdp,

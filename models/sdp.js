@@ -57,6 +57,9 @@ const sdpInputchema = new mongoose.Schema(
     schoolCode: String,
     schoolName: String,
     year: Number,
+    county28: String,
+    payam28: String,
+    state10: String,
     approved: {
       isApproved: {
         type: String,
