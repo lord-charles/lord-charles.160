@@ -95,104 +95,6 @@ const getAllSdpsBySchoolAndYear = async (req, res) => {
   }
 };
 
-// const getSchoolsWithAllDocuments = async (req, res) => {
-//   try {
-//     const pipeline = [
-//       {
-//         $group: {
-//           _id: "$schoolCode",
-//           schoolName: { $first: "$schoolName" },
-//           physicalInputs: {
-//             $push: {
-//               $cond: [
-//                 { $eq: ["$category", "physical inputs"] },
-//                 "$$ROOT",
-//                 null,
-//               ],
-//             },
-//           },
-//           generalSupport: {
-//             $push: {
-//               $cond: [
-//                 { $eq: ["$category", "general support"] },
-//                 "$$ROOT",
-//                 null,
-//               ],
-//             },
-//           },
-//           learningQuality: {
-//             $push: {
-//               $cond: [
-//                 { $eq: ["$category", "learning quality"] },
-//                 "$$ROOT",
-//                 null,
-//               ],
-//             },
-//           },
-//         },
-//       },
-//       {
-//         $project: {
-//           schoolCode: "$_id",
-//           schoolName: 1,
-//           physicalInputs: {
-//             $filter: {
-//               input: "$physicalInputs",
-//               as: "doc",
-//               cond: { $ne: ["$$doc", null] },
-//             },
-//           },
-//           generalSupport: {
-//             $filter: {
-//               input: "$generalSupport",
-//               as: "doc",
-//               cond: { $ne: ["$$doc", null] },
-//             },
-//           },
-//           learningQuality: {
-//             $filter: {
-//               input: "$learningQuality",
-//               as: "doc",
-//               cond: { $ne: ["$$doc", null] },
-//             },
-//           },
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: "schooldata2023",
-//           localField: "schoolCode",
-//           foreignField: "code",
-//           as: "schoolData",
-//         },
-//       },
-//       {
-//         $addFields: {
-//           schoolData: { $arrayElemAt: ["$schoolData", 0] },
-//         },
-//       },
-//       {
-//         $project: {
-//           schoolCode: 1,
-//           schoolName: 1,
-//           state10: "$schoolData.state10",
-//           payam28: "$schoolData.payam28",
-//           county28: "$schoolData.county28",
-//           physicalInputs: 1,
-//           generalSupport: 1,
-//           learningQuality: 1,
-//         },
-//       },
-//     ];
-
-//     const result = await SdpInputs.aggregate(pipeline).exec();
-//     res.json(result);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send("Server error");
-//   }
-// };
-
 const getSchoolsWithAllDocuments = async (req, res) => {
   try {
     const { state10, payam28, county28, year, schoolType } = req.body;
@@ -294,6 +196,212 @@ const getSchoolsWithAllDocuments = async (req, res) => {
   }
 };
 
+//no of schools that has met approval requirements
+const getSchoolCountsPerStateMetReq = async (req, res) => {
+  try {
+    const { year } = req.body;
+    const specifiedYear = year || new Date().getFullYear();
+
+    const states = [
+      "AAA",
+      "CES",
+      "EES",
+      "JGL",
+      "LKS",
+      "NBG",
+      "PAA",
+      "RAA",
+      "UNS",
+      "UTY",
+      "WBG",
+      "WES",
+      "WRP",
+    ];
+
+    const pipeline = [
+      {
+        $match: {
+          year: specifiedYear,
+        },
+      },
+      {
+        $group: {
+          _id: "$schoolCode",
+          state10: { $first: "$state10" },
+          physicalInputs: {
+            $push: {
+              $cond: [{ $eq: ["$category", "physical inputs"] }, "$Sdp", null],
+            },
+          },
+          generalSupport: {
+            $push: {
+              $cond: [{ $eq: ["$category", "general support"] }, "$Sdp", null],
+            },
+          },
+          learningQuality: {
+            $push: {
+              $cond: [{ $eq: ["$category", "learning quality"] }, "$Sdp", null],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          state10: 1,
+          physicalInputs: {
+            $filter: {
+              input: "$physicalInputs",
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
+            },
+          },
+          generalSupport: {
+            $filter: {
+              input: "$generalSupport",
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
+            },
+          },
+          learningQuality: {
+            $filter: {
+              input: "$learningQuality",
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $gt: [{ $size: "$physicalInputs" }, 0] },
+              { $gt: [{ $size: "$generalSupport" }, 0] },
+              { $gt: [{ $size: "$learningQuality" }, 0] },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id",
+          count: 1,
+        },
+      },
+    ];
+
+    let result = await SdpInputs.aggregate(pipeline).exec();
+
+    // Include all states with a count of 0 if they are not present in the result
+    const stateCounts = states.map((state) => {
+      const stateResult = result.find((r) => r.state10 === state);
+      return {
+        state10: state,
+        count: stateResult ? stateResult.count : 0,
+      };
+    });
+
+    res.json(stateCounts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+};
+
+const getSchoolCountsPerStateByBudgetStatus = async (req, res) => {
+  try {
+    const { year, status } = req.body;
+    const specifiedYear = year || new Date().getFullYear();
+    const budgetStatus = status || "approved";
+    const states = [
+      "AAA",
+      "CES",
+      "EES",
+      "JGL",
+      "LKS",
+      "NBG",
+      "PAA",
+      "RAA",
+      "UNS",
+      "UTY",
+      "WBG",
+      "WES",
+      "WRP",
+    ];
+
+    const pipeline = [
+      {
+        $match: {
+          year: specifiedYear,
+        },
+      },
+      {
+        $group: {
+          _id: "$schoolCode",
+          state10: { $first: "$state10" },
+          isApproved: {
+            $max: {
+              $cond: [
+                { $eq: ["$approved.isApproved", budgetStatus] },
+                true,
+                false,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          state10: 1,
+          isApproved: 1,
+        },
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: {
+            $sum: {
+              $cond: ["$isApproved", 1, 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id",
+          count: 1,
+        },
+      },
+    ];
+
+    let result = await SdpInputs.aggregate(pipeline).exec();
+
+    // Include all states with a count of 0 if they are not present in the result
+    const stateCounts = states.map((state) => {
+      const stateResult = result.find((r) => r.state10 === state);
+      return {
+        state10: state,
+        count: stateResult ? stateResult.count : 0,
+      };
+    });
+
+    res.json(stateCounts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+};
+
+
+
 
 
 module.exports = {
@@ -301,4 +409,6 @@ module.exports = {
   updateSdp,
   getAllSdpsBySchoolAndYear,
   getSchoolsWithAllDocuments,
+  getSchoolCountsPerStateMetReq,
+  getSchoolCountsPerStateByBudgetStatus,
 };
