@@ -7,6 +7,7 @@ const {
   getSchoolsWithAllDocuments,
   getSchoolCountsPerStateMetReq,
   getSchoolCountsPerStateByBudgetStatus,
+  getLatestSchoolsWithAnyDocuments,
 } = require("../controller/sdp");
 
 router.post("/", createSdp);
@@ -19,8 +20,10 @@ router.post(
   "/getSchoolCountsPerStateByBudgetStatus",
   getSchoolCountsPerStateByBudgetStatus
 );
-
-
+router.post(
+  "/getLatestSchoolsWithAnyDocuments",
+  getLatestSchoolsWithAnyDocuments
+);
 
 
 module.exports = router;

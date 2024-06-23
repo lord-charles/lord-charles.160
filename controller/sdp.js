@@ -400,9 +400,138 @@ const getSchoolCountsPerStateByBudgetStatus = async (req, res) => {
   }
 };
 
+const getLatestSchoolsWithAnyDocuments = async (req, res) => {
+  try {
+    const { year } = req.body;
+    const specifiedYear = year || new Date().getFullYear();
 
+    const pipeline = [
+      {
+        $match: {
+          year: specifiedYear,
+        },
+      },
+      {
+        $group: {
+          _id: "$schoolCode",
+          schoolName: { $first: "$schoolName" },
+          latestSubmission: { $max: "$updatedAt" },
+          county28: { $first: "$county28" },
+          payam28: { $first: "$payam28" },
+          state10: { $first: "$state10" },
+          schoolType: { $first: "$schoolType" },
+          physicalInputs: {
+            $push: {
+              $cond: [{ $eq: ["$category", "physical inputs"] }, "$Sdp", null],
+            },
+          },
+          generalSupport: {
+            $push: {
+              $cond: [{ $eq: ["$category", "general support"] }, "$Sdp", null],
+            },
+          },
+          learningQuality: {
+            $push: {
+              $cond: [{ $eq: ["$category", "learning quality"] }, "$Sdp", null],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          schoolName: 1,
+          latestSubmission: 1,
+          county28: 1,
+          payam28: 1,
+          state10: 1,
+          schoolType: 1,
+          physicalInputs: {
+            $filter: {
+              input: "$physicalInputs",
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
+            },
+          },
+          generalSupport: {
+            $filter: {
+              input: "$generalSupport",
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
+            },
+          },
+          learningQuality: {
+            $filter: {
+              input: "$learningQuality",
+              as: "sdp",
+              cond: { $ne: ["$$sdp", null] },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          physicalInputsCount: { $size: "$physicalInputs" },
+          generalSupportCount: { $size: "$generalSupport" },
+          learningQualityCount: { $size: "$learningQuality" },
+        },
+      },
+      {
+        $sort: {
+          latestSubmission: -1,
+        },
+      },
+      {
+        $limit: 10,
+      },
+      {
+        $project: {
+          _id: 0,
+          schoolCode: "$_id",
+          schoolName: 1,
+          county28: 1,
+          payam28: 1,
+          state10: 1,
+          schoolType: 1,
+          latestSubmission: 1,
+          physicalInputsCount: 1,
+          generalSupportCount: 1,
+          learningQualityCount: 1,
+          submittedDocuments: {
+            $concatArrays: [
+              {
+                $cond: [
+                  { $gt: ["$physicalInputsCount", 0] },
+                  ["physical inputs"],
+                  [],
+                ],
+              },
+              {
+                $cond: [
+                  { $gt: ["$generalSupportCount", 0] },
+                  ["general support"],
+                  [],
+                ],
+              },
+              {
+                $cond: [
+                  { $gt: ["$learningQualityCount", 0] },
+                  ["learning quality"],
+                  [],
+                ],
+              },
+            ],
+          },
+        },
+      },
+    ];
 
-
+    const result = await SdpInputs.aggregate(pipeline).exec();
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+};
 
 module.exports = {
   createSdp,
@@ -411,4 +540,5 @@ module.exports = {
   getSchoolsWithAllDocuments,
   getSchoolCountsPerStateMetReq,
   getSchoolCountsPerStateByBudgetStatus,
+  getLatestSchoolsWithAnyDocuments,
 };
