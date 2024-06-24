@@ -5,7 +5,7 @@ const dbConnect = () => {
   mongoose
     .connect("mongodb://127.0.0.1:27017/")
     .then(() => {
-      console.log("connection to db sucessfully...");
+      console.log("connection to db sucessfull...");
     })
     .catch((err) => {
       console.log("connection failed", err);

@@ -60,6 +60,7 @@ const schoolDataSchema = new mongoose.Schema(
         ref: "Attendance",
       },
     ],
+    ctAttendance: { type: String },
     correctionReason: {
       type: String,
       required: false,
