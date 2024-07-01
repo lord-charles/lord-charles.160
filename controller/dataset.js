@@ -420,10 +420,40 @@ const SchoolData = require("../models/2023Data");
      }
    };
 
+// const payamSchoolPupilTotals_2023 = async (req, res) => {
+//   try {
+//     // Extract payam28 from the request parameters
+//     const { payam28 } = req.body;
+
+//     // Validate if payam28 is provided
+//     if (!payam28) {
+//       return res
+//         .status(400)
+//         .json({ success: false, error: "Payam name is required" });
+//     }
+
+//     // Fetch unique school names and codes from the database using aggregation
+//     const result = await SchoolData.aggregate([
+//       { $match: { payam28: payam28 } },
+//       { $group: { _id: "$code", school: { $first: "$school" } } },
+//       { $project: { _id: 0, code: "$_id", school: 1 } },
+//     ]);
+
+//     // Return the result
+//     res.status(200).json(result);
+//   } catch (error) {
+//     console.error("Error fetching payam school pupil totals:", error);
+//     res.status(500).json({ success: false, error: "Internal Server Error" });
+//   }
+// };
+
+
+
+
 const payamSchoolPupilTotals_2023 = async (req, res) => {
   try {
-    // Extract payam28 from the request parameters
-    const { payam28 } = req.body;
+    // Extract payam28 and isDisabled from the request body
+    const { payam28, isDisabled } = req.body;
 
     // Validate if payam28 is provided
     if (!payam28) {
@@ -432,12 +462,43 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
         .json({ success: false, error: "Payam name is required" });
     }
 
-    // Fetch unique school names and codes from the database using aggregation
-    const result = await SchoolData.aggregate([
-      { $match: { payam28: payam28 } },
-      { $group: { _id: "$code", school: { $first: "$school" } } },
-      { $project: { _id: 0, code: "$_id", school: 1 } },
-    ]);
+    // Base match stage
+    const matchStage = { payam28: payam28 };
+
+    // Create the pipeline array
+    const pipeline = [{ $match: matchStage }];
+
+    // If isDisabled is true, add the necessary stages
+    if (isDisabled) {
+      pipeline.push(
+        {
+          $match: {
+            disabilities: {
+              $elemMatch: {
+                $or: [
+                  { "disabilities.difficultyHearing": { $gt: 1 } },
+                  { "disabilities.difficultyRecalling": { $gt: 1 } },
+                  { "disabilities.difficultySeeing": { $gt: 1 } },
+                  { "disabilities.difficultySelfCare": { $gt: 1 } },
+                  { "disabilities.difficultyTalking": { $gt: 1 } },
+                  { "disabilities.difficultyWalking": { $gt: 1 } },
+                ],
+              },
+            },
+          },
+        },
+        { $group: { _id: "$code", school: { $first: "$school" } } },
+        { $project: { _id: 0, code: "$_id", school: 1 } }
+      );
+    } else {
+      pipeline.push(
+        { $group: { _id: "$code", school: { $first: "$school" } } },
+        { $project: { _id: 0, code: "$_id", school: 1 } }
+      );
+    }
+
+    // Execute the aggregation pipeline
+    const result = await SchoolData.aggregate(pipeline);
 
     // Return the result
     res.status(200).json(result);
@@ -446,6 +507,12 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
+
+
+
+
+
 
 
    const getStudentsInSchool_2023 = async (req, res) => {

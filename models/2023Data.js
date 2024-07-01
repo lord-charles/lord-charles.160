@@ -6,7 +6,7 @@ const schoolDataSchema = new mongoose.Schema(
     state28: String,
     stateName28: String,
     county28: String,
-    payam28: String,
+    payam28: { type: String, index: true },
     state10: String,
     stateName10: String,
     county10: String,
@@ -154,6 +154,14 @@ const schoolDataSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+schoolDataSchema.index({ payam28: 1 });
+schoolDataSchema.index({ "disabilities.disabilities.difficultyHearing": 1 });
+schoolDataSchema.index({ "disabilities.disabilities.difficultyRecalling": 1 });
+schoolDataSchema.index({ "disabilities.disabilities.difficultySeeing": 1 });
+schoolDataSchema.index({ "disabilities.disabilities.difficultySelfCare": 1 });
+schoolDataSchema.index({ "disabilities.disabilities.difficultyTalking": 1 });
+schoolDataSchema.index({ "disabilities.disabilities.difficultyWalking": 1 });
 
 const SchoolData = mongoose.model("schooldata2023", schoolDataSchema);
 
