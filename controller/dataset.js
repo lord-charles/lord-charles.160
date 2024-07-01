@@ -515,43 +515,61 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
 
 
 
-   const getStudentsInSchool_2023 = async (req, res) => {
-     try {
-       // Extract schoolName from the request body
-       const { schoolName, isDroppedOut, isValidated } = req.body;
+ const getStudentsInSchool_2023 = async (req, res) => {
+   try {
+     // Extract schoolName, isDroppedOut, isValidated, and isDisabled from the request body
+     const { schoolName, isDroppedOut, isValidated, isDisabled } = req.body;
 
-       // Validate if schoolName is provided
-       if (!schoolName) {
-         return res
-           .status(400)
-           .json({ success: false, error: "School name is required" });
-       }
-       // Validate isDroppedOut field if provided
-       if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
-         return res
-           .status(400)
-           .json({ success: false, error: "isDroppedOut must be a boolean" });
-       }
-
-       // Construct query
-       const query = { school: schoolName };
-       if (isDroppedOut !== undefined) {
-         query.isDroppedOut = isDroppedOut;
-       }
-       if (isValidated !== undefined) {
-         query.isValidated = isValidated;
-       }
-
-       // Use the find method to get documents matching the schoolName
-       const result = await SchoolData.find(query);
-
-       // Return the formatted result
-       res.status(200).json(result);
-     } catch (error) {
-       console.error("Error fetching students in school:", error);
-       res.status(500).json({ success: false, error: "Internal Server Error" });
+     // Validate if schoolName is provided
+     if (!schoolName) {
+       return res
+         .status(400)
+         .json({ success: false, error: "School name is required" });
      }
-   };
+
+     // Validate isDroppedOut field if provided
+     if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
+       return res
+         .status(400)
+         .json({ success: false, error: "isDroppedOut must be a boolean" });
+     }
+
+     // Construct query
+     const query = { school: schoolName };
+     if (isDroppedOut !== undefined) {
+       query.isDroppedOut = isDroppedOut;
+     }
+     if (isValidated !== undefined) {
+       query.isValidated = isValidated;
+     }
+
+     // If isDisabled is provided, modify the query to include disability check
+     if (isDisabled) {
+       query.disabilities = {
+         $elemMatch: {
+           $or: [
+             { "disabilities.difficultyHearing": { $gt: 1 } },
+             { "disabilities.difficultyRecalling": { $gt: 1 } },
+             { "disabilities.difficultySeeing": { $gt: 1 } },
+             { "disabilities.difficultySelfCare": { $gt: 1 } },
+             { "disabilities.difficultyTalking": { $gt: 1 } },
+             { "disabilities.difficultyWalking": { $gt: 1 } },
+           ],
+         },
+       };
+     }
+
+     // Use the find method to get documents matching the query
+     const result = await SchoolData.find(query);
+
+     // Return the formatted result
+     res.status(200).json(result);
+   } catch (error) {
+     console.error("Error fetching students in school:", error);
+     res.status(500).json({ success: false, error: "Internal Server Error" });
+   }
+ };
+
 
   const getStudentsInClass_2023 = async (req, res) => {
     try {
