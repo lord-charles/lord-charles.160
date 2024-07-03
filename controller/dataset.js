@@ -838,6 +838,7 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
          isValidated: 1,
          isDisbursed: 1,
          CTEFSerialNumber: 1,
+         isWithDisability: 1,
        };
 
        // Calculate skip value based on pagination
