@@ -29,6 +29,7 @@ const schoolDataSchema = new mongoose.Schema(
       type: Boolean,
       default: null,
     },
+    isWithDisability: { type: Boolean, default: false },
     invalidationReason: { type: String },
     isDisbursed: {
       type: Boolean,
@@ -154,7 +155,7 @@ const schoolDataSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
+schoolDataSchema.index({ class: 1 });
 schoolDataSchema.index({ payam28: 1 });
 schoolDataSchema.index({ "disabilities.disabilities.difficultyHearing": 1 });
 schoolDataSchema.index({ "disabilities.disabilities.difficultyRecalling": 1 });
