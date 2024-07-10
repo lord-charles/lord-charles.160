@@ -65,7 +65,7 @@ router.patch("/2023_data/update/bulk", updateSchoolDataFieldsBulk);
 router.patch("/2023_data/update/bulkStates", bulkUpdateStateFields);
 
 //2024 student registration
-router.post("/register-student-2024", registerStudent2024);
+// router.post("/register-student-2024", registerStudent2024);
 router.delete("/student/delete/:id", deleteStudentById);
 
 //downloads
