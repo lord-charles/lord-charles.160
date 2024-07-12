@@ -2,15 +2,15 @@ const SchoolData = require("../models/2023Data");
 
 
 const getEnrollmentReport = async (req, res) => {
-  const { state28 } = req.query; // Get the state from the query parameters
+  const { state10 } = req.query;
 
-  if (!state28) {
+  if (!state10) {
     return res.status(400).json({ error: "State is required" });
   }
 
   try {
     const report = await SchoolData.aggregate([
-      { $match: { state28 } },
+      { $match: { state10 } },
       {
         $group: {
           _id: { code: "$code", county: "$county28", payam: "$payam28" },
