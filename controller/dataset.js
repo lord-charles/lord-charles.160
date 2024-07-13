@@ -1888,9 +1888,7 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
     state10,
     county28,
     payam28,
-    school,
     code,
-    education,
     gender,
     firstName,
     middleName,
@@ -1929,6 +1927,7 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 const fetchDocumentsWithDelay = async (req, res) => {
   try {
     const documents = await SchoolDataCtCash.find().exec();
@@ -1937,7 +1936,21 @@ const fetchDocumentsWithDelay = async (req, res) => {
     const processDocument = async () => {
       if (count < documents.length) {
         const document = documents[count];
-        console.log(`Document ${count + 1}:`, document);
+        console.log(`Document ${count + 1}:`);
+
+        // Send the document to the remote server
+        try {
+          const response = await axios.patch(
+            "http://35.244.58.160/express/data-set/updateSchoolDataLearnerUniqueID",
+            document
+          );
+          console.log(`Updated document ${count + 1}:`, response.data);
+        } catch (error) {
+          console.error(
+            `Failed to update document ${count + 1}:`,
+            error.message
+          );
+        }
 
         // Increment the count
         count += 1;
