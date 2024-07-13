@@ -36,6 +36,7 @@ const {
   getUniqueSchoolsPerState10,
   fetchState10EnrollmentSummary,
   getUniqueSchoolsDetailsPayam,
+  updateSchoolDataLearnerUniqueID,
 } = require("../controller/dataset");
 
 router.get("/", dataSet);
@@ -98,6 +99,12 @@ router.post("/fetchSchoolsEnrollmentToday", fetchSchoolsEnrollmentToday);
 router.post("/getUniqueSchoolsPerState10", getUniqueSchoolsPerState10);
 router.post("/fetchState10EnrollmentSummary", fetchState10EnrollmentSummary);
 router.post("/getUniqueSchoolsDetailsPayam", getUniqueSchoolsDetailsPayam);
+
+// update learnerUniquesID AND REFERENCE 
+router.patch("/updateSchoolDataLearnerUniqueID", updateSchoolDataLearnerUniqueID);
+
+
+;
 
 
 module.exports = router;
