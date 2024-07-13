@@ -1888,6 +1888,7 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
     state10,
     county28,
     payam28,
+    education,
     code,
     gender,
     firstName,
