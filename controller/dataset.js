@@ -1944,38 +1944,26 @@ const fetchDocumentsWithDelay = async (req, res) => {
     const documents = await SchoolDataCtCash.find().exec();
     let count = 0;
 
-    const processDocument = async () => {
-      if (count < documents.length) {
-        const document = documents[count];
-        console.log(`Document ${count + 1}:`);
+    for (const document of documents) {
+      console.log(`Document ${count + 1}:`);
 
-        // Send the document to the remote server
-        try {
-          const response = await axios.patch(
-            "http://35.244.58.160/express/data-set/updateSchoolDataLearnerUniqueID",
-            document
-          );
-          console.log(`Updated document ${count + 1}:`, response.data);
-        } catch (error) {
-          console.error(
-            `Failed to update document ${count + 1}:`,
-            error.message
-          );
-        }
-
-        // Increment the count
-        count += 1;
-
-        // Wait for 300 milliseconds before processing the next document
-        setTimeout(processDocument, 10);
-      } else {
-        console.log("All documents processed");
-        res.status(200).json({ message: "All documents processed" });
+      // Send the document to the remote server
+      try {
+        await axios.patch(
+           "http://35.244.58.160/express/data-set/updateSchoolDataLearnerUniqueID",
+           document
+         );
+        console.log(`Updated document ${count + 1}:`);
+      } catch (error) {
+        console.error(`Failed to update document ${count + 1}:`, error.message);
       }
-    };
 
-    // Start processing the first document
-    processDocument();
+      // Increment the count
+      count += 1;
+    }
+
+    console.log("All documents processed");
+    res.status(200).json({ message: "All documents processed" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
