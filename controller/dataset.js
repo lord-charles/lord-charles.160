@@ -1953,7 +1953,7 @@ const fetchDocumentsWithDelay = async (req, res) => {
         count += 1;
 
         // Wait for 300 milliseconds before processing the next document
-        setTimeout(processDocument, 100);
+        setTimeout(processDocument, 10);
       } else {
         console.log("All documents processed");
         res.status(200).json({ message: "All documents processed" });
