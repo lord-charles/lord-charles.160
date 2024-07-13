@@ -1883,13 +1883,13 @@ const getUniqueSchoolsDetailsPayam = async (req, res) => {
 
 // learnerUniqueID, reference
 
+
+
 const updateSchoolDataLearnerUniqueID = async (req, res) => {
   const {
     state10,
-    county28,
-    payam28,
-    education,
     code,
+    education,
     gender,
     firstName,
     middleName,
@@ -1898,25 +1898,36 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
     reference,
   } = req.body;
 
+  // Build the query dynamically
+  const query = {
+    state10,
+    code,
+    education,
+    gender,
+    firstName,
+  };
+
+  if (middleName) {
+    query.middleName = middleName;
+  }
+
+  if (lastName) {
+    query.lastName = lastName;
+  }
+
   try {
     const updatedDoc = await SchoolData.findOneAndUpdate(
-      {
-        state10,
-        code,
-        education,
-        gender,
-        firstName,
-        middleName,
-        lastName,
-      },
+      query,
       { learnerUniqueID, reference },
       { new: true }
     );
 
     if (!updatedDoc) {
       console.log("Document not found");
+
       return res.status(404).json({ message: "Document not found" });
     }
+
     console.log("success");
     res.status(200).json({ message: "success" });
   } catch (error) {
@@ -1925,6 +1936,8 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 const fetchDocumentsWithDelay = async (req, res) => {
   try {
