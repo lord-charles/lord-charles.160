@@ -1900,7 +1900,7 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
   } = req.body;
 
   try {
-    const updatedDoc = await SchoolDataCtCash.findOneAndUpdate(
+    const updatedDoc = await SchoolData.findOneAndUpdate(
       {
         state10,
         county28,
@@ -1918,6 +1918,7 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
     );
 
     if (!updatedDoc) {
+      console.log("Document not found");
       return res.status(404).json({ message: "Document not found" });
     }
     console.log("success");
@@ -1925,6 +1926,33 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
   } catch (error) {
     console.log(error.message);
 
+    res.status(500).json({ message: error.message });
+  }
+};
+const fetchDocumentsWithDelay = async (req, res) => {
+  try {
+    const documents = await SchoolDataCtCash.find().exec();
+    let count = 0;
+
+    const processDocument = async () => {
+      if (count < documents.length) {
+        const document = documents[count];
+        console.log(`Document ${count + 1}:`, document);
+
+        // Increment the count
+        count += 1;
+
+        // Wait for 300 milliseconds before processing the next document
+        setTimeout(processDocument, 300);
+      } else {
+        console.log("All documents processed");
+        res.status(200).json({ message: "All documents processed" });
+      }
+    };
+
+    // Start processing the first document
+    processDocument();
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
@@ -1966,5 +1994,6 @@ module.exports = {
   fetchState10EnrollmentSummary,
   getUniqueSchoolsDetailsPayam,
   updateSchoolDataLearnerUniqueID,
+  fetchDocumentsWithDelay,
 };
 
