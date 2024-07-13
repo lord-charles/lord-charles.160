@@ -1901,9 +1901,8 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
     const updatedDoc = await SchoolData.findOneAndUpdate(
       {
         state10,
-        county28,
-        payam28,
         code,
+        education,
         gender,
         firstName,
         middleName,
