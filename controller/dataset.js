@@ -598,19 +598,116 @@ const getStudentsInClass_2023 = async (req, res) => {
   }
 };
 
+
+// Function to update all fields of a school data document
 const updateSchoolDataFields_2023 = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateFields = req.body;
+    const {
+      year,
+      state28,
+      stateName28,
+      county28,
+      payam28,
+      state10,
+      stateName10,
+      county10,
+      payam10,
+      school,
+      class: classField, // Rename to avoid using reserved word
+      code,
+      education,
+      form,
+      formstream,
+      gender,
+      dob,
+      age,
+      firstName,
+      middleName,
+      lastName,
+      isPromoted,
+      isDroppedOut,
+      isValidated,
+      isWithDisability,
+      invalidationReason,
+      isDisbursed,
+      CTEFSerialNumber,
+      dateCTEFPaid,
+      learnerUniqueID,
+      reference,
+      dateCorrectedOnSSSAMS,
+      dateApproved,
+      signatureOnPaymentList,
+      dateCollectedAtSchool,
+      accountabilityCTEFReceived,
+      accountabilityCTEFSerialNumber,
+      CTPaid,
+      uniqueReceivedP5Girls,
+      uniqueReceivedNewSchools,
+      uniqueReceived,
+      attendance,
+      ctAttendance,
+      correctionReason,
+      isAlpProgram,
+      disabilities,
+      houseHold,
+      pregnantOrNursing,
+      modifiedBy,
+    } = req.body;
 
-    // Validate if any fields are provided in req.body
-    if (Object.keys(updateFields).length === 0) {
-      return res
-        .status(400)
-        .json({ message: "No fields to update provided in req.body" });
-    }
+    const updateData = {
+      year,
+      state28,
+      stateName28,
+      county28,
+      payam28,
+      state10,
+      stateName10,
+      county10,
+      payam10,
+      school,
+      class: classField,
+      code,
+      education,
+      form,
+      formstream,
+      gender,
+      dob,
+      age,
+      firstName,
+      middleName,
+      lastName,
+      isPromoted,
+      // isDroppedOut,
+      isValidated,
+      isWithDisability,
+      invalidationReason,
+      isDisbursed,
+      CTEFSerialNumber,
+      dateCTEFPaid,
+      learnerUniqueID,
+      reference,
+      dateCorrectedOnSSSAMS,
+      dateApproved,
+      signatureOnPaymentList,
+      dateCollectedAtSchool,
+      accountabilityCTEFReceived,
+      accountabilityCTEFSerialNumber,
+      CTPaid,
+      uniqueReceivedP5Girls,
+      uniqueReceivedNewSchools,
+      uniqueReceived,
+      attendance,
+      ctAttendance,
+      correctionReason,
+      isAlpProgram,
+      disabilities,
+      houseHold,
+      pregnantOrNursing,
+      modifiedBy,
+    };
 
-    const schoolData = await SchoolData.findByIdAndUpdate(id, updateFields, {
+    const schoolData = await SchoolData.findByIdAndUpdate(id, updateData, {
       new: true,
     });
 
@@ -620,11 +717,11 @@ const updateSchoolDataFields_2023 = async (req, res) => {
 
     res.status(200).json(schoolData);
   } catch (error) {
-    if (error.code === 79) {
-      return res.status(200).json({ success: true });
-    }
+    res.status(500).json({ message: error.message });
   }
 };
+
+
 
 const updateSchoolDataFieldsBulk = async (req, res) => {
   try {
