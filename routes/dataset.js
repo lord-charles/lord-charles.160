@@ -39,6 +39,7 @@ const {
   updateSchoolDataLearnerUniqueID,
   fetchDocumentsWithDelay,
 } = require("../controller/dataset");
+const { updateDocuments } = require("../controller/update");
 
 router.get("/", dataSet);
 router.get("/get/county", countyPupilTotal);
@@ -107,7 +108,7 @@ router.patch(
   updateSchoolDataLearnerUniqueID
 );
 
-router.post("/fetchDocumentsWithDelay", fetchDocumentsWithDelay);
+router.post("/updateDocuments", updateDocuments);
 
 
 
