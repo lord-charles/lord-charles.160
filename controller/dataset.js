@@ -534,14 +534,7 @@ const getStudentsInSchool_2023 = async (req, res) => {
 
 const getStudentsInClass_2023 = async (req, res) => {
   try {
-    const { code, Class, isDroppedOut } = req.body;
-
-    // Validate isDroppedOut field if provided
-    if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
-      return res
-        .status(400)
-        .json({ success: false, error: "isDroppedOut must be a boolean" });
-    }
+    const { Class, isDroppedOut } = req.body;
 
     // Construct query
     const query = {};
