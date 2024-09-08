@@ -536,13 +536,6 @@ const getStudentsInClass_2023 = async (req, res) => {
   try {
     const { code, Class, isDroppedOut } = req.body;
 
-    // Validate required fields
-    if (!schoolName) {
-      return res
-        .status(400)
-        .json({ success: false, error: "School name is required" });
-    }
-
     // Validate isDroppedOut field if provided
     if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
       return res
