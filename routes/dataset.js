@@ -32,12 +32,16 @@ const {
   totalNewStudentsPerState,
   totalNewStudentsPerStateDroppedOut,
   totalNewStudentsPerStateDisabled,
+  totalStudentsPerStatePromoted,
   fetchSchoolsEnrollmentToday,
   getUniqueSchoolsPerState10,
   fetchState10EnrollmentSummary,
   getUniqueSchoolsDetailsPayam,
   updateSchoolDataLearnerUniqueID,
-  fetchDocumentsWithDelay,
+  // apis sep 2024
+  getLearnerCountByLocation,
+  getPromotedLearnersCountByLocation,
+  getDisabledLearnersCountByLocation,
 } = require("../controller/dataset");
 const { updateDocuments } = require("../controller/update");
 
@@ -101,6 +105,7 @@ router.post("/fetchSchoolsEnrollmentToday", fetchSchoolsEnrollmentToday);
 router.post("/getUniqueSchoolsPerState10", getUniqueSchoolsPerState10);
 router.post("/fetchState10EnrollmentSummary", fetchState10EnrollmentSummary);
 router.post("/getUniqueSchoolsDetailsPayam", getUniqueSchoolsDetailsPayam);
+router.post("/totalStudentsPerStatePromoted", totalStudentsPerStatePromoted);
 
 // update learnerUniquesID AND REFERENCE
 router.patch(
@@ -108,9 +113,17 @@ router.patch(
   updateSchoolDataLearnerUniqueID
 );
 
+// apis sept 2024
+router.post("/getLearnerCountByLocation", getLearnerCountByLocation);
+router.post(
+  "/getPromotedLearnersCountByLocation",
+  getPromotedLearnersCountByLocation
+);
+router.post(
+  "/getDisabledLearnersCountByLocation",
+  getDisabledLearnersCountByLocation
+);
+
 router.post("/updateDocuments", updateDocuments);
-
-
-
 
 module.exports = router;

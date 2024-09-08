@@ -1,7 +1,7 @@
 const { default: axios } = require("axios");
 const Dataset = require("../models/ssams");
 const SchoolData = require("../models/2023Data");
-  const moment = require("moment-timezone");
+const moment = require("moment-timezone");
 const SchoolDataCtCash = require("../models/ctCash");
 
 // Controller function to fetch dataset with advanced queries
@@ -419,33 +419,6 @@ const countyPayamPupilTotals_2023 = async (req, res) => {
   }
 };
 
-// const payamSchoolPupilTotals_2023 = async (req, res) => {
-//   try {
-//     // Extract payam28 from the request parameters
-//     const { payam28 } = req.body;
-
-//     // Validate if payam28 is provided
-//     if (!payam28) {
-//       return res
-//         .status(400)
-//         .json({ success: false, error: "Payam name is required" });
-//     }
-
-//     // Fetch unique school names and codes from the database using aggregation
-//     const result = await SchoolData.aggregate([
-//       { $match: { payam28: payam28 } },
-//       { $group: { _id: "$code", school: { $first: "$school" } } },
-//       { $project: { _id: 0, code: "$_id", school: 1 } },
-//     ]);
-
-//     // Return the result
-//     res.status(200).json(result);
-//   } catch (error) {
-//     console.error("Error fetching payam school pupil totals:", error);
-//     res.status(500).json({ success: false, error: "Internal Server Error" });
-//   }
-// };
-
 const payamSchoolPupilTotals_2023 = async (req, res) => {
   try {
     // Extract payam28 and isDisabled from the request body
@@ -598,7 +571,6 @@ const getStudentsInClass_2023 = async (req, res) => {
   }
 };
 
-
 // Function to update all fields of a school data document
 const updateSchoolDataFields_2023 = async (req, res) => {
   try {
@@ -720,8 +692,6 @@ const updateSchoolDataFields_2023 = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 const updateSchoolDataFieldsBulk = async (req, res) => {
   try {
@@ -1590,6 +1560,41 @@ const totalNewStudentsPerStateDroppedOut = async (req, res) => {
   }
 };
 
+//promoted per state
+const totalStudentsPerStatePromoted = async (req, res) => {
+  try {
+    const pipeline = [
+      {
+        $match: {
+          isPromoted: true,
+          isDroppedOut: false,
+        },
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id",
+          count: 1,
+        },
+      },
+    ];
+
+    // Execute the aggregation pipeline
+    const result = await SchoolData.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching schools:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 //disabled in the current year
 const totalNewStudentsPerStateDisabled = async (req, res) => {
   try {
@@ -1978,10 +1983,6 @@ const getUniqueSchoolsDetailsPayam = async (req, res) => {
   }
 };
 
-// learnerUniqueID, reference
-
-
-
 const updateSchoolDataLearnerUniqueID = async (req, res) => {
   const {
     state10,
@@ -2034,8 +2035,6 @@ const updateSchoolDataLearnerUniqueID = async (req, res) => {
   }
 };
 
-
-
 const fetchDocumentsWithDelay = async (req, res) => {
   try {
     const documents = await SchoolDataCtCash.find().exec();
@@ -2047,9 +2046,9 @@ const fetchDocumentsWithDelay = async (req, res) => {
       // Send the document to the remote server
       try {
         await axios.patch(
-           "http://35.244.58.160/express/data-set/updateSchoolDataLearnerUniqueID",
-           document
-         );
+          "http://35.244.58.160/express/data-set/updateSchoolDataLearnerUniqueID",
+          document
+        );
         console.log(`Updated document ${count + 1}:`);
       } catch (error) {
         console.error(`Failed to update document ${count + 1}:`, error.message);
@@ -2063,6 +2062,102 @@ const fetchDocumentsWithDelay = async (req, res) => {
     res.status(200).json({ message: "All documents processed" });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+//leaners apis sept 2024
+
+const getLearnerCountByLocation = async (req, res) => {
+  try {
+    // Destructure the optional query parameters from the request
+    const { year, state10, county28, payam28, code } = req.body;
+
+    // Build the query object dynamically
+    const query = {};
+
+    if (year) query.year = year;
+    if (state10) query.state10 = state10;
+    if (county28) query.county28 = county28;
+    if (payam28) query.payam28 = payam28;
+    if (code) query.code = code;
+
+    console.log(query);
+
+    // Fetch the learner count based on the query
+    const learnerCount = await SchoolData.countDocuments(query);
+
+    // Respond with the total count of learners
+    return res.status(200).json({
+      success: true,
+      count: learnerCount,
+    });
+  } catch (error) {
+    console.error("Error fetching learner count:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching learner count",
+    });
+  }
+};
+
+const getPromotedLearnersCountByLocation = async (req, res) => {
+  try {
+    // Destructure the optional query parameters from the request
+    const { year, state10, county28, payam28, code } = req.body;
+
+    // Build the query object dynamically
+    const query = {
+      isPromoted: true, // Only promoted learners
+      isDroppedOut: false, // Exclude learners who dropped out
+    };
+
+    if (year) query.year = year;
+    if (state10) query.state10 = state10;
+    if (county28) query.county28 = county28;
+    if (payam28) query.payam28 = payam28;
+    if (code) query.code = code;
+
+    // Get the count of promoted learners based on the query
+    const promotedLearnersCount = await SchoolData.countDocuments(query);
+
+    // Respond with the count of promoted learners
+    return res.status(200).json({
+      success: true,
+      count: promotedLearnersCount,
+    });
+  } catch (error) {
+    console.error("Error fetching promoted learners count:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching promoted learners count",
+    });
+  }
+};
+
+const getDisabledLearnersCountByLocation = async (req, res) => {
+  try {
+    const { year, state10, county28, payam28, code } = req.body;
+
+    // Build query object dynamically based on location filters
+    const query = { isWithDisability: true };
+
+    if (year) query.year = parseInt(year); // Ensure year is a number
+    if (state10) query.state10 = state10;
+    if (county28) query.county28 = county28;
+    if (payam28) query.payam28 = payam28;
+    if (code) query.code = code;
+
+    // Get the count of disabled learners based on the query
+    const disabledLearnersCount = await SchoolData.countDocuments(query);
+
+    // Respond with the count of disabled learners
+    return res.status(200).json({
+      success: true,
+      count: disabledLearnersCount,
+    });
+  } catch (error) {
+    console.error("Error fetching disabled learners count:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
 
@@ -2097,6 +2192,7 @@ module.exports = {
   fetchSchoolsPerState,
   totalNewStudentsPerState,
   totalNewStudentsPerStateDroppedOut,
+  totalStudentsPerStatePromoted,
   totalNewStudentsPerStateDisabled,
   fetchSchoolsEnrollmentToday,
   getUniqueSchoolsPerState10,
@@ -2104,5 +2200,9 @@ module.exports = {
   getUniqueSchoolsDetailsPayam,
   updateSchoolDataLearnerUniqueID,
   fetchDocumentsWithDelay,
-};
 
+  // apis sep 2024
+  getLearnerCountByLocation,
+  getPromotedLearnersCountByLocation,
+  getDisabledLearnersCountByLocation,
+};
