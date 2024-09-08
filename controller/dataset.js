@@ -482,13 +482,6 @@ const getStudentsInSchool_2023 = async (req, res) => {
     // Extract schoolName, isDroppedOut, isValidated, and isDisabled from the request body
     const { schoolName, isDroppedOut, isValidated, isDisabled } = req.body;
 
-    // Validate if schoolName is provided
-    if (!schoolName) {
-      return res
-        .status(400)
-        .json({ success: false, error: "School name is required" });
-    }
-
     // Validate isDroppedOut field if provided
     if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
       return res
@@ -497,7 +490,13 @@ const getStudentsInSchool_2023 = async (req, res) => {
     }
 
     // Construct query
-    const query = { school: schoolName };
+    const query = {};
+    if (req.body.schoolName) {
+      query.schoolName = schoolName;
+    }
+    if (req.body.code) {
+      query.code = code;
+    }
     if (isDroppedOut !== undefined) {
       query.isDroppedOut = isDroppedOut;
     }
