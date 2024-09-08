@@ -534,7 +534,7 @@ const getStudentsInSchool_2023 = async (req, res) => {
 
 const getStudentsInClass_2023 = async (req, res) => {
   try {
-    const { schoolName, Class, isDroppedOut } = req.body;
+    const { code, Class, isDroppedOut } = req.body;
 
     // Validate required fields
     if (!schoolName) {
@@ -551,7 +551,13 @@ const getStudentsInClass_2023 = async (req, res) => {
     }
 
     // Construct query
-    const query = { school: schoolName };
+    const query = {};
+    if (req.body.schoolName) {
+      query.schoolName = schoolName;
+    }
+    if (req.body.code) {
+      query.code = code;
+    }
     if (isDroppedOut !== undefined) {
       query.isDroppedOut = isDroppedOut;
     }
@@ -2082,8 +2088,6 @@ const getLearnerCountByLocation = async (req, res) => {
     if (county28) query.county28 = county28;
     if (payam28) query.payam28 = payam28;
     if (code) query.code = code;
-
-    console.log(query);
 
     // Fetch the learner count based on the query
     const learnerCount = await SchoolData.countDocuments(query);
