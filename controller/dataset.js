@@ -2073,7 +2073,9 @@ const getLearnerCountByLocation = async (req, res) => {
     const { year, state10, county28, payam28, code } = req.body;
 
     // Build the query object dynamically
-    const query = {};
+    const query = {
+      isDroppedOut: false,
+    };
 
     if (year) query.year = year;
     if (state10) query.state10 = state10;
@@ -2139,7 +2141,7 @@ const getDisabledLearnersCountByLocation = async (req, res) => {
     const { year, state10, county28, payam28, code } = req.body;
 
     // Build query object dynamically based on location filters
-    const query = { isWithDisability: true };
+    const query = { isWithDisability: true, isDroppedOut: false };
 
     if (year) query.year = parseInt(year); // Ensure year is a number
     if (state10) query.state10 = state10;
