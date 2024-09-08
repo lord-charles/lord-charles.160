@@ -480,7 +480,8 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
 const getStudentsInSchool_2023 = async (req, res) => {
   try {
     // Extract schoolName, isDroppedOut, isValidated, and isDisabled from the request body
-    const { schoolName, isDroppedOut, isValidated, isDisabled } = req.body;
+    const { code, schoolName, isDroppedOut, isValidated, isDisabled } =
+      req.body;
 
     // Validate isDroppedOut field if provided
     if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
@@ -533,7 +534,7 @@ const getStudentsInSchool_2023 = async (req, res) => {
 
 const getStudentsInClass_2023 = async (req, res) => {
   try {
-    const { Class, isDroppedOut } = req.body;
+    const { code, schoolName, Class, isDroppedOut } = req.body;
 
     // Construct query
     const query = {};
