@@ -493,7 +493,7 @@ const getStudentsInSchool_2023 = async (req, res) => {
     // Construct query
     const query = {};
     if (schoolName) {
-      query.schoolName = schoolName;
+      query.school = schoolName;
     }
     if (code) {
       query.code = code;
