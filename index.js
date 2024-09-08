@@ -1,7 +1,7 @@
 const app = require("express")();
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
-const cors = require("cors"); 
+const cors = require("cors");
 const { notFound, errorHandler } = require("./middlewares/error-handler");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -16,7 +16,7 @@ const reportRoutes = require("./routes/report");
 const attendance = require("./routes/attendance");
 
 dbConnect();
-// apply middlewares
+// apply middleware
 app.use(morgan("dev"));
 app.use(cors());
 app.use(bodyParser.json());
@@ -28,12 +28,6 @@ app.use("/express/sbrt", sbrt);
 app.use("/express/sb/pn", sbpn);
 app.use("/express/report", reportRoutes);
 app.use("/express/attendance", attendance);
-
-
-
-
-
-
 
 //error handlers
 app.use(notFound);
