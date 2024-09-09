@@ -3,6 +3,7 @@ const Dataset = require("../models/ssams");
 const SchoolData = require("../models/2023Data");
 const moment = require("moment-timezone");
 const SchoolDataCtCash = require("../models/ctCash");
+const RegistrationPeriod = require("../models/RegistrationPeriod");
 
 // Controller function to fetch dataset with advanced queries
 const dataSet = async (req, res) => {
@@ -742,6 +743,20 @@ const getSingleStudents_2023 = async (req, res) => {
 
 const registerStudent2024 = async (req, res) => {
   try {
+    // Check if the registration period is open
+    const currentDate = new Date();
+    const currentPeriod = await RegistrationPeriod.findOne({
+      startDate: { $lte: currentDate },
+      endDate: { $gte: currentDate },
+      isOpen: true,
+    });
+
+    if (!currentPeriod) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Registration period is closed." });
+    }
+
     // Extract registration data from the request body
     const {
       year,
