@@ -824,6 +824,187 @@ const stateMaleFemaleStat = async (req, res) => {
   }
 };
 
+// api sept 2024
+const getTeacherCountByLocation = async (req, res) => {
+  try {
+    // Destructure the optional query parameters from the request
+    const { year, state10, county28, payam28, code } = req.body;
+
+    // Build the query object dynamically
+    const query = {
+      isDroppedOut: false,
+    };
+
+    if (year) query.year = year;
+    if (state10) query.state10 = state10;
+    if (county28) query.county28 = county28;
+    if (payam28) query.payam28 = payam28;
+    if (code) query.code = code;
+
+    // Fetch the Teacher count based on the query
+    const TeacherCount = await User.countDocuments(query);
+
+    // Respond with the total count of Teachers
+    return res.status(200).json({
+      success: true,
+      count: TeacherCount,
+    });
+  } catch (error) {
+    console.error("Error fetching Teacher count:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching Teacher count",
+    });
+  }
+};
+
+const getTeachersStatusCountByLocation = async (req, res) => {
+  try {
+    // Dynamically construct the query object based on the location parameters provided
+    const query = {};
+    const { year, state10, county28, payam28, code } = req.body;
+
+    if (year) query.year = year;
+    if (state10) query.state10 = state10;
+    if (county28) query.county28 = county28;
+    if (payam28) query.payam28 = payam28;
+    if (code) query.code = code;
+
+    // Aggregation pipeline to count teachers by status (active, inactive, dropped out, not dropped out)
+    const result = await User.aggregate([
+      // Step 1: Match the teachers based on the location query
+      { $match: query },
+
+      // Step 2: Group by location and calculate counts for each status
+      {
+        $group: {
+          _id: null, // No need to group by specific field since we're just counting statuses
+          activeCount: { $sum: { $cond: [{ $eq: ["$active", true] }, 1, 0] } }, // Count active teachers
+          inactiveCount: {
+            $sum: { $cond: [{ $eq: ["$active", false] }, 1, 0] },
+          }, // Count inactive teachers
+          droppedOutCount: {
+            $sum: { $cond: [{ $eq: ["$isDroppedOut", true] }, 1, 0] },
+          }, // Count dropped out teachers
+          notDroppedOutCount: {
+            $sum: { $cond: [{ $eq: ["$isDroppedOut", false] }, 1, 0] },
+          }, // Count not dropped out teachers
+        },
+      },
+    ]);
+
+    // Send the result back to the client
+    res.status(200).json({
+      success: true,
+      data:
+        result.length > 0
+          ? result[0]
+          : {
+              activeCount: 0,
+              inactiveCount: 0,
+              droppedOutCount: 0,
+              notDroppedOutCount: 0,
+            },
+    });
+  } catch (error) {
+    console.error("Error fetching teacher status counts:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch teacher status counts",
+      error: error.message,
+    });
+  }
+};
+
+const getTeachersPerState = async (req, res) => {
+  try {
+    const { year } = req.body;
+
+    let query = {
+      isDroppedOut: false,
+    };
+
+    if (year) query.year = year;
+
+    const pipeline = [
+      {
+        $match: query,
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: { $sum: 1 },
+        },
+      },
+    ];
+
+    const result = await User.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching schools per state:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+const getActiveTeachersPerState = async (req, res) => {
+  try {
+    const { active } = req.body;
+    let query = {
+      isDroppedOut: false,
+      active,
+    };
+
+    const pipeline = [
+      {
+        $match: query,
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: { $sum: 1 },
+        },
+      },
+    ];
+
+    const result = await User.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching schools per state:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+const getDroppedOutTeachersPerState = async (req, res) => {
+  try {
+    const { isDroppedOut } = req.body;
+
+    let query = {
+      isDroppedOut: isDroppedOut,
+    };
+
+    const pipeline = [
+      {
+        $match: query,
+      },
+      {
+        $group: {
+          _id: "$state10",
+          count: { $sum: 1 },
+        },
+      },
+    ];
+
+    const result = await User.aggregate(pipeline);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching schools per state:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   createUser,
   logIn,
@@ -846,4 +1027,11 @@ module.exports = {
   fetchUsersPerState,
   stateMaleFemaleStat,
   getUserByCriteria,
+
+  // sept 2024
+  getTeacherCountByLocation,
+  getTeachersStatusCountByLocation,
+  getTeachersPerState,
+  getActiveTeachersPerState,
+  getDroppedOutTeachersPerState,
 };

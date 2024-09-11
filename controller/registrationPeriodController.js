@@ -68,7 +68,7 @@ const getCurrentRegistrationPeriod = async (req, res) => {
 const deleteRegistrationPeriod = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id; // Assuming the user ID is available in req.user
+    const userId = req.body.userId; // Assuming the user ID is available in req.user
 
     const period = await RegistrationPeriod.findByIdAndUpdate(
       id,

@@ -12,7 +12,7 @@ const {
 router.post("/create", createRegistrationPeriod);
 
 // Update an existing registration period
-router.put("/update/:id", updateRegistrationPeriod);
+router.patch("/update/:id", updateRegistrationPeriod);
 
 // Get the current registration period status
 router.get("/current", getCurrentRegistrationPeriod);

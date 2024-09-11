@@ -23,6 +23,13 @@ const {
   fetchUsersPerState,
   stateMaleFemaleStat,
   getUserByCriteria,
+
+  // sept 2024
+  getTeacherCountByLocation,
+  getTeachersStatusCountByLocation,
+  getTeachersPerState,
+  getActiveTeachersPerState,
+  getDroppedOutTeachersPerState,
 } = require("../controller/userCtrl");
 
 // User endpoints
@@ -53,7 +60,14 @@ router.put("/address", authMiddleware, saveAddress);
 router.post("/fetchUsersPerState", fetchUsersPerState);
 router.post("/stateMaleFemaleStat", stateMaleFemaleStat);
 
-
-
+// apis sept 2024
+router.post("/getTeacherCountByLocation", getTeacherCountByLocation);
+router.post(
+  "/getTeachersStatusCountByLocation",
+  getTeachersStatusCountByLocation
+);
+router.post("/getTeachersPerState", getTeachersPerState);
+router.post("/getActiveTeachersPerState", getActiveTeachersPerState);
+router.post("/getDroppedOutTeachersPerState", getDroppedOutTeachersPerState);
 
 module.exports = router;

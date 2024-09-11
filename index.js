@@ -14,6 +14,7 @@ const sbrt = require("./routes/sbrt");
 const sbpn = require("./routes/sbpn");
 const reportRoutes = require("./routes/report");
 const attendance = require("./routes/attendance");
+const registrationPeriod = require("./routes/registrationPeriods");
 
 dbConnect();
 // apply middleware
@@ -28,6 +29,7 @@ app.use("/express/sbrt", sbrt);
 app.use("/express/sb/pn", sbpn);
 app.use("/express/report", reportRoutes);
 app.use("/express/attendance", attendance);
+app.use("/express/registration-period", registrationPeriod);
 
 //error handlers
 app.use(notFound);
