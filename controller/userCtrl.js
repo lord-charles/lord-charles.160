@@ -833,7 +833,7 @@ const getTeacherCountByLocation = async (req, res) => {
 
     // Build the query object dynamically
     const query = {
-      isDroppedOut: false,
+      // isDroppedOut: false,
     };
 
     if (year) query.year = year;
