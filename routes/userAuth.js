@@ -30,6 +30,7 @@ const {
   getTeachersPerState,
   getActiveTeachersPerState,
   getDroppedOutTeachersPerState,
+  getTeachersByCode,
 } = require("../controller/userCtrl");
 
 // User endpoints
@@ -69,5 +70,6 @@ router.post(
 router.post("/getTeachersPerState", getTeachersPerState);
 router.post("/getActiveTeachersPerState", getActiveTeachersPerState);
 router.post("/getDroppedOutTeachersPerState", getDroppedOutTeachersPerState);
+router.post("/getTeachersByCode", getTeachersByCode);
 
 module.exports = router;

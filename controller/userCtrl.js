@@ -5,6 +5,7 @@ const validateMongodbId = require("../utils/validateMongodbId");
 const sendEmail = require("./emailCtl");
 const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
+const userModel = require("../models/userModel");
 
 //Register CHECKED
 const createUser = asyncHandler(async (req, res) => {
@@ -1005,6 +1006,21 @@ const getDroppedOutTeachersPerState = async (req, res) => {
   }
 };
 
+// get teachers by code
+const getTeachersByCode = async (req, res) => {
+  try {
+    const { code, isDroppedOut, active } = req.body;
+    const query = { code: code, isDroppedOut: false };
+
+    const teachers = await userModel.find({ code });
+
+    res.status(200).json(teachers);
+  } catch (error) {
+    console.error("Error fetching teachers by code:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   createUser,
   logIn,
@@ -1034,4 +1050,5 @@ module.exports = {
   getTeachersPerState,
   getActiveTeachersPerState,
   getDroppedOutTeachersPerState,
+  getTeachersByCode,
 };
