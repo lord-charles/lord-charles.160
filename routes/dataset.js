@@ -43,7 +43,7 @@ const {
   getPromotedLearnersCountByLocation,
   getDisabledLearnersCountByLocation,
 } = require("../controller/dataset");
-const { updateDocuments } = require("../controller/update");
+const { updateDocuments, updateSchoolData } = require("../controller/update");
 
 router.get("/", dataSet);
 router.get("/get/county", countyPupilTotal);
@@ -125,5 +125,6 @@ router.post(
 );
 
 router.post("/updateDocuments", updateDocuments);
+router.post("/updateSchoolData", updateSchoolData);
 
 module.exports = router;

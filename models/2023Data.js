@@ -155,6 +155,7 @@ const schoolDataSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
 schoolDataSchema.index({ class: 1 });
 schoolDataSchema.index({ payam28: 1 });
 schoolDataSchema.index({ "disabilities.disabilities.difficultyHearing": 1 });
