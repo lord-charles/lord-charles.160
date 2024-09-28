@@ -16,13 +16,28 @@ const SchoolDataSchema = new Schema(
       type: String,
       enum: ["PRI", "SEC", "ECD", "ALP", "ASP", "CGS"],
     },
-    headTeacher: [{ type: Schema.Types.ObjectId, ref: "user" }],
+    headTeacher: {
+      name: { type: String },
+      phoneNumber: { type: String },
+      email: { type: String },
+    },
     pta: {
       name: { type: String, required: true },
       phoneNumber: { type: String, required: true },
     },
-    reporter: { type: Schema.Types.ObjectId, ref: "user" },
-    facilities: [{ type: Schema.Types.ObjectId, ref: "SchoolFacilities" }],
+    reporter: {
+      name: { type: String },
+      phoneNumber: { type: String },
+    },
+    // facilities: [{ type: Schema.Types.ObjectId, ref: "SchoolFacilities" }],
+    facilities: {
+      hasKitchen: { type: Boolean, default: false },
+      hasFoodStorage: { type: Boolean, default: false },
+      hasTextbookStorage: { type: Boolean, default: false },
+      hasCleanWater: { type: Boolean, default: false },
+      hasInternet: { type: Boolean, default: false },
+      hasRecreationalActivities: { type: Boolean, default: false },
+    },
 
     location: {
       gpsLng: { type: Number },
@@ -103,9 +118,18 @@ const SchoolDataSchema = new Schema(
       ],
     },
     bankDetails: {
-      bankName: { type: String, required: true },
-      accountName: { type: String, required: true },
-      accountNumber: { type: String, required: true },
+      bankName: {
+        type: String,
+      },
+      accountName: {
+        type: String,
+      },
+      accountNumber: {
+        type: Number,
+      },
+      bankBranch: {
+        type: String,
+      },
     },
     lastVisited: [
       {

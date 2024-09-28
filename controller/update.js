@@ -52,10 +52,13 @@ const updateSchoolData = async () => {
       const update = emis[i];
 
       const result = await schoolData.updateOne(
-        { code: update.code },
+        { code: update.schoolCode },
         {
           $set: {
-            emisId: update.EmisNumber,
+            "bankDetails.bankName": update.bankName,
+            "bankDetails.accountName": update.accountName,
+            "bankDetails.accountNumber": update.bankAccount,
+            "bankDetails.bankBranch": update.bankBranch,
           },
         },
         { upsert: true }

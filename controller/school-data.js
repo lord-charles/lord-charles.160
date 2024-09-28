@@ -53,9 +53,8 @@ exports.getAllSchools = async (req, res) => {
 // Get a single school by ID
 exports.getSchoolById = async (req, res) => {
   try {
-    const school = await schoolData
-      .findById(req.params.id)
-      .populate("headTeacher reporter facilities radioCoverage.stations");
+    const school = await schoolData.findById(req.params.id);
+    // .populate("headTeacher reporter facilities radioCoverage.stations");
     if (!school) {
       return res.status(404).json({ message: "School not found" });
     }

@@ -2,13 +2,23 @@ const mongoose = require("mongoose");
 
 const emisSchema = new mongoose.Schema(
   {
-    EmisNumber: {
+    schoolCode: {
       type: String,
-      required: true,
     },
-    code: {
+    schoolName: {
       type: String,
-      required: true,
+    },
+    bankName: {
+      type: String,
+    },
+    bankAccount: {
+      type: Number,
+    },
+    bankBranch: {
+      type: String,
+    },
+    accountName: {
+      type: String,
     },
   },
   { timestamps: true }
