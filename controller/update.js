@@ -52,13 +52,11 @@ const updateSchoolData = async () => {
       const update = emis[i];
 
       const result = await schoolData.updateOne(
-        { code: update.schoolCode },
+        { code: update.code },
         {
           $set: {
-            "bankDetails.bankName": update.bankName,
-            "bankDetails.accountName": update.accountName,
-            "bankDetails.accountNumber": update.bankAccount,
-            "bankDetails.bankBranch": update.bankBranch,
+            "schoolStatus.isOpen": update.isOpen || "Fully Functional",
+            "schoolStatus.closedReason": update.closeReason,
           },
         },
         { upsert: true }

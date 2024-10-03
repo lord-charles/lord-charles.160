@@ -138,6 +138,11 @@ const SchoolDataSchema = new Schema(
         comments: { type: String },
       },
     ],
+    schoolStatus: {
+      isOpen: { type: String },
+      closeReason: { type: String },
+      closedDate: { type: Date },
+    },
   },
   { timestamps: true }
 );
