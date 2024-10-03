@@ -56,7 +56,7 @@ const updateSchoolData = async () => {
         {
           $set: {
             "schoolStatus.isOpen": update.isOpen || "Fully Functional",
-            "schoolStatus.closedReason": update.closeReason,
+            "schoolStatus.closeReason": update.closeReason,
           },
         },
         { upsert: true }
