@@ -882,6 +882,7 @@ const registerLearnerDuringSync = async (req, res) => {
       disabilities,
       houseHold,
       pregnantOrNursing,
+      eieStatus,
       modifiedBy,
       overwrite = false,
     } = req.body;
@@ -915,16 +916,7 @@ const registerLearnerDuringSync = async (req, res) => {
       if (overwrite) {
         // Overwrite existing learner data
         Object.assign(existingLearner, {
-          year,
-          stateName,
-          state10: state,
-          code,
-          county28: county,
           countryOfOrigin,
-          payam28: payam,
-          school: schoolName,
-          education,
-          class: studentClass,
           gender,
           dob,
           firstName,
@@ -933,7 +925,7 @@ const registerLearnerDuringSync = async (req, res) => {
           disabilities,
           houseHold,
           pregnantOrNursing,
-          reference: generateUniqueCode(),
+          eieStatus,
           modifiedBy,
         });
         await existingLearner.save();
@@ -977,6 +969,7 @@ const registerLearnerDuringSync = async (req, res) => {
       disabilities,
       houseHold,
       pregnantOrNursing,
+      eieStatus,
       reference: generateUniqueCode(),
       modifiedBy,
     });
