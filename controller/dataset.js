@@ -2365,4 +2365,5 @@ module.exports = {
   getLearnerCountByLocation,
   getPromotedLearnersCountByLocation,
   getDisabledLearnersCountByLocation,
+  registerLearnerDuringSync,
 };
