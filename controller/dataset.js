@@ -844,6 +844,159 @@ const registerStudent2024 = async (req, res) => {
   }
 };
 
+// Controller function to register a new learner
+const registerLearnerDuringSync = async (req, res) => {
+  try {
+    // Check if the registration period is open
+    const currentDate = new Date();
+    const currentPeriod = await RegistrationPeriod.findOne({
+      startDate: { $lte: currentDate },
+      endDate: { $gte: currentDate },
+      isOpen: true,
+    });
+
+    if (!currentPeriod) {
+      return res.status(403).json({
+        success: false,
+        message: "Registration period is closed.",
+      });
+    }
+
+    // Extract registration data from the request body
+    const {
+      year,
+      state,
+      stateName,
+      county,
+      countryOfOrigin,
+      payam,
+      code,
+      schoolName,
+      education,
+      class: studentClass,
+      gender,
+      dob,
+      firstName,
+      middleName,
+      lastName,
+      disabilities,
+      houseHold,
+      pregnantOrNursing,
+      modifiedBy,
+      overwrite = false,
+    } = req.body;
+
+    // Generate a unique reference code
+    const generateUniqueCode = () => {
+      const currentDate = new Date();
+      const year = String(currentDate.getFullYear()).slice(-2);
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+      const day = String(currentDate.getDate()).padStart(2, "0");
+      let hours = String(currentDate.getHours() + 3).padStart(2, "0");
+      const minutes = String(currentDate.getMinutes()).padStart(2, "0");
+      const seconds = String(currentDate.getSeconds()).padStart(2, "0");
+
+      if (hours > 12) hours -= 12;
+      return `${year}${month}${day}${hours}${minutes}${seconds}`;
+    };
+
+    // Check if a learner with the same details exists
+    const existingLearner = await SchoolData.findOne({
+      class: studentClass,
+      code,
+      gender,
+      dob,
+      firstName,
+      middleName,
+      lastName,
+    });
+
+    if (existingLearner) {
+      if (overwrite) {
+        // Overwrite existing learner data
+        Object.assign(existingLearner, {
+          year,
+          stateName,
+          state10: state,
+          code,
+          county28: county,
+          countryOfOrigin,
+          payam28: payam,
+          school: schoolName,
+          education,
+          class: studentClass,
+          gender,
+          dob,
+          firstName,
+          middleName,
+          lastName,
+          disabilities,
+          houseHold,
+          pregnantOrNursing,
+          reference: generateUniqueCode(),
+          modifiedBy,
+        });
+        await existingLearner.save();
+
+        return res.status(200).json({
+          success: true,
+          message: "Learner details updated successfully",
+          learner: existingLearner,
+        });
+      } else {
+        return res.status(409).json({
+          success: false,
+          message: "A learner with the same details already exists.",
+          learner: existingLearner,
+        });
+      }
+    }
+
+    // Log the registration details
+    console.log(
+      `${firstName} in state ${state}, county ${county}, payam ${payam}, school ${schoolName} registered`
+    );
+
+    // Create and save the new learner
+    const newLearner = new SchoolData({
+      year,
+      stateName,
+      state10: state,
+      code,
+      county28: county,
+      countryOfOrigin,
+      payam28: payam,
+      school: schoolName,
+      education,
+      class: studentClass,
+      gender,
+      dob,
+      firstName,
+      middleName,
+      lastName,
+      disabilities,
+      houseHold,
+      pregnantOrNursing,
+      reference: generateUniqueCode(),
+      modifiedBy,
+    });
+
+    await newLearner.save();
+    return res.status(201).json({
+      success: true,
+      message: "Learner registered successfully",
+      learner: newLearner,
+    });
+  } catch (error) {
+    console.error("Error registering learner:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 const deleteStudentById = async (req, res) => {
   const { id } = req.params;
 
