@@ -26,6 +26,7 @@ const schoolDataSchema = new mongoose.Schema(
     eieStatus: String,
     isPromoted: { type: Boolean, default: false },
     isDroppedOut: { type: Boolean, default: false },
+    isAbsentDuringEnrolment: { type: Boolean, default: false },
     isValidated: {
       type: Boolean,
       default: null,
