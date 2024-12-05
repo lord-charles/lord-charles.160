@@ -1755,15 +1755,15 @@ const totalNewStudentsPerStateDisabled = async (req, res) => {
     const currentYear = new Date().getFullYear(); // Get the current year
 
     const pipeline = [
-      {
-        $match: {
-          // updatedAt: {
-          //   $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`), // Filter for the current year
-          //   $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`), // Next year's beginning
-          // },
-          isDroppedOut: false,
-        },
-      },
+      // {
+      //   $match: {
+      //     // updatedAt: {
+      //     //   $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`), // Filter for the current year
+      //     //   $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`), // Next year's beginning
+      //     // },
+      //     isDroppedOut: false,
+      //   },
+      // },
       {
         $project: {
           state10: 1,
