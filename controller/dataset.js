@@ -1755,13 +1755,10 @@ const totalNewStudentsPerStateDisabled = async (req, res) => {
     const currentYear = new Date().getFullYear(); // Get the current year
 
     const pipeline = [
+      // Match documents where isDroppedOut is neither true nor false
       // {
       //   $match: {
-      //     // updatedAt: {
-      //     //   $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`), // Filter for the current year
-      //     //   $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`), // Next year's beginning
-      //     // },
-      //     isDroppedOut: false,
+      //     isDroppedOut: { $nin: [true, false] },
       //   },
       // },
       {
@@ -1771,31 +1768,25 @@ const totalNewStudentsPerStateDisabled = async (req, res) => {
         },
       },
       {
+        $unwind: "$disabilities",
+      },
+      {
         $addFields: {
           totalDisabilities: {
-            $reduce: {
-              input: "$disabilities",
-              initialValue: 0,
-              in: {
-                $sum: [
-                  "$$value",
-                  {
-                    $size: {
-                      $filter: {
-                        input: { $objectToArray: "$$this.disabilities" },
-                        cond: { $gt: ["$$this.v", 1] }, // Check if disability count is greater than 1
-                      },
-                    },
-                  },
-                ],
-              },
-            },
+            $sum: [
+              "$disabilities.disabilities.difficultySeeing",
+              "$disabilities.disabilities.difficultyHearing",
+              "$disabilities.disabilities.difficultyTalking",
+              "$disabilities.disabilities.difficultySelfCare",
+              "$disabilities.disabilities.difficultyWalking",
+              "$disabilities.disabilities.difficultyRecalling",
+            ],
           },
         },
       },
       {
         $match: {
-          totalDisabilities: { $gt: 0 }, // Filter out students with disabilities
+          totalDisabilities: { $gt: 6 }, // Filter out students where total disabilities > 6
         },
       },
       {
