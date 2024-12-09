@@ -16,6 +16,7 @@ const reportRoutes = require("./routes/report");
 const attendance = require("./routes/attendance");
 const registrationPeriod = require("./routes/registrationPeriods");
 const schoolData = require("./routes/school-data");
+const budgetRoutes = require("./routes/budgetRoutes");
 
 dbConnect();
 // apply middleware
@@ -32,6 +33,7 @@ app.use("/express/report", reportRoutes);
 app.use("/express/attendance", attendance);
 app.use("/express/registration-period", registrationPeriod);
 app.use("/express/school-data", schoolData);
+app.use("/express/budget", budgetRoutes);
 //error handlers
 app.use(notFound);
 app.use(errorHandler);
