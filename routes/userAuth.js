@@ -31,6 +31,7 @@ const {
   getActiveTeachersPerState,
   getDroppedOutTeachersPerState,
   getTeachersByCode,
+  overallMaleFemaleStat,
 } = require("../controller/userCtrl");
 
 // User endpoints
@@ -71,5 +72,5 @@ router.post("/getTeachersPerState", getTeachersPerState);
 router.post("/getActiveTeachersPerState", getActiveTeachersPerState);
 router.post("/getDroppedOutTeachersPerState", getDroppedOutTeachersPerState);
 router.post("/getTeachersByCode", getTeachersByCode);
-
+router.post("/overallMaleFemaleStat", overallMaleFemaleStat);
 module.exports = router;

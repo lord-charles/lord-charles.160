@@ -43,6 +43,7 @@ const {
   getPromotedLearnersCountByLocation,
   getDisabledLearnersCountByLocation,
   registerLearnerDuringSync,
+  overallMaleFemaleStat,
 } = require("../controller/dataset");
 const { updateDocuments, updateSchoolData } = require("../controller/update");
 
@@ -128,5 +129,6 @@ router.post(
 router.post("/updateDocuments", updateDocuments);
 router.post("/updateSchoolData", updateSchoolData);
 router.post("/registerLearnerDuringSync", registerLearnerDuringSync);
+router.post("/overallMaleFemaleStat", overallMaleFemaleStat);
 
 module.exports = router;

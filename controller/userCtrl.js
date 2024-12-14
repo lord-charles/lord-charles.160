@@ -800,9 +800,137 @@ const fetchUsersPerState = async (req, res) => {
   }
 };
 
+const overallMaleFemaleStat = async (req, res) => {
+  try {
+    const { county28, payam28, state10, school } = req.body;
+
+    // Build dynamic match stage for filtering
+    const matchStage = { isDroppedOut: false }; // Only include non-dropped-out records
+
+    if (county28) matchStage.county28 = county28;
+    if (payam28) matchStage.payam28 = payam28;
+    if (state10) matchStage.state10 = state10;
+    if (school) matchStage.school = school;
+
+    const pipeline = [
+      {
+        $match: matchStage, // Apply filters dynamically
+      },
+      {
+        $unwind: "$disabilities", // Process each disability array item
+      },
+      {
+        $addFields: {
+          totalDisabilities: {
+            $sum: [
+              "$disabilities.disabilities.difficultySeeing",
+              "$disabilities.disabilities.difficultyHearing",
+              "$disabilities.disabilities.difficultyTalking",
+              "$disabilities.disabilities.difficultySelfCare",
+              "$disabilities.disabilities.difficultyWalking",
+              "$disabilities.disabilities.difficultyRecalling",
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          hasDisability: {
+            $gt: ["$totalDisabilities", 6], // Mark as disabled if totalDisabilities > 6
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null, // No grouping by state, calculate overall totals
+          totalFemale: {
+            $sum: { $cond: [{ $in: ["$gender", ["Female", "F"]] }, 1, 0] },
+          },
+          totalMale: {
+            $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
+          },
+          femaleWithDisabilities: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $in: ["$gender", ["Female", "F"]] },
+                    { $eq: ["$hasDisability", true] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          maleWithDisabilities: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $in: ["$gender", ["Male", "M"]] },
+                    { $eq: ["$hasDisability", true] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Remove MongoDB's _id from results
+          totalFemale: 1,
+          totalMale: 1,
+          femaleWithDisabilities: 1,
+          maleWithDisabilities: 1,
+        },
+      },
+    ];
+
+    const result = await User.aggregate(pipeline);
+
+    res.status(200).json(result.length ? result[0] : {});
+  } catch (error) {
+    console.error("Error fetching overall totals:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 const stateMaleFemaleStat = async (req, res) => {
   try {
     const pipeline = [
+      {
+        $match: {
+          isDroppedOut: false, // Exclude dropped-out individuals
+        },
+      },
+      {
+        $unwind: "$disabilities", // Unwind disabilities array
+      },
+      {
+        $addFields: {
+          totalDisabilities: {
+            $sum: [
+              "$disabilities.disabilities.difficultySeeing",
+              "$disabilities.disabilities.difficultyHearing",
+              "$disabilities.disabilities.difficultyTalking",
+              "$disabilities.disabilities.difficultySelfCare",
+              "$disabilities.disabilities.difficultyWalking",
+              "$disabilities.disabilities.difficultyRecalling",
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          hasDisability: {
+            $gt: ["$totalDisabilities", 6], // Mark as disabled if totalDisabilities > 6
+          },
+        },
+      },
       {
         $group: {
           _id: "$state10", // Group by state10
@@ -812,6 +940,44 @@ const stateMaleFemaleStat = async (req, res) => {
           totalMale: {
             $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
           },
+          femaleWithDisabilities: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $in: ["$gender", ["Female", "F"]] },
+                    { $eq: ["$hasDisability", true] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          maleWithDisabilities: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $in: ["$gender", ["Male", "M"]] },
+                    { $eq: ["$hasDisability", true] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id",
+          totalFemale: 1,
+          totalMale: 1,
+          femaleWithDisabilities: 1,
+          maleWithDisabilities: 1,
         },
       },
     ];
@@ -1051,4 +1217,5 @@ module.exports = {
   getActiveTeachersPerState,
   getDroppedOutTeachersPerState,
   getTeachersByCode,
+  overallMaleFemaleStat,
 };
