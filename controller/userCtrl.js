@@ -802,16 +802,17 @@ const fetchUsersPerState = async (req, res) => {
 
 const overallMaleFemaleStat = async (req, res) => {
   try {
-    const { county28, payam28, state10, school } = req.body;
+    const { county28, payam28, state10, code } = req.body;
 
-    // Build dynamic match stage for filtering
-    const matchStage = { isDroppedOut: false }; // Only include non-dropped-out records
+    // Build dynamic match stage for non-dropped-out records
+    const matchStage = { isDroppedOut: false };
 
     if (county28) matchStage.county28 = county28;
     if (payam28) matchStage.payam28 = payam28;
     if (state10) matchStage.state10 = state10;
-    if (school) matchStage.school = school;
+    if (code) matchStage.code = code;
 
+    // Main pipeline
     const pipeline = [
       {
         $match: matchStage, // Apply filters dynamically
@@ -890,11 +891,55 @@ const overallMaleFemaleStat = async (req, res) => {
       },
     ];
 
+    // Execute the main pipeline
     const result = await User.aggregate(pipeline);
 
-    res.status(200).json(result.length ? result[0] : {});
+    // Calculate dropped-out statistics
+    const droppedOutMatchStage = { isDroppedOut: true };
+
+    if (county28) droppedOutMatchStage.county28 = county28;
+    if (payam28) droppedOutMatchStage.payam28 = payam28;
+    if (state10) droppedOutMatchStage.state10 = state10;
+    if (code) droppedOutMatchStage.code = code;
+
+    const droppedOutPipeline = [
+      {
+        $match: droppedOutMatchStage, // Filter for dropped-out records
+      },
+      {
+        $group: {
+          _id: null,
+          droppedOutFemale: {
+            $sum: { $cond: [{ $in: ["$gender", ["Female", "F"]] }, 1, 0] },
+          },
+          droppedOutMale: {
+            $sum: { $cond: [{ $in: ["$gender", ["Male", "M"]] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Remove MongoDB's _id from results
+          droppedOutFemale: 1,
+          droppedOutMale: 1,
+        },
+      },
+    ];
+
+    // Execute the dropped-out pipeline
+    const droppedOutResult = await User.aggregate(droppedOutPipeline);
+
+    // Combine results from both pipelines
+    const finalResult = {
+      ...result[0],
+      ...(droppedOutResult.length
+        ? droppedOutResult[0]
+        : { droppedOutFemale: 0, droppedOutMale: 0 }),
+    };
+
+    res.status(200).json(finalResult);
   } catch (error) {
-    console.error("Error fetching overall totals:", error);
+    console.error("Error fetching statistics:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
