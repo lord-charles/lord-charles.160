@@ -1040,18 +1040,17 @@ const stateMaleFemaleStat = async (req, res) => {
 const getTeacherCountByLocation = async (req, res) => {
   try {
     // Destructure the optional query parameters from the request
-    const { year, state10, county28, payam28, code } = req.body;
+    const { year, state10, county28, payam28, code, isDroppedOut } = req.body;
 
     // Build the query object dynamically
-    const query = {
-      // isDroppedOut: false,
-    };
+    const query = {};
 
     if (year) query.year = year;
     if (state10) query.state10 = state10;
     if (county28) query.county28 = county28;
     if (payam28) query.payam28 = payam28;
     if (code) query.code = code;
+    if (isDroppedOut) query.isDroppedOut = isDroppedOut;
 
     // Fetch the Teacher count based on the query
     const TeacherCount = await User.countDocuments(query);
