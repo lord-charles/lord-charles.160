@@ -33,7 +33,7 @@ const swaggerOptions = {
       title: "SAMS API Documentation",
       version: "1.0.0",
       description:
-        "School Student Attendance Management System (SAMS) REST API documentation. This API provides endpoints for managing student attendance, user authentication, school committees, and various administrative functions.",
+        "SAMS REST API documentation. This API provides endpoints for managing learner enrollment, learner attendance, user authentication, school committees, and various administrative functions.",
       contact: {
         name: "SAMS Development Team",
         email: "mgichure@strathmore.edu",
