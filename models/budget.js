@@ -74,6 +74,9 @@ const MetaSchema = new mongoose.Schema({
 const MainSchema = new mongoose.Schema({
   code: { type: String, required: true },
   year: { type: Number, required: true },
+  schoolOwnerShip: { type: String },
+  schoolType: { type: String },
+  schoolName: { type: String },
   meta: { type: MetaSchema, required: true },
   budget: { type: BudgetSchema, required: true },
   revenues: [RevenueSchema],

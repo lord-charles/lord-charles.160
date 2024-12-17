@@ -22,6 +22,8 @@ exports.getBudgets = async (req, res) => {
       county28: 1,
       payam28: 1,
       schoolType: 1,
+      schoolOwnerShip: 1,
+      schoolName: 1,
       "budget.submittedAmount": 1,
       "budget.preparedBy": 1,
       "budget.reviewedBy": 1,
