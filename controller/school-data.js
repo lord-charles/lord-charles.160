@@ -33,7 +33,7 @@ exports.getAllSchools = async (req, res) => {
       state10: 1,
       county28: 1,
       payam28: 1,
-      // schoolOwnerShip: 1,
+      schoolOwnerShip: 1,
       schoolType: 1,
       emisId: 1,
     };

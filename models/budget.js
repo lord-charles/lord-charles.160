@@ -30,13 +30,13 @@ const CategorySchema = new mongoose.Schema({
   items: [BudgetItemSchema],
 });
 
-// Define the BudgetGroupSchema
+// BudgetGroupSchema
 const BudgetGroupSchema = new mongoose.Schema({
   group: { type: String, enum: ["OPEX", "CAPEX"], required: true },
   categories: [CategorySchema],
 });
 
-// Define the BudgetSchema
+// BudgetSchema
 const BudgetSchema = new mongoose.Schema({
   submittedAmount: { type: Number, required: true },
   preparedBy: { type: String, required: true },
@@ -46,7 +46,7 @@ const BudgetSchema = new mongoose.Schema({
   groups: [BudgetGroupSchema],
 });
 
-// Define the MetaSchema
+// MetaSchema
 const MetaSchema = new mongoose.Schema({
   classLevels: [{ type: String, required: true }],
   estimateLearnerEnrolment: { type: Number, required: true },
@@ -70,7 +70,7 @@ const MetaSchema = new mongoose.Schema({
   },
 });
 
-// Define the MainSchema
+// MainSchema
 const MainSchema = new mongoose.Schema({
   code: { type: String, required: true },
   year: { type: Number, required: true },
