@@ -83,7 +83,7 @@ app.use("/express/budget", budgetRoutes);
 app.use("/express/accountability", accountabilityRoutes);
 
 // Swagger Documentation Route
-app.use("/express/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// app.use("/express/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Error Handlers
 app.use(notFound);
