@@ -13,7 +13,7 @@ exports.createBudget = async (req, res) => {
 
 // Get all budgets
 exports.getBudgets = async (req, res) => {
-  const { year } = req.body;
+  const { year } = req.query;
   try {
     const projection = {
       code: 1,
