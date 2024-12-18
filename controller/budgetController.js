@@ -54,11 +54,22 @@ exports.getBudgetById = async (req, res) => {
 exports.getBudgetByCode = async (req, res) => {
   try {
     const { code, year } = req.params;
-    // Ensure year is parsed as integer
+
+    if (!code || !year) {
+      return res.status(400).json({ error: "Code and year are required" });
+    }
+
     const parsedYear = parseInt(year, 10);
-    const budget = await Budget.findOne({ code, year: parsedYear });
-    if (!budget) return res.status(404).json({ error: "Budget not found" });
-    res.status(200).json(budget);
+    if (isNaN(parsedYear)) {
+      return res.status(400).json({ error: "Invalid year format" });
+    }
+
+    const budgets = await Budget.find({ code, year: parsedYear });
+    if (!budgets || budgets.length === 0) {
+      return res.status(404).json({ error: "No budgets found" });
+    }
+
+    res.json(budgets);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
