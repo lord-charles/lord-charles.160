@@ -143,7 +143,7 @@ router.get("/:id", getBudgetById);
  *       500:
  *         description: Internal server error
  */
-router.get("/code/:code", getBudgetByCode);
+router.get("/code/:code/:year", getBudgetByCode);
 
 /**
  * @swagger

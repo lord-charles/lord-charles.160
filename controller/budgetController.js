@@ -53,9 +53,10 @@ exports.getBudgetById = async (req, res) => {
 // Get a single budget by ID
 exports.getBudgetByCode = async (req, res) => {
   try {
-    const { code } = req.params;
-    const { year } = req.query;
-    const budget = await Budget.find({ code, year });
+    const { code, year } = req.params;
+    // Ensure year is parsed as integer
+    const parsedYear = parseInt(year, 10);
+    const budget = await Budget.findOne({ code, year: parsedYear });
     if (!budget) return res.status(404).json({ error: "Budget not found" });
     res.status(200).json(budget);
   } catch (error) {
