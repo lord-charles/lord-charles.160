@@ -5,6 +5,8 @@ const {
   getBudgetById,
   updateBudget,
   deleteBudget,
+  getEligibility,
+  getBudgetByCode,
 } = require("../controller/budgetController");
 
 const router = express.Router();
@@ -120,6 +122,31 @@ router.get("/:id", getBudgetById);
 
 /**
  * @swagger
+ * /budgets/code/{code}:
+ *   get:
+ *     summary: Get a budget by code
+ *     tags: [Budgets]
+ *     description: Retrieve a specific budget using its code.
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         required: true
+ *         description: The code of the budget to retrieve
+ *         schema:
+ *           type: string
+ *           example: "ABB"
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the budget
+ *       404:
+ *         description: Budget not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/code/:code", getBudgetByCode);
+
+/**
+ * @swagger
  * /budgets/{id}:
  *   put:
  *     summary: Update a budget by ID
@@ -187,5 +214,7 @@ router.put("/:id", updateBudget);
  *         description: Internal server error
  */
 router.delete("/:id", deleteBudget);
+
+router.get("/get/eligibility", getEligibility);
 
 module.exports = router;

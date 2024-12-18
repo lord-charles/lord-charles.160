@@ -166,6 +166,7 @@ schoolDataSchema.index({ "disabilities.disabilities.difficultySeeing": 1 });
 schoolDataSchema.index({ "disabilities.disabilities.difficultySelfCare": 1 });
 schoolDataSchema.index({ "disabilities.disabilities.difficultyTalking": 1 });
 schoolDataSchema.index({ "disabilities.disabilities.difficultyWalking": 1 });
+schoolDataSchema.index({ isDroppedOut: 1 });
 
 const SchoolData = mongoose.model("schooldata2023", schoolDataSchema);
 

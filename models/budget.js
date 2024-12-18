@@ -77,9 +77,15 @@ const MainSchema = new mongoose.Schema({
   ownership: { type: String },
   schoolType: { type: String },
   school: { type: String },
+  state10: { type: String },
+  county28: { type: String },
+  payam28: { type: String },
   meta: { type: MetaSchema, required: true },
   budget: { type: BudgetSchema, required: true },
   revenues: [RevenueSchema],
 });
+
+MainSchema.index({ code: 1 });
+MainSchema.index({ year: 1 });
 
 module.exports = mongoose.model("Budget", MainSchema);
