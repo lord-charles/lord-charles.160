@@ -55,7 +55,7 @@ exports.getBudgetByCode = async (req, res) => {
   try {
     const { code } = req.params;
     const { year } = req.query;
-    const budget = await Budget.findOne({ code, year });
+    const budget = await Budget.find({ code, year });
     if (!budget) return res.status(404).json({ error: "Budget not found" });
     res.status(200).json(budget);
   } catch (error) {
