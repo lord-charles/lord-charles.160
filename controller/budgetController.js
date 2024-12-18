@@ -64,7 +64,7 @@ exports.getBudgetByCode = async (req, res) => {
       return res.status(400).json({ error: "Invalid year format" });
     }
 
-    const budgets = await Budget.find({ code, year: parsedYear });
+    const budgets = await Budget.findOne({ code, year: parsedYear });
     if (!budgets || budgets.length === 0) {
       return res.status(404).json({ error: "No budgets found" });
     }
