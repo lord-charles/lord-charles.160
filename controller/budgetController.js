@@ -106,12 +106,12 @@ exports.deleteBudget = async (req, res) => {
 
 exports.getEligibility = async (req, res) => {
   try {
-    const { year } = req.body;
+    const { year } = req.query;
 
     if (!year) {
       return res
         .status(400)
-        .json({ error: "Year is required in the request body." });
+        .json({ error: "Year is required in the request query." });
     }
 
     // Step 1: Run SchoolData and Budget queries in parallel
