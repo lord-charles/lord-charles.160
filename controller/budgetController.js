@@ -108,10 +108,9 @@ exports.getEligibility = async (req, res) => {
   try {
     const { year } = req.query;
 
-    if (!year) {
-      return res
-        .status(400)
-        .json({ error: "Year is required in the request query." });
+    const parsedYear = parseInt(year, 10);
+    if (isNaN(parsedYear)) {
+      return res.status(400).json({ error: "Invalid year format" });
     }
 
     // Step 1: Run SchoolData and Budget queries in parallel
@@ -125,7 +124,7 @@ exports.getEligibility = async (req, res) => {
 
       // Fetch budgets and governance details for the specified year
       Budget.find(
-        { year },
+        { year: parsedYear },
         {
           code: 1,
           year: 1,
