@@ -574,55 +574,65 @@ const getLearnersV2 = async (req, res) => {
       query.code = code;
     }
 
-    // Project fields to return
-    const projection = {
-      school: 1,
-      code: 1,
-      education: 1,
-      firstName: 1,
-      middleName: 1,
-      lastName: 1,
-      eieStatus: 1,
-      learnerUniqueID: 1,
-      reference: 1,
-      gender: 1,
-      class: 1,
-      dob: 1,
-      age: 1,
-      isPromoted: 1,
-      isDroppedOut: 1,
-      isWithDisability: 1,
-      disabilities: 1,
-    };
+    // MongoDB Aggregation Pipeline
+    const pipeline = [
+      {
+        $match: query, // Filter by code or other query parameters
+      },
+      {
+        $addFields: {
+          // Calculate total disabilities
+          totalDisabilities: {
+            $sum: [
+              "$disabilities.disabilities.difficultySeeing",
+              "$disabilities.disabilities.difficultyHearing",
+              "$disabilities.disabilities.difficultyTalking",
+              "$disabilities.disabilities.difficultySelfCare",
+              "$disabilities.disabilities.difficultyWalking",
+              "$disabilities.disabilities.difficultyRecalling",
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          // Set disabilities to "Yes" if totalDisabilities > 0, else "No"
+          disabilities: {
+            $cond: {
+              if: { $gt: ["$totalDisabilities", 0] },
+              then: "Yes",
+              else: "No",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          school: 1,
+          code: 1,
+          education: 1,
+          firstName: 1,
+          middleName: 1,
+          lastName: 1,
+          eieStatus: 1,
+          learnerUniqueID: 1,
+          reference: 1,
+          gender: 1,
+          class: 1,
+          dob: 1,
+          age: 1,
+          isPromoted: 1,
+          isDroppedOut: 1,
+          disabilities: 1, // Include disabilities with the flag
+        },
+      },
+    ];
 
-    // Fetch all learners
-    const result = await SchoolData.find(query, projection).lean();
-
-    // Flag those with disabilities
-    const formattedResult = result.map((student) => {
-      const hasDisabilities =
-        student.disabilities &&
-        student.disabilities.some(
-          (disability) =>
-            disability.difficultyHearing > 1 ||
-            disability.difficultyRecalling > 1 ||
-            disability.difficultySeeing > 1 ||
-            disability.difficultySelfCare > 1 ||
-            disability.difficultyTalking > 1 ||
-            disability.difficultyWalking > 1
-        );
-
-      return {
-        ...student,
-        isPromoted: student.isPromoted ? "Yes" : "No",
-        isDroppedOut: student.isDroppedOut ? "Yes" : "No",
-        isWithDisability: hasDisabilities ? "Yes" : "No",
-        disabilities: hasDisabilities ? "Yes" : "No",
-      };
-    });
+    // Execute the aggregation pipeline
+    const result = await SchoolData.aggregate(pipeline);
 
     // Send the response
-    res.status(200).json(formattedResult);
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching learners:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
