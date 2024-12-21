@@ -651,7 +651,7 @@ const getLearnersV2 = async (req, res) => {
     ];
 
     // Run the aggregation pipeline
-    const result = await SchoolData.aggregate(pipeline).lean();
+    const result = await SchoolData.aggregate(pipeline);
 
     // Send the response
     res.status(200).json(result);
