@@ -582,26 +582,22 @@ const getLearnersV2 = async (req, res) => {
       {
         $addFields: {
           // Calculate total disabilities
-          totalDisabilities: {
-            $sum: [
-              "$disabilities.disabilities.difficultySeeing",
-              "$disabilities.disabilities.difficultyHearing",
-              "$disabilities.disabilities.difficultyTalking",
-              "$disabilities.disabilities.difficultySelfCare",
-              "$disabilities.disabilities.difficultyWalking",
-              "$disabilities.disabilities.difficultyRecalling",
-            ],
-          },
-        },
-      },
-      {
-        $addFields: {
-          // Set disabilities to "Yes" if totalDisabilities > 0, else "No"
-          disabilities: {
+          disabilitiesFlag: {
             $cond: {
-              if: { $gt: ["$totalDisabilities", 0] },
-              then: "Yes",
-              else: "No",
+              if: {
+                $or: [
+                  { $gt: ["$disabilities.disabilities.difficultyHearing", 1] },
+                  {
+                    $gt: ["$disabilities.disabilities.difficultyRecalling", 1],
+                  },
+                  { $gt: ["$disabilities.disabilities.difficultySeeing", 1] },
+                  { $gt: ["$disabilities.disabilities.difficultySelfCare", 1] },
+                  { $gt: ["$disabilities.disabilities.difficultyTalking", 1] },
+                  { $gt: ["$disabilities.disabilities.difficultyWalking", 1] },
+                ],
+              },
+              then: "Yes", // Flag "Yes" if any disability condition is greater than 1
+              else: "No", // Otherwise flag "No"
             },
           },
         },
@@ -623,7 +619,8 @@ const getLearnersV2 = async (req, res) => {
           age: 1,
           isPromoted: 1,
           isDroppedOut: 1,
-          disabilities: 1, // Include disabilities with the flag
+          // disabilities: 1, // Include disabilities with the flag
+          disabilitiesFlag: 1, // Include the disabilities flag
         },
       },
     ];
