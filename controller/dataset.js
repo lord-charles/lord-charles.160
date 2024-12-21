@@ -586,6 +586,7 @@ const getLearnersV2 = async (req, res) => {
       learnerUniqueID: 1,
       reference: 1,
       gender: 1,
+      class: 1,
       dob: 1,
       age: 1,
       isPromoted: 1,
