@@ -607,6 +607,21 @@ const getLearnersV2 = async (req, res) => {
               else: "No", // Otherwise flag as "No"
             },
           },
+          // Flag isPromoted and isDroppedOut as "Yes" or "No"
+          isPromoted: {
+            $cond: {
+              if: { $eq: ["$isPromoted", true] }, // If isPromoted is true
+              then: "Yes", // Flag as "Yes"
+              else: "No", // Otherwise flag as "No"
+            },
+          },
+          isDroppedOut: {
+            $cond: {
+              if: { $eq: ["$isDroppedOut", true] }, // If isDroppedOut is true
+              then: "Yes", // Flag as "Yes"
+              else: "No", // Otherwise flag as "No"
+            },
+          },
         },
       },
       {
@@ -627,7 +642,7 @@ const getLearnersV2 = async (req, res) => {
           isPromoted: { $first: "$isPromoted" },
           isDroppedOut: { $first: "$isDroppedOut" },
           disabilities: { $first: "$disabilities" },
-          hasDisability: { $first: "$hasDisability" }, // Include the disability flag
+          hasDisability: { $first: "$hasDisability" },
         },
       },
       {
@@ -647,14 +662,13 @@ const getLearnersV2 = async (req, res) => {
           isPromoted: 1,
           isDroppedOut: 1,
           disabilities: 1,
-          hasDisability: 1, // Include the flag in the projection
+          hasDisability: 1,
         },
       },
     ];
 
     // Run the aggregation pipeline
     const result = await SchoolData.aggregate(pipeline);
-
     // Send the response
     res.status(200).json(result);
   } catch (error) {
