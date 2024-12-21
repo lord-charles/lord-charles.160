@@ -599,9 +599,13 @@ const getLearnersV2 = async (req, res) => {
       },
       {
         $addFields: {
-          // Flag as "Yes" if totalDisabilities > 6 (or adjust threshold as needed)
-          disabilitiesFlag: {
-            $gt: ["$totalDisabilities", 6],
+          // Flag as "Yes" if totalDisabilities > 6, else "No"
+          hasDisability: {
+            $cond: {
+              if: { $gt: ["$totalDisabilities", 6] }, // If totalDisabilities > 6
+              then: "Yes", // Flag as "Yes"
+              else: "No", // Otherwise flag as "No"
+            },
           },
         },
       },
@@ -620,11 +624,10 @@ const getLearnersV2 = async (req, res) => {
           gender: { $first: "$gender" },
           class: { $first: "$class" },
           dob: { $first: "$dob" },
-          age: { $first: "$age" },
           isPromoted: { $first: "$isPromoted" },
           isDroppedOut: { $first: "$isDroppedOut" },
           disabilities: { $first: "$disabilities" },
-          disabilitiesFlag: { $first: "$disabilitiesFlag" }, // Include the disability flag
+          hasDisability: { $first: "$hasDisability" }, // Include the disability flag
         },
       },
       {
@@ -641,11 +644,10 @@ const getLearnersV2 = async (req, res) => {
           gender: 1,
           class: 1,
           dob: 1,
-          age: 1,
           isPromoted: 1,
           isDroppedOut: 1,
-          // disabilities: 1,
-          disabilitiesFlag: 1, // Include the flag in the projection
+          disabilities: 1,
+          hasDisability: 1, // Include the flag in the projection
         },
       },
     ];
