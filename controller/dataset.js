@@ -567,29 +567,12 @@ const getLearnersV2 = async (req, res) => {
   try {
     const { code } = req.body;
 
-    // Validate input
-    if (!code) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Code is required" });
-    }
+    // Construct query to fetch all learners
+    const query = {};
 
-    // Construct query
-    const query = {
-      code,
-      disabilities: {
-        $elemMatch: {
-          $or: [
-            { "disabilities.difficultyHearing": { $gt: 1 } },
-            { "disabilities.difficultyRecalling": { $gt: 1 } },
-            { "disabilities.difficultySeeing": { $gt: 1 } },
-            { "disabilities.difficultySelfCare": { $gt: 1 } },
-            { "disabilities.difficultyTalking": { $gt: 1 } },
-            { "disabilities.difficultyWalking": { $gt: 1 } },
-          ],
-        },
-      },
-    };
+    if (code) {
+      query.code = code;
+    }
 
     // Project fields to return
     const projection = {
@@ -611,40 +594,34 @@ const getLearnersV2 = async (req, res) => {
       disabilities: 1,
     };
 
-    // Fetch result with lean()
+    // Fetch all learners
     const result = await SchoolData.find(query, projection).lean();
 
-    // Return 404 if no data is found
-    if (!result.length) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No learners found" });
-    }
+    // Flag those with disabilities
+    const formattedResult = result.map((student) => {
+      const hasDisabilities =
+        student.disabilities &&
+        student.disabilities.some(
+          (disability) =>
+            disability.difficultyHearing > 1 ||
+            disability.difficultyRecalling > 1 ||
+            disability.difficultySeeing > 1 ||
+            disability.difficultySelfCare > 1 ||
+            disability.difficultyTalking > 1 ||
+            disability.difficultyWalking > 1
+        );
 
-    // Extract common values
-    const { school, code: schoolCode, education } = result[0];
-
-    // Format learners
-    const learners = result.map((student) => ({
-      firstName: student.firstName,
-      lastName: student.lastName,
-      gender: student.gender,
-      dob: student.dob,
-      age: student.age,
-      isPromoted: student.isPromoted ? "Yes" : "No",
-      isDroppedOut: student.isDroppedOut ? "Yes" : "No",
-      isWithDisability: student.isWithDisability ? "Yes" : "No",
-      disabilities:
-        student.disabilities && student.disabilities.length > 0 ? "Yes" : "No",
-    }));
-
-    // Return response
-    res.status(200).json({
-      school,
-      code: schoolCode,
-      education,
-      learners,
+      return {
+        ...student,
+        isPromoted: student.isPromoted ? "Yes" : "No",
+        isDroppedOut: student.isDroppedOut ? "Yes" : "No",
+        isWithDisability: hasDisabilities ? "Yes" : "No",
+        disabilities: hasDisabilities ? "Yes" : "No",
+      };
     });
+
+    // Send the response
+    res.status(200).json(formattedResult);
   } catch (error) {
     console.error("Error fetching learners:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
