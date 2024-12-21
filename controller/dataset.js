@@ -574,32 +574,57 @@ const getLearnersV2 = async (req, res) => {
       query.code = code;
     }
 
-    // MongoDB Aggregation Pipeline
+    // MongoDB aggregation pipeline
     const pipeline = [
       {
-        $match: query, // Filter by code or other query parameters
+        $match: query, // Match learners based on the query params (e.g., code)
+      },
+      {
+        $unwind: "$disabilities", // Unwind the disabilities array to process each disability
       },
       {
         $addFields: {
-          // Calculate total disabilities
-          disabilitiesFlag: {
-            $cond: {
-              if: {
-                $or: [
-                  { $gt: ["$disabilities.disabilities.difficultyHearing", 1] },
-                  {
-                    $gt: ["$disabilities.disabilities.difficultyRecalling", 1],
-                  },
-                  { $gt: ["$disabilities.disabilities.difficultySeeing", 1] },
-                  { $gt: ["$disabilities.disabilities.difficultySelfCare", 1] },
-                  { $gt: ["$disabilities.disabilities.difficultyTalking", 1] },
-                  { $gt: ["$disabilities.disabilities.difficultyWalking", 1] },
-                ],
-              },
-              then: "Yes", // Flag "Yes" if any disability condition is greater than 1
-              else: "No", // Otherwise flag "No"
-            },
+          // Calculate the total disabilities score for each learner
+          totalDisabilities: {
+            $sum: [
+              "$disabilities.disabilities.difficultySeeing",
+              "$disabilities.disabilities.difficultyHearing",
+              "$disabilities.disabilities.difficultyTalking",
+              "$disabilities.disabilities.difficultySelfCare",
+              "$disabilities.disabilities.difficultyWalking",
+              "$disabilities.disabilities.difficultyRecalling",
+            ],
           },
+        },
+      },
+      {
+        $addFields: {
+          // Flag as "Yes" if totalDisabilities > 6 (or adjust threshold as needed)
+          disabilitiesFlag: {
+            $gt: ["$totalDisabilities", 6],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id", // Group by learner ID to re-assemble the document
+          school: { $first: "$school" },
+          code: { $first: "$code" },
+          education: { $first: "$education" },
+          firstName: { $first: "$firstName" },
+          middleName: { $first: "$middleName" },
+          lastName: { $first: "$lastName" },
+          eieStatus: { $first: "$eieStatus" },
+          learnerUniqueID: { $first: "$learnerUniqueID" },
+          reference: { $first: "$reference" },
+          gender: { $first: "$gender" },
+          class: { $first: "$class" },
+          dob: { $first: "$dob" },
+          age: { $first: "$age" },
+          isPromoted: { $first: "$isPromoted" },
+          isDroppedOut: { $first: "$isDroppedOut" },
+          disabilities: { $first: "$disabilities" },
+          disabilitiesFlag: { $first: "$disabilitiesFlag" }, // Include the disability flag
         },
       },
       {
@@ -619,14 +644,14 @@ const getLearnersV2 = async (req, res) => {
           age: 1,
           isPromoted: 1,
           isDroppedOut: 1,
-          // disabilities: 1, // Include disabilities with the flag
-          disabilitiesFlag: 1, // Include the disabilities flag
+          // disabilities: 1,
+          disabilitiesFlag: 1, // Include the flag in the projection
         },
       },
     ];
 
-    // Execute the aggregation pipeline
-    const result = await SchoolData.aggregate(pipeline);
+    // Run the aggregation pipeline
+    const result = await SchoolData.aggregate(pipeline).lean();
 
     // Send the response
     res.status(200).json(result);
