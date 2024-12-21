@@ -563,6 +563,94 @@ const getStudentsInClass_2023 = async (req, res) => {
   }
 };
 
+const getLearnersV2 = async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    // Validate input
+    if (!code) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Code is required" });
+    }
+
+    // Construct query
+    const query = {
+      code,
+      disabilities: {
+        $elemMatch: {
+          $or: [
+            { "disabilities.difficultyHearing": { $gt: 1 } },
+            { "disabilities.difficultyRecalling": { $gt: 1 } },
+            { "disabilities.difficultySeeing": { $gt: 1 } },
+            { "disabilities.difficultySelfCare": { $gt: 1 } },
+            { "disabilities.difficultyTalking": { $gt: 1 } },
+            { "disabilities.difficultyWalking": { $gt: 1 } },
+          ],
+        },
+      },
+    };
+
+    // Project fields to return
+    const projection = {
+      school: 1,
+      code: 1,
+      education: 1,
+      firstName: 1,
+      middleName: 1,
+      lastName: 1,
+      eieStatus: 1,
+      learnerUniqueID: 1,
+      reference: 1,
+      gender: 1,
+      dob: 1,
+      age: 1,
+      isPromoted: 1,
+      isDroppedOut: 1,
+      isWithDisability: 1,
+      disabilities: 1,
+    };
+
+    // Fetch result with lean()
+    const result = await SchoolData.find(query, projection).lean();
+
+    // Return 404 if no data is found
+    if (!result.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No learners found" });
+    }
+
+    // Extract common values
+    const { school, code: schoolCode, education } = result[0];
+
+    // Format learners
+    const learners = result.map((student) => ({
+      firstName: student.firstName,
+      lastName: student.lastName,
+      gender: student.gender,
+      dob: student.dob,
+      age: student.age,
+      isPromoted: student.isPromoted ? "Yes" : "No",
+      isDroppedOut: student.isDroppedOut ? "Yes" : "No",
+      isWithDisability: student.isWithDisability ? "Yes" : "No",
+      disabilities:
+        student.disabilities && student.disabilities.length > 0 ? "Yes" : "No",
+    }));
+
+    // Return response
+    res.status(200).json({
+      school,
+      code: schoolCode,
+      education,
+      learners,
+    });
+  } catch (error) {
+    console.error("Error fetching learners:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 // Function to update all fields of a school data document
 const updateSchoolDataFields_2023 = async (req, res) => {
   try {
@@ -2497,4 +2585,5 @@ module.exports = {
   getDisabledLearnersCountByLocation,
   registerLearnerDuringSync,
   overallMaleFemaleStat,
+  getLearnersV2,
 };

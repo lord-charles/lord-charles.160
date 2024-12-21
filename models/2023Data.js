@@ -160,13 +160,17 @@ const schoolDataSchema = new mongoose.Schema(
 
 schoolDataSchema.index({ class: 1 });
 schoolDataSchema.index({ payam28: 1 });
-schoolDataSchema.index({ "disabilities.disabilities.difficultyHearing": 1 });
-schoolDataSchema.index({ "disabilities.disabilities.difficultyRecalling": 1 });
-schoolDataSchema.index({ "disabilities.disabilities.difficultySeeing": 1 });
-schoolDataSchema.index({ "disabilities.disabilities.difficultySelfCare": 1 });
-schoolDataSchema.index({ "disabilities.disabilities.difficultyTalking": 1 });
-schoolDataSchema.index({ "disabilities.disabilities.difficultyWalking": 1 });
-schoolDataSchema.index({ isDroppedOut: 1 });
+schoolDataSchema.index({ code: 1 });
+schoolDataSchema.index({
+  "disabilities.disabilities.difficultyHearing": 1,
+  "disabilities.disabilities.difficultyRecalling": 1,
+  "disabilities.disabilities.difficultySeeing": 1,
+  "disabilities.disabilities.difficultySelfCare": 1,
+  "disabilities.disabilities.difficultyTalking": 1,
+  "disabilities.disabilities.difficultyWalking": 1,
+});
+schoolDataSchema.index({ code: 1, isDroppedOut: 1 });
+schoolDataSchema.index({ isDroppedOut: 1 }, { sparse: true });
 
 const SchoolData = mongoose.model("schooldata2023", schoolDataSchema);
 

@@ -44,6 +44,7 @@ const {
   getDisabledLearnersCountByLocation,
   registerLearnerDuringSync,
   overallMaleFemaleStat,
+  getLearnersV2,
 } = require("../controller/dataset");
 const { updateDocuments, updateSchoolData } = require("../controller/update");
 
@@ -69,6 +70,7 @@ router.post(
   getStudentsInSchool_2023
 ); // all students in school
 router.get("/2023_data/students/:id", getSingleStudents_2023);
+router.get("/2023_data/get/learnersv2", getLearnersV2);
 router.patch("/2023_data/students/:id", updateSchoolDataFields_2023);
 router.patch("/2023_data/update/bulk", updateSchoolDataFieldsBulk);
 router.patch("/2023_data/update/bulkStates", bulkUpdateStateFields);

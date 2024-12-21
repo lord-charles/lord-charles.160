@@ -19,8 +19,8 @@ const updateDocuments = async () => {
         { _id: update._id },
         {
           $set: {
-            isPromoted: update.isPromoted,
-            isDroppedOut: update.isDroppedOut,
+            // isPromoted: update.isPromoted,
+            // isDroppedOut: update.isDroppedOut,
             learnerUniqueID: update.learnerUniqueID,
             reference: update.reference,
           },
