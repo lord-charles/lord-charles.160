@@ -6,10 +6,83 @@ const Accountability = require("../models/accountability");
 // Get all accountability entries
 const getAllAccountabilityEntries = async (req, res) => {
   try {
-    const entries = await Accountability.find();
+    const { tranche, year } = req.query;
+    // Input validation
+    if (year && isNaN(parseInt(year))) {
+      return res.status(400).json({ message: "Invalid year format" });
+    }
+
+    // Build match conditions first
+    const matchConditions = {};
+
+    if (year) {
+      matchConditions.academicYear = parseInt(year);
+    }
+
+    if (tranche) {
+      matchConditions["tranches.name"] = tranche;
+    }
+
+    const entries = await Accountability.aggregate([
+      { $match: matchConditions },
+
+      // Unwind tranches to work with individual tranche records
+      { $unwind: { path: "$tranches", preserveNullAndEmptyArrays: true } },
+
+      // Project the essential fields
+      {
+        $project: {
+          code: 1,
+          academicYear: 1,
+          state10: 1,
+          county28: 1,
+          payam28: 1,
+          schoolName: 1,
+          schoolType: 1,
+          ownership: 1,
+          amountDisbursed: "$tranches.amountDisbursed",
+          amountApproved: "$tranches.amountApproved",
+          paidBy: "$tranches.paidBy",
+          totalRevenue: "$financialSummary.totalRevenue",
+          totalExpenditure: "$financialSummary.totalExpenditure",
+          openingBalance: "$financialSummary.openingBalance",
+          closingBalance: "$financialSummary.closingBalance",
+        },
+      },
+
+      // Group by the main accountability document (for multiple tranche entries)
+      {
+        $group: {
+          _id: "$_id",
+          code: { $first: "$code" },
+          academicYear: { $first: "$academicYear" },
+          state10: { $first: "$state10" },
+          county28: { $first: "$county28" },
+          payam28: { $first: "$payam28" },
+          schoolName: { $first: "$schoolName" },
+          schoolType: { $first: "$schoolType" },
+          ownership: { $first: "$ownership" },
+          totalRevenue: { $first: "$totalRevenue" },
+          totalExpenditure: { $first: "$totalExpenditure" },
+          openingBalance: { $first: "$openingBalance" },
+          closingBalance: { $first: "$closingBalance" },
+          tranches: {
+            $push: {
+              name: "$tranches.name",
+              amountDisbursed: "$amountDisbursed",
+              amountApproved: "$amountApproved",
+              paidBy: "$paidBy",
+            },
+          },
+        },
+      },
+    ]);
+
     res.status(200).json(entries);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching data", error });
+    res
+      .status(500)
+      .json({ message: "Error fetching accountability data", error });
   }
 };
 
