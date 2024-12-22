@@ -10,4 +10,10 @@ router.post("/", accountabilityController.createAccountabilityEntry);
 router.put("/:id", accountabilityController.updateAccountabilityEntry);
 router.delete("/:id", accountabilityController.deleteAccountabilityEntry);
 
+//APPROVALS
+router.get(
+  "/approvals/get-all",
+  accountabilityController.getAllApprovalEntries
+);
+
 module.exports = router;

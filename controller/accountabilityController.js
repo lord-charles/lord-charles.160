@@ -69,10 +69,49 @@ const deleteAccountabilityEntry = async (req, res) => {
   }
 };
 
+const getAllApprovalEntries = async (req, res) => {
+  const { year } = req.query;
+  try {
+    const entries = await Accountability.aggregate([
+      // Match documents with the specified academic year
+      { $match: { academicYear: parseInt(year) } },
+
+      // Unwind the tranches array to get individual tranche documents
+      { $unwind: "$tranches" },
+
+      // Project the required fields
+      {
+        $project: {
+          code: 1,
+          academicYear: 1,
+          state10: 1,
+          county28: 1,
+          payam28: 1,
+          schoolName: 1,
+          schoolType: 1,
+          ownership: 1,
+          amountDisbursed: "$tranches.amountDisbursed",
+          currency: "$tranches.currency",
+          approval: "$tranches.approval",
+          amountApproved: "$tranches.amountApproved",
+          name: "$tranches.name",
+        },
+      },
+    ]);
+
+    // Respond with the aggregated data
+    res.status(200).json(entries);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching approval entries", error });
+  }
+};
+
 module.exports = {
   getAllAccountabilityEntries,
   getAccountabilityById,
   createAccountabilityEntry,
   updateAccountabilityEntry,
   deleteAccountabilityEntry,
+  //APPROVALS
+  getAllApprovalEntries,
 };

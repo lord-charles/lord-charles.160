@@ -60,6 +60,7 @@ const expenditureSchema = new Schema({
 
 // Tranche Schema
 const trancheSchema = new Schema({
+  name: { type: String },
   amountDisbursed: { type: Number, default: 0 },
   currency: { type: String, default: "USD" },
   dateDisbursed: { type: Date },
@@ -70,7 +71,7 @@ const trancheSchema = new Schema({
     approvedBy: { type: String },
     approverName: { type: String },
     approvalDate: { type: Date },
-    status: { type: String },
+    status: { type: String, default: "Not Approved" },
     remarks: { type: String },
   },
   amountApproved: { type: Number, default: 0 },
