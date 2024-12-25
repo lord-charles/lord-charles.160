@@ -422,7 +422,7 @@ const countyPayamPupilTotals_2023 = async (req, res) => {
 const payamSchoolPupilTotals_2023 = async (req, res) => {
   try {
     // Extract payam28 and isDisabled from the request body
-    const { payam28, isDisabled } = req.body;
+    const { payam28, county28, state10, isDisabled } = req.body;
 
     // Validate if payam28 is provided
     if (!payam28) {
@@ -433,6 +433,12 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
 
     // Base match stage to filter by payam28
     const matchStage = { payam28 };
+    if (county28) {
+      matchStage.county28 = county28;
+    }
+    if (state10) {
+      matchStage.state10 = state10;
+    }
 
     // Define the aggregation pipeline
     const pipeline = [{ $match: matchStage }];
@@ -480,7 +486,7 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     const result = await SchoolData.aggregate(pipeline);
 
     // Return the result
-    res.status(200).json({ success: true, data: result });
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching payam school pupil totals:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
