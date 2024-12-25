@@ -40,9 +40,10 @@ const updateDocuments = async (req, res) => {
         continue;
       }
 
-      // Fields to update
-      const fieldsToUpdate = update;
+      // Fields to update (ensure _id is not included)
+      const { _id, ...fieldsToUpdate } = update.toObject(); // Remove _id from the update fields
       console.log(`Fields to update: ${JSON.stringify(fieldsToUpdate)}`);
+
       if (!fieldsToUpdate || typeof fieldsToUpdate !== "object") {
         console.log(`Skipping update ${i + 1}: Invalid fields`);
         continue;
