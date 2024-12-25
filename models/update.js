@@ -12,6 +12,7 @@ const learnerSchema = new mongoose.Schema(
     county10: String,
     payam10: String,
     school: String,
+    schoolName: String,
     class: String,
     code: String,
     education: String,
