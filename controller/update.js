@@ -4,39 +4,67 @@ const schoolData = require("../models/school-data");
 
 const Update = require("../models/update");
 
-const updateDocuments = async () => {
+const updateDocuments = async (req, res) => {
   try {
-    console.log("Getting updates...");
+    const { method } = req.body; // Get the method (_id or code) from the request body
 
+    if (!method || (method !== "_id" && method !== "code")) {
+      return res.status(400).json({
+        message: "Invalid method. The method must be '_id' or 'code'.",
+      });
+    }
+
+    console.log("Fetching updates from Update model...");
     const updates = await Update.find();
     console.log(`${updates.length} documents found`);
 
-    // Iterate over each document in the update collection
+    if (!updates || updates.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No updates found in the Update model." });
+    }
+
     for (let i = 0; i < updates.length; i++) {
       const update = updates[i];
 
-      const result = await SchoolData2023.updateOne(
-        { _id: update._id },
-        {
-          $set: {
-            // isPromoted: update.isPromoted,
-            // isDroppedOut: update.isDroppedOut,
-            learnerUniqueID: update.learnerUniqueID,
-            reference: update.reference,
-          },
-        }
-      );
+      // Define the filter based on the method
+      const filter =
+        method === "_id" && update._id
+          ? { _id: update._id }
+          : method === "code" && update.code
+          ? { code: update.code }
+          : null;
 
+      if (!filter) {
+        console.log(`Skipping update ${i + 1}: Invalid filter`);
+        continue;
+      }
+
+      // Fields to update
+      const fieldsToUpdate = update.fields;
+      if (!fieldsToUpdate || typeof fieldsToUpdate !== "object") {
+        console.log(`Skipping update ${i + 1}: Invalid fields`);
+        continue;
+      }
+
+      // Perform update operation
+      const result = await SchoolData2023.updateOne(filter, {
+        $set: fieldsToUpdate,
+      });
+
+      // Log update status
       if (result.modifiedCount > 0) {
-        console.log(`${i + 1}: success`);
+        console.log(`Update ${i + 1}: Success`);
       } else {
-        console.log(`${i + 1}: no change`);
+        console.log(`Update ${i + 1}: No changes made or document not found`);
       }
     }
 
     console.log("Update process completed");
+    res.status(200).json({ message: "Update process completed successfully." });
   } catch (error) {
     console.error("Error updating documents:", error);
+    res.status(500).json({ message: "Error updating documents", error });
   }
 };
 
