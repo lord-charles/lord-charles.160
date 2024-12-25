@@ -431,46 +431,56 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
         .json({ success: false, error: "Payam name is required" });
     }
 
-    // Base match stage
-    const matchStage = { payam28: payam28 };
+    // Base match stage to filter by payam28
+    const matchStage = { payam28 };
 
-    // Create the pipeline array
+    // Define the aggregation pipeline
     const pipeline = [{ $match: matchStage }];
 
-    // If isDisabled is true, add the necessary stages
+    // Additional filter for schools with disabled pupils if isDisabled is true
     if (isDisabled) {
-      pipeline.push(
-        {
-          $match: {
-            disabilities: {
-              $elemMatch: {
-                $or: [
-                  { "disabilities.difficultyHearing": { $gt: 1 } },
-                  { "disabilities.difficultyRecalling": { $gt: 1 } },
-                  { "disabilities.difficultySeeing": { $gt: 1 } },
-                  { "disabilities.difficultySelfCare": { $gt: 1 } },
-                  { "disabilities.difficultyTalking": { $gt: 1 } },
-                  { "disabilities.difficultyWalking": { $gt: 1 } },
-                ],
-              },
+      pipeline.push({
+        $match: {
+          "disabilities.disabilities": {
+            $elemMatch: {
+              $or: [
+                { difficultyHearing: { $gt: 1 } },
+                { difficultyRecalling: { $gt: 1 } },
+                { difficultySeeing: { $gt: 1 } },
+                { difficultySelfCare: { $gt: 1 } },
+                { difficultyTalking: { $gt: 1 } },
+                { difficultyWalking: { $gt: 1 } },
+              ],
             },
           },
         },
-        { $group: { _id: "$code", school: { $first: "$school" } } },
-        { $project: { _id: 0, code: "$_id", school: 1 } }
-      );
-    } else {
-      pipeline.push(
-        { $group: { _id: "$code", school: { $first: "$school" } } },
-        { $project: { _id: 0, code: "$_id", school: 1 } }
-      );
+      });
     }
+
+    // Group by unique school code and collect relevant details
+    pipeline.push(
+      {
+        $group: {
+          _id: "$code", // Unique school code
+          school: { $first: "$school" }, // School name
+          payam: { $first: "$payam28" }, // Payam
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude MongoDB's default `_id`
+          code: "$_id", // Include unique school code
+          school: 1,
+          payam: 1,
+        },
+      }
+    );
 
     // Execute the aggregation pipeline
     const result = await SchoolData.aggregate(pipeline);
 
     // Return the result
-    res.status(200).json(result);
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching payam school pupil totals:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
