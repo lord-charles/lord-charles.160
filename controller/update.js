@@ -50,7 +50,7 @@ const updateDocuments = async (req, res) => {
       }
 
       // Perform update operation
-      const result = await SchoolData2023.updateOne(filter, {
+      const result = await SchoolData2023.updateMany(filter, {
         $set: fieldsToUpdate,
       });
 
