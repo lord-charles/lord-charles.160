@@ -42,7 +42,8 @@ const updateDocuments = async (req, res) => {
 
       // Fields to update
       const fieldsToUpdate = update.fields;
-      if (!fieldsToUpdate || typeof fieldsToUpdate !== "object") {
+      console.log(`Fields to update: ${JSON.stringify(fieldsToUpdate)}`);
+      if (!fieldsToUpdate) {
         console.log(`Skipping update ${i + 1}: Invalid fields`);
         continue;
       }
