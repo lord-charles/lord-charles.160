@@ -20,6 +20,7 @@ const registrationPeriod = require("./routes/registrationPeriods");
 const schoolData = require("./routes/school-data");
 const budgetRoutes = require("./routes/budgetRoutes");
 const accountabilityRoutes = require("./routes/accountabilityRoutes");
+const budgetCodesRoutes = require("./routes/budgetCodes");
 
 // Swagger
 const swaggerUi = require("swagger-ui-express");
@@ -81,6 +82,7 @@ app.use("/express/registration-period", registrationPeriod);
 app.use("/express/school-data", schoolData);
 app.use("/express/budget", budgetRoutes);
 app.use("/express/accountability", accountabilityRoutes);
+app.use("/express/budget-codes", budgetCodesRoutes);
 
 // Swagger Documentation Route
 app.use("/express/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
