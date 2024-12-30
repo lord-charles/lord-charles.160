@@ -1,87 +1,101 @@
 const mongoose = require("mongoose");
 
 const RevenueSchema = new mongoose.Schema({
-  type: { type: String, required: true },
-  category: { type: String, required: true },
-  description: { type: String, required: true },
-  amount: { type: Number, required: true },
-  sourceCode: { type: String, required: true },
-  group: { type: String, enum: ["OPEX", "CAPEX"], required: true },
+  type: { type: String },
+  category: { type: String },
+  description: { type: String },
+  amount: { type: Number },
+  sourceCode: { type: String },
+  group: { type: String, enum: ["OPEX", "CAPEX"] },
 });
 
 const BudgetItemSchema = new mongoose.Schema({
-  budgetCode: { type: String, required: true },
-  description: { type: String, required: true },
+  budgetCode: { type: String },
+  description: { type: String },
   neededItems: [{ type: String }],
-  units: { type: Number, required: true },
-  unitCostSSP: { type: Number, required: true },
-  totalCostSSP: { type: Number, required: true },
-  fundingSource: { type: String, required: true },
-  monthActivityToBeCompleted: { type: String, required: true },
-  subCommitteeResponsible: { type: String, required: true },
-  adaptationCostPercentageLWD: { type: String },
-  impact: { type: String },
+  units: { type: Number },
+  unitCostSSP: { type: Number },
+  totalCostSSP: { type: Number },
+  fundingSource: { type: String },
+  monthActivityToBeCompleted: { type: String },
 });
 
 const CategorySchema = new mongoose.Schema({
-  id: { type: String, required: true },
-  categoryName: { type: String, required: true },
-  categoryCode: { type: String, required: true },
+  categoryName: { type: String },
+  categoryCode: { type: String },
   items: [BudgetItemSchema],
 });
 
 // BudgetGroupSchema
 const BudgetGroupSchema = new mongoose.Schema({
-  group: { type: String, enum: ["OPEX", "CAPEX"], required: true },
+  group: { type: String, enum: ["OPEX", "CAPEX"] },
   categories: [CategorySchema],
 });
 
 // BudgetSchema
 const BudgetSchema = new mongoose.Schema({
-  submittedAmount: { type: Number, required: true },
-  preparedBy: { type: String, required: true },
-  reviewedBy: { type: String, required: true },
-  reviewDate: { type: Date, required: true },
+  submittedAmount: { type: Number },
+  preparedBy: { type: String },
+  reviewedBy: { type: String },
+  reviewDate: { type: Date },
   previousYearLedgerAccountedFor: { type: Boolean, default: false },
   groups: [BudgetGroupSchema],
 });
 
 // MetaSchema
 const MetaSchema = new mongoose.Schema({
-  classLevels: [{ type: String, required: true }],
-  estimateLearnerEnrolment: { type: Number, required: true },
-  latestAttendance: { type: Number, required: true }, // Calculated
+  classLevels: [{ type: String }],
+  estimateLearnerEnrolment: { type: Number },
+  latestAttendance: { type: Number },
+  learners: {
+    estimatedFemale: { type: Number },
+    estimatedMale: { type: Number },
+    estimatedFemaleDisabled: { type: Number },
+    estimatedMaleDisabled: { type: Number },
+  },
   teachers: {
-    estimatedFemale: { type: Number, required: true },
-    estimatedMale: { type: Number, required: true },
+    estimatedFemale: { type: Number },
+    estimatedMale: { type: Number },
     estimatedFemaleDisabled: { type: Number },
     estimatedMaleDisabled: { type: Number },
   },
   classrooms: {
-    permanent: { type: Number, required: true },
+    permanent: { type: Number },
     temporary: { type: Number },
     openAir: { type: Number },
   },
   governance: {
-    SGB: { type: Boolean, required: true },
-    SDP: { type: Boolean, required: true },
-    budgetSubmitted: { type: Boolean, required: true },
-    bankAccount: { type: Boolean, required: true },
+    SGB: { type: Boolean },
+    SDP: { type: Boolean },
+    budgetSubmitted: { type: Boolean },
+    bankAccount: { type: Boolean },
+  },
+  subCommitteeResponsible: {
+    subCommitteeName: { type: String },
+    chairperson: { type: String },
+    responsibilities: { type: String },
+  },
+  // adaptationCostPercentageLWD: { type: String },
+  impact: { type: String },
+  preparation: {
+    preparedBy: { type: String },
+    preparationDate: { type: String },
+    submittedBy: { type: String },
   },
 });
 
 // MainSchema
 const MainSchema = new mongoose.Schema({
-  code: { type: String, required: true },
-  year: { type: Number, required: true },
+  code: { type: String },
+  year: { type: Number },
   ownership: { type: String },
   schoolType: { type: String },
   school: { type: String },
   state10: { type: String },
   county28: { type: String },
   payam28: { type: String },
-  meta: { type: MetaSchema, required: true },
-  budget: { type: BudgetSchema, required: true },
+  meta: { type: MetaSchema },
+  budget: { type: BudgetSchema },
   revenues: [RevenueSchema],
 });
 
