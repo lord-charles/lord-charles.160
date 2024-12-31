@@ -188,7 +188,7 @@ router.get("/code/:code/:year", getBudgetByCode);
  *       500:
  *         description: Internal server error
  */
-router.put("/:id", updateBudget);
+router.patch("/:id", updateBudget);
 
 /**
  * @swagger
