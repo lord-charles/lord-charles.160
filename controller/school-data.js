@@ -80,7 +80,9 @@ exports.getSchoolByCode = async (req, res) => {
     if (!school) {
       return res.status(404).json({ message: "School not found" });
     }
-    res.status(200).json(school);
+    res
+      .status(200)
+      .json({ message: "School retrieved successfully", data: school });
   } catch (error) {
     res
       .status(500)
