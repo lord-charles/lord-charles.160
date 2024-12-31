@@ -68,6 +68,26 @@ exports.getSchoolById = async (req, res) => {
   }
 };
 
+// Get a single school by ID
+exports.getSchoolByCode = async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (!code) {
+      return res.status(400).json({ message: "school code is required!" });
+    }
+
+    const school = await schoolData.findOne({ code });
+    if (!school) {
+      return res.status(404).json({ message: "School not found" });
+    }
+    res.status(200).json(school);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error retrieving school", error: error.message });
+  }
+};
+
 // Update a school by ID
 exports.updateSchool = async (req, res) => {
   try {

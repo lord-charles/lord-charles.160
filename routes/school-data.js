@@ -136,6 +136,8 @@ router.get("/schools", schoolController.getAllSchools);
  */
 router.get("/school/:id", schoolController.getSchoolById);
 
+router.get("/school/code/:code", schoolController.getSchoolByCode);
+
 /**
  * @swagger
  * /school/{id}:

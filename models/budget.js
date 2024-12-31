@@ -35,7 +35,6 @@ const BudgetGroupSchema = new mongoose.Schema({
 // BudgetSchema
 const BudgetSchema = new mongoose.Schema({
   submittedAmount: { type: Number },
-  preparedBy: { type: String },
   reviewedBy: { type: String },
   reviewDate: { type: Date },
   previousYearLedgerAccountedFor: { type: Boolean, default: false },
