@@ -25,7 +25,7 @@ exports.getBudgets = async (req, res) => {
       ownership: 1,
       school: 1,
       "budget.submittedAmount": 1,
-      "budget.preparedBy": 1,
+      "budget.meta.preparation.preparedBy": 1,
       "budget.reviewedBy": 1,
       "budget.reviewDate": 1,
     };
