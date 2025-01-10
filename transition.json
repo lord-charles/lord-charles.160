@@ -1,0 +1,169 @@
+{
+  "_id": { "$oid": "65dc24b2dd2ca1f2c931ffa5" },
+  "year": 2027,
+  "state28": "UTY",
+  "stateName28": "Unity",
+  "county28": "Mayom",
+  "payam28": "Kuerbone",
+  "state10": "UTY",
+  "stateName10": "Unity",
+  "county10": "Mayom",
+  "payam10": "Kuerbone",
+  "school": "Mayom Town Alp School",
+  "education": "ALP",
+  "gender": "M",
+  "dob": "2003-02-25",
+  "age": 24,
+  "firstName": "Duol",
+  "middleName": "Riek",
+  "lastName": "Thot",
+  "learnerUniqueID": 230572759,
+  "reference": "23AAA128",
+  "progress": [
+    {
+      "year": 2020,
+      "class": "P7",
+      "educationLevel": "Primary",
+      "school": "Mayom Town Primary School",
+      "reference":"",
+      "code":"",
+      "status": "Enrolled",
+      "remarks": "Normal progression."
+    },
+    {
+      "year": 2021,
+      "class": "P8",
+      "educationLevel": "Primary",
+      "school": "Mayom Town Primary School",
+      "reference":"",
+      "code":"",
+      "status": "Promoted",
+      "remarks": "Completed KCPE exams successfully."
+    },
+    {
+      "year": 2022,
+      "class": "S1",
+      "educationLevel": "Secondary",
+      "school": "Mayom Town Secondary School",
+      "reference":"",
+      "code":"",
+      "status": "Enrolled",
+      "remarks": "Transitioned to secondary school."
+    },
+    {
+      "year": 2023,
+      "class": "S2",
+      "educationLevel": "Secondary",
+      "school": "Mayom Town Secondary School",
+      "reference":"",
+      "code":"",
+      "status": "Dropped Out",
+      "remarks": "Dropped out due to family relocation."
+    },
+    {
+      "year": 2024,
+      "class": "S2",
+      "educationLevel": "Secondary",
+      "school": "Mayom Town Secondary School",
+      "reference":"",
+      "code":"",
+      "status": "Returned",
+      "remarks": "Re-enrolled after family relocation."
+    },
+    {
+      "year": 2025,
+      "class": "S2",
+      "educationLevel": "Secondary",
+      "school": "Mayom Town Secondary School",
+      "reference":"",
+      "code":"",
+      "status": "Repeated",
+      "remarks": "Repeated due to prolonged absence in 2023."
+    },
+    {
+      "year": 2026,
+      "class": "S3",
+      "educationLevel": "Secondary",
+      "school": "Mayom Town Secondary School",
+      "reference":"",
+      "code":"",
+      "status": "Promoted",
+      "remarks": "Normal progression."
+    },
+    {
+      "year": 2027,
+      "class": "S4",
+      "educationLevel": "Secondary",
+      "school": "Mayom Town Secondary School",
+      "reference":"",
+      "code":"",
+      "status": "Enrolled",
+      "remarks": "Preparing for KCSE exams."
+    }
+  ],
+  "transitionDetails": {
+    "primaryToSecondaryYear": 2022,
+    "secondarySchool": "Mayom Town Secondary School",
+    "remarks": "Successfully transitioned after passing KCPE exams."
+  },
+  "attendance": [
+    {
+      "year": 2020,
+      "attendanceRate": 95
+    },
+    {
+      "year": 2021,
+      "attendanceRate": 98
+    },
+    {
+      "year": 2022,
+      "attendanceRate": 90
+    },
+    {
+      "year": 2023,
+      "attendanceRate": 40
+    },
+    {
+      "year": 2024,
+      "attendanceRate": 85
+    },
+    {
+      "year": 2025,
+      "attendanceRate": 88
+    },
+    {
+      "year": 2026,
+      "attendanceRate": 92
+    },
+    {
+      "year": 2027,
+      "attendanceRate": 94
+    }
+  ],
+  "disabilities": {
+    "difficultySeeing": 1,
+    "difficultyHearing": 0,
+    "difficultyTalking": 0,
+    "difficultySelfCare": 0,
+    "difficultyWalking": 0,
+    "difficultyRecalling": 0
+  },
+  "houseHold": {
+    "guardianPhone": "+21112345678",
+    "guardianCountryOfOrigin": "South Sudan",
+    "maleAdult": 1,
+    "femaleAdult": 1,
+    "maleBelow18": 2,
+    "femaleBelow18": 1,
+    "maleWithDisability": 0,
+    "femaleWithDisability": 0
+  },
+  "pregnantOrNursing": {
+    "pregnant": 0,
+    "nursing": 0,
+    "moredetails": ""
+  },
+  "modifiedBy": "UTY+RAA",
+  "updatedAt": { "$date": "2027-12-31T23:59:59.000Z" },
+  "isValidated": true
+}

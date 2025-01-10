@@ -581,13 +581,18 @@ const getStudentsInClass_2023 = async (req, res) => {
 
 const getLearnersV2 = async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, enrollmentYear } = req.body;
 
     // Construct query to fetch all learners
     const query = {};
 
     if (code) {
       query.code = code;
+    }
+    if (enrollmentYear) {
+      query["progress"] = {
+        $elemMatch: { year: parseInt(enrollmentYear) },
+      };
     }
 
     // MongoDB aggregation pipeline
@@ -2346,7 +2351,7 @@ const fetchDocumentsWithDelay = async (req, res) => {
 const getLearnerCountByLocation = async (req, res) => {
   try {
     // Destructure the optional query parameters from the request
-    const { year, state10, county28, payam28, code } = req.body;
+    const { year, state10, county28, payam28, code, enrollmentYear } = req.body;
 
     // Build the query object dynamically
     const query = {
@@ -2358,9 +2363,14 @@ const getLearnerCountByLocation = async (req, res) => {
     if (county28) query.county28 = county28;
     if (payam28) query.payam28 = payam28;
     if (code) query.code = code;
+    if (enrollmentYear) {
+      query["progress"] = {
+        $elemMatch: { year: parseInt(enrollmentYear) },
+      };
+    }
 
     // Fetch the learner count based on the query
-    const learnerCount = await SchoolData.countDocuments(query);
+    const learnerCount = (await SchoolData.countDocuments(query)) || 0;
 
     // Respond with the total count of learners
     return res.status(200).json({
@@ -2379,7 +2389,7 @@ const getLearnerCountByLocation = async (req, res) => {
 const getPromotedLearnersCountByLocation = async (req, res) => {
   try {
     // Destructure the optional query parameters from the request
-    const { year, state10, county28, payam28, code } = req.body;
+    const { year, state10, county28, payam28, code, enrollmentYear } = req.body;
 
     // Build the query object dynamically
     const query = {
@@ -2392,9 +2402,14 @@ const getPromotedLearnersCountByLocation = async (req, res) => {
     if (county28) query.county28 = county28;
     if (payam28) query.payam28 = payam28;
     if (code) query.code = code;
+    if (enrollmentYear) {
+      query["progress"] = {
+        $elemMatch: { year: parseInt(enrollmentYear) },
+      };
+    }
 
     // Get the count of promoted learners based on the query
-    const promotedLearnersCount = await SchoolData.countDocuments(query);
+    const promotedLearnersCount = (await SchoolData.countDocuments(query)) || 0;
 
     // Respond with the count of promoted learners
     return res.status(200).json({
@@ -2412,7 +2427,7 @@ const getPromotedLearnersCountByLocation = async (req, res) => {
 
 const getDisabledLearnersCountByLocation = async (req, res) => {
   try {
-    const { year, state10, county28, payam28, code } = req.body;
+    const { year, state10, county28, payam28, code, enrollmentYear } = req.body;
 
     // Build query object dynamically based on location filters
     const query = { isWithDisability: true, isDroppedOut: false };
@@ -2422,9 +2437,14 @@ const getDisabledLearnersCountByLocation = async (req, res) => {
     if (county28) query.county28 = county28;
     if (payam28) query.payam28 = payam28;
     if (code) query.code = code;
+    if (enrollmentYear) {
+      query["progress"] = {
+        $elemMatch: { year: parseInt(enrollmentYear) },
+      };
+    }
 
     // Get the count of disabled learners based on the query
-    const disabledLearnersCount = await SchoolData.countDocuments(query);
+    const disabledLearnersCount = (await SchoolData.countDocuments(query)) || 0;
 
     // Respond with the count of disabled learners
     return res.status(200).json({
@@ -2439,7 +2459,7 @@ const getDisabledLearnersCountByLocation = async (req, res) => {
 
 const overallMaleFemaleStat = async (req, res) => {
   try {
-    const { county28, payam28, state10, code } = req.body;
+    const { county28, payam28, state10, code, enrollmentYear } = req.body;
 
     // Build dynamic match stage for non-dropped-out records
     const matchStage = { isDroppedOut: false };
@@ -2448,6 +2468,11 @@ const overallMaleFemaleStat = async (req, res) => {
     if (payam28) matchStage.payam28 = payam28;
     if (state10) matchStage.state10 = state10;
     if (code) matchStage.code = code;
+    if (enrollmentYear) {
+      matchStage["progress"] = {
+        $elemMatch: { year: parseInt(enrollmentYear) },
+      };
+    }
 
     // Main pipeline
     const pipeline = [
@@ -2538,6 +2563,11 @@ const overallMaleFemaleStat = async (req, res) => {
     if (payam28) droppedOutMatchStage.payam28 = payam28;
     if (state10) droppedOutMatchStage.state10 = state10;
     if (code) droppedOutMatchStage.code = code;
+    if (enrollmentYear) {
+      droppedOutMatchStage["progress"] = {
+        $elemMatch: { year: parseInt(enrollmentYear) },
+      };
+    }
 
     const droppedOutPipeline = [
       {

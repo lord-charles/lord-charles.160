@@ -152,6 +152,68 @@ const schoolDataSchema = new mongoose.Schema(
       },
     },
     modifiedBy: String,
+    progress: [
+      {
+        year: {
+          type: Number,
+          required: true,
+          validate: {
+            validator: (year) =>
+              year > 1980 && year <= new Date().getFullYear(),
+            message:
+              "Year must be a valid number between 1980 and the current year.",
+          },
+        },
+        class: {
+          type: String,
+          required: false,
+        },
+        educationLevel: {
+          type: String,
+          required: false,
+        },
+        learnerUniqueID: {
+          type: Number,
+          required: false,
+        },
+        reference: {
+          type: String,
+          required: false,
+        },
+        code: {
+          type: String,
+          required: false,
+        },
+        school: {
+          type: String,
+          required: false,
+        },
+        attendanceRate: {
+          type: Number,
+          min: 0,
+          max: 100,
+          required: false,
+        },
+        status: {
+          type: String,
+          enum: [
+            "Enrolled",
+            "Promoted",
+            "Repeated",
+            "DroppedOut",
+            "Returned",
+            "Transferred",
+            "Graduated",
+          ],
+          required: true,
+        },
+        remarks: {
+          type: String,
+          required: false,
+          default: "",
+        },
+      },
+    ],
   },
   {
     timestamps: true,
