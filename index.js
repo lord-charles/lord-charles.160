@@ -21,6 +21,7 @@ const schoolData = require("./routes/school-data");
 const budgetRoutes = require("./routes/budgetRoutes");
 const accountabilityRoutes = require("./routes/accountabilityRoutes");
 const budgetCodesRoutes = require("./routes/budgetCodes");
+const ct = require("./routes/ct");
 
 // Swagger
 const swaggerUi = require("swagger-ui-express");
@@ -83,6 +84,7 @@ app.use("/express/school-data", schoolData);
 app.use("/express/budget", budgetRoutes);
 app.use("/express/accountability", accountabilityRoutes);
 app.use("/express/budget-codes", budgetCodesRoutes);
+app.use("/express/ct", ct);
 
 // Swagger Documentation Route
 app.use("/express/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

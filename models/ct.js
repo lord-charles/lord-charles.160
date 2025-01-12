@@ -37,7 +37,18 @@ const CashTransferSchema = new mongoose.Schema(
         required: true,
       },
       attendance: { type: Number, min: 0, required: true },
-
+      disabilities: [
+        {
+          disabilities: {
+            difficultyHearing: { type: Number, required: false },
+            difficultyRecalling: { type: Number, required: false },
+            difficultySeeing: { type: Number, required: false },
+            difficultySelfCare: { type: Number, required: false },
+            difficultyTalking: { type: Number, required: false },
+            difficultyWalking: { type: Number, required: false },
+          },
+        },
+      ],
       collectedBy: { type: String },
     },
     validation: {
@@ -80,9 +91,9 @@ const CashTransferSchema = new mongoose.Schema(
       },
     },
     heldBy: {
-      dateReleased: { type: Date },
       fundsHeldBy: { type: String },
       fundsHeldAmount: { type: Number, min: 0 },
+      dateReturnedHeldFunds: { type: Date },
       commentsReturnedHeldFunds: { type: String },
     },
     paymentWitnesses: [

@@ -1555,21 +1555,15 @@ const trackSchool = async (req, res) => {
 // dashboard
 const stateMaleFemaleStat = async (req, res) => {
   try {
-    let regexYear;
-    if (req.body && req.body.year) {
-      regexYear = req.body.year.toString().slice(-2);
-      console.log(regexYear);
-    } else {
-      regexYear = new Date().getFullYear().toString().slice(-2);
+    const { year } = req.body;
+
+    const query = {};
+    if (year) {
+      query.year = year;
     }
-
-    const regexPattern = new RegExp(`^(${regexYear})`);
-
     const pipeline = [
       {
-        $match: {
-          reference: { $regex: regexPattern }, // Match references starting with the determined year
-        },
+        $match: query,
       },
       {
         $group: {
