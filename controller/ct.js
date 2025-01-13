@@ -120,11 +120,32 @@ exports.validateAndApproveTransfer = async (req, res) => {
 
 exports.getStatCardData = async (req, res) => {
   try {
-    const { tranche } = req.query;
+    const { tranche, state, county, payam, year } = req.query;
 
-    const matchStage = tranche
-      ? [{ $match: { tranche: parseInt(tranche) } }]
-      : [];
+    const matchStage = [];
+    const matchConditions = {};
+
+    // Only add location and year filters to the initial match
+    if (state) {
+      matchConditions["location.state10"] = state;
+    }
+
+    if (county) {
+      matchConditions["location.county10"] = county;
+    }
+
+    if (payam) {
+      matchConditions["location.payam10"] = payam;
+    }
+
+    if (year) {
+      matchConditions.year = parseInt(year);
+    }
+
+    // Only add the match stage if there are conditions
+    if (Object.keys(matchConditions).length > 0) {
+      matchStage.push({ $match: matchConditions });
+    }
 
     const pipeline = [
       ...matchStage,
@@ -160,15 +181,23 @@ exports.getStatCardData = async (req, res) => {
       {
         $lookup: {
           from: "cashtransfers",
-          let: { tranche: { $ifNull: ["$_id", 0] } },
+          let: {
+            tranche: { $ifNull: ["$_id", 0] },
+            requestedTranche: tranche ? parseInt(tranche) : null,
+          },
           pipeline: [
             {
               $match: {
-                $expr: { 
-                  $eq: [
-                    { $ifNull: ["$tranche", 0] }, 
-                    "$$tranche"
-                  ] 
+                $expr: {
+                  $and: [
+                    { $eq: [{ $ifNull: ["$tranche", 0] }, "$$tranche"] },
+                    {
+                      $or: [
+                        { $eq: ["$$requestedTranche", null] },
+                        { $eq: ["$$tranche", "$$requestedTranche"] },
+                      ],
+                    },
+                  ],
                 },
               },
             },
