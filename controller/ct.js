@@ -117,3 +117,242 @@ exports.validateAndApproveTransfer = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+exports.getStatCardData = async (req, res) => {
+  try {
+    const { tranche } = req.query;
+
+    const matchStage = tranche
+      ? [{ $match: { tranche: parseInt(tranche) } }]
+      : [];
+
+    const pipeline = [
+      ...matchStage,
+      {
+        $addFields: {
+          tranche: { $ifNull: ["$tranche", 0] },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            tranche: "$tranche",
+            schoolCode: "$school.code",
+          },
+          schoolName: { $first: "$school.name" },
+          schoolCount: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.tranche",
+          schools: {
+            $push: {
+              code: "$_id.schoolCode",
+              name: "$schoolName",
+              count: "$schoolCount",
+            },
+          },
+          totalSchools: { $sum: 1 },
+          uniqueSchoolCodes: { $addToSet: "$_id.schoolCode" },
+        },
+      },
+      {
+        $lookup: {
+          from: "cashtransfers",
+          let: { tranche: { $ifNull: ["$_id", 0] } },
+          pipeline: [
+            {
+              $match: {
+                $expr: { 
+                  $eq: [
+                    { $ifNull: ["$tranche", 0] }, 
+                    "$$tranche"
+                  ] 
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                totalLearners: { $addToSet: "$learner.learnerUniqueID" },
+                totalAmountDisbursed: { $sum: "$amounts.paid.amount" },
+                accountedAmount: { $sum: "$accountability.amountAccounted" },
+                averageAttendance: { $avg: "$learner.attendance" },
+                maleLearners: {
+                  $sum: { $cond: [{ $eq: ["$learner.gender", "M"] }, 1, 0] },
+                },
+                femaleLearners: {
+                  $sum: { $cond: [{ $eq: ["$learner.gender", "F"] }, 1, 0] },
+                },
+                disabledMaleLearners: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ["$learner.gender", "M"] },
+                          {
+                            $gt: [
+                              {
+                                $size: {
+                                  $ifNull: ["$learner.disabilities", []],
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                disabledFemaleLearners: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ["$learner.gender", "F"] },
+                          {
+                            $gt: [
+                              {
+                                $size: {
+                                  $ifNull: ["$learner.disabilities", []],
+                                },
+                              },
+                              0,
+                            ],
+                          },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                learnersWithDisabilities: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $gt: [
+                          { $size: { $ifNull: ["$learner.disabilities", []] } },
+                          0,
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                publicSchools: {
+                  $addToSet: {
+                    $cond: [
+                      { $eq: ["$school.ownership", "Public"] },
+                      "$school.code",
+                      null,
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              $addFields: {
+                publicSchools: {
+                  $size: {
+                    $filter: {
+                      input: "$publicSchools",
+                      as: "code",
+                      cond: { $ne: ["$$code", null] },
+                    },
+                  },
+                },
+              },
+            },
+          ],
+          as: "trancheStats",
+        },
+      },
+      {
+        $addFields: {
+          stats: { $arrayElemAt: ["$trancheStats", 0] },
+          createdAt: { $first: "$createdAt" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ];
+
+    const allStats = await CashTransfer.aggregate(pipeline);
+
+    if (!allStats || allStats.length === 0) {
+      return res.status(404).json({ message: "No data found" });
+    }
+
+    const currentTranche = tranche
+      ? allStats.find((stat) => stat._id === parseInt(tranche))
+      : allStats[allStats.length - 1];
+
+    if (!currentTranche) {
+      return res.status(404).json({ message: "Tranche not found" });
+    }
+
+    const response = {
+      totalSchools: {
+        value: currentTranche.totalSchools,
+      },
+      totalLearners: {
+        value: currentTranche.stats.totalLearners.length,
+        male: currentTranche.stats.maleLearners,
+        female: currentTranche.stats.femaleLearners,
+      },
+      totalAmountDisbursed: {
+        value: currentTranche.stats.totalAmountDisbursed,
+        currency: "SSP",
+      },
+      accountabilityRate: {
+        value: Number(
+          (
+            (currentTranche.stats.accountedAmount /
+              currentTranche.stats.totalAmountDisbursed) *
+            100
+          ).toFixed(1)
+        ),
+        unit: "%",
+      },
+      learnersWithDisabilities: {
+        value: currentTranche.stats.learnersWithDisabilities,
+        percentageOfTotalLearners: Number(
+          (
+            (currentTranche.stats.learnersWithDisabilities /
+              currentTranche.stats.totalLearners.length) *
+            100
+          ).toFixed(1)
+        ),
+        male: currentTranche.stats.disabledMaleLearners,
+        female: currentTranche.stats.disabledFemaleLearners,
+      },
+      averageAttendance: {
+        value: Number(currentTranche.stats.averageAttendance.toFixed(1)),
+        unit: "%",
+      },
+      publicSchools: {
+        value: currentTranche.stats.publicSchools,
+        percentageOfTotalSchools: Number(
+          (
+            (currentTranche.stats.publicSchools / currentTranche.totalSchools) *
+            100
+          ).toFixed(1)
+        ),
+      },
+      latestTranche: {
+        trancheNumber: currentTranche._id,
+        startDate: currentTranche.createdAt,
+      },
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

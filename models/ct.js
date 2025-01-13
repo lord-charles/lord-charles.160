@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 
 const CashTransferSchema = new mongoose.Schema(
   {
-    tranche: { type: String, required: true },
+    tranche: { type: Number, required: true },
+    year: { type: Number, required: true },
     location: {
       state10: { type: String, required: true },
       county10: { type: String, required: true },

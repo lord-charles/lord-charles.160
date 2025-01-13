@@ -8,6 +8,7 @@ router.get("/", cashTransferController.getAllCashTransfers);
 router.get("/:id", cashTransferController.getCashTransferById);
 router.put("/:id", cashTransferController.updateCashTransfer);
 router.delete("/:id", cashTransferController.deleteCashTransfer);
+router.get("/stat-card/data", cashTransferController.getStatCardData);
 
 // Advanced routes
 router.get(
