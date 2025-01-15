@@ -753,6 +753,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       houseHold,
       pregnantOrNursing,
       modifiedBy,
+      academicHistory,
     } = req.body;
 
     const updateData = {
