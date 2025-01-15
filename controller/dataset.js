@@ -4,6 +4,7 @@ const SchoolData = require("../models/2023Data");
 const moment = require("moment-timezone");
 const SchoolDataCtCash = require("../models/ctCash");
 const RegistrationPeriod = require("../models/RegistrationPeriod");
+const ReferenceCounter = require("../models/referenceCounter");
 // Controller function to fetch dataset with advanced queries
 const dataSet = async (req, res) => {
   try {
@@ -240,9 +241,12 @@ const dataSet_2023 = async (req, res) => {
       learnerUniqueID: 1,
       reference: 1,
       disabilities: 1,
-      //  houseHold: 1,
-      //  pregnantOrNursing: 1,
-      //  modifiedBy: 1,
+      houseHold: 1,
+      pregnantOrNursing: 1,
+      isValidated: 1,
+      isDisbursed: 1,
+      CTEFSerialNumber: 1,
+      isWithDisability: 1,
     };
 
     // Fetch documents based on pagination
@@ -923,6 +927,7 @@ const registerStudent2024 = async (req, res) => {
       houseHold,
       pregnantOrNursing,
       modifiedBy,
+      progress,
     } = req.body;
 
     const generateUniqueCode = () => {
@@ -934,12 +939,30 @@ const registerStudent2024 = async (req, res) => {
       const minutes = String(currentDate.getMinutes()).padStart(2, "0");
       const seconds = String(currentDate.getSeconds()).padStart(2, "0");
 
-      // Convert hours to 12-hour format
       if (hours > 12) {
         hours -= 12;
       }
 
       return `${year}${month}${day}${hours}${minutes}${seconds}`;
+    };
+
+    const generateReferenceCode = async (schoolCode, grade, year) => {
+      try {
+        const counter = await ReferenceCounter.findOneAndUpdate(
+          { schoolCode, grade, year },
+          { $inc: { lastNumber: 1 } },
+          { upsert: true, new: true }
+        );
+
+        const yearCode = year.toString().slice(-2);
+        const schoolPrefix = schoolCode.slice(0, 3).toUpperCase();
+        const counterCode = counter.lastNumber.toString().padStart(2, "0");
+
+        return `${yearCode}${schoolPrefix}${grade}${counterCode}`;
+      } catch (error) {
+        console.error("Error generating learner unique ID:", error);
+        throw error;
+      }
     };
 
     // Create a new instance of the RegistrationData model
@@ -962,14 +985,16 @@ const registerStudent2024 = async (req, res) => {
       disabilities,
       houseHold,
       pregnantOrNursing,
-      reference: generateUniqueCode(),
+      reference: await generateReferenceCode(code, studentClass, year),
+      learnerUniqueID: generateUniqueCode(code, studentClass, year),
       modifiedBy,
+      progress,
     });
 
     // Save the registration data to the database
     const reg = await newRegistration2023.save();
     console.log(
-      `${reg.firstName} in state ${reg.state10}, county${reg.county28} payam ${reg.payam28}, school ${reg.school} registered`
+      `${reg.firstName} in state ${reg.state10}, reference${reg.reference} learnerUniqueID ${reg.learnerUniqueID}, school ${reg.school} registered`
     );
 
     res
@@ -1032,18 +1057,33 @@ const registerLearnerDuringSync = async (req, res) => {
       overwrite = false,
     } = req.body;
 
-    // Generate a unique reference code
-    const generateUniqueCode = () => {
-      const currentDate = new Date();
-      const year = String(currentDate.getFullYear()).slice(-2);
-      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-      const day = String(currentDate.getDate()).padStart(2, "0");
-      let hours = String(currentDate.getHours() + 3).padStart(2, "0");
-      const minutes = String(currentDate.getMinutes()).padStart(2, "0");
-      const seconds = String(currentDate.getSeconds()).padStart(2, "0");
+    const generateUniqueCode = async (schoolCode, grade, year) => {
+      try {
+        // Convert grade number to letter (1->A, 2->B, etc.)
+        const gradeToLetter = (grade) => {
+          const gradeNum = parseInt(grade);
+          if (isNaN(gradeNum)) return "X";
+          return String.fromCharCode(64 + gradeNum); // 65 is ASCII for 'A'
+        };
 
-      if (hours > 12) hours -= 12;
-      return `${year}${month}${day}${hours}${minutes}${seconds}`;
+        // Find and update the counter, or create if doesn't exist
+        const counter = await LearnerIdCounter.findOneAndUpdate(
+          { schoolCode, grade, year },
+          { $inc: { lastNumber: 1 } },
+          { upsert: true, new: true }
+        );
+
+        // Format: YY (last 2 digits of year) + AAA (first 3 letters of school code) + P (grade letter) + NN (counter)
+        const yearCode = year.toString().slice(-2);
+        const schoolPrefix = schoolCode.slice(0, 3).toUpperCase();
+        const gradeLetter = gradeToLetter(grade);
+        const counterCode = counter.lastNumber.toString().padStart(2, "0");
+
+        return `${yearCode}${schoolPrefix}${gradeLetter}${counterCode}`;
+      } catch (error) {
+        console.error("Error generating learner unique ID:", error);
+        throw error;
+      }
     };
 
     // Check if a learner with the same details exists
@@ -1115,7 +1155,8 @@ const registerLearnerDuringSync = async (req, res) => {
       houseHold,
       pregnantOrNursing,
       eieStatus,
-      reference: generateUniqueCode(),
+      reference: await generateUniqueCode(code, studentClass, year),
+      learnerUniqueID: await generateUniqueCode(code, studentClass, year),
       modifiedBy,
     });
 
