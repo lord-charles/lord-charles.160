@@ -673,6 +673,9 @@ const getLearnersV2 = async (req, res) => {
         $project: {
           school: 1,
           code: 1,
+          state10: 1,
+          county28: 1,
+          payam28: 1,
           education: 1,
           firstName: 1,
           middleName: 1,
