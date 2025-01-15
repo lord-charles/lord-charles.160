@@ -852,15 +852,51 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     }
 
     // Function to check if a class/grade is a final grade
-    const isInFinalGrade = (education, grade) => {
-      const finalGrades = {
-        PRI: "P8",
-        SEC: "S4",
-        ECD: "ECD3",
-        ALP: "Level4(P7&P8)",
-        "ASP(ASEP)": "Level6(S3&S4)",
-      };
-      return finalGrades[education] === grade;
+    const isInFinalGrade = (grade) => {
+      const finalGrades = [
+        "P8",
+        "S4",
+        "ECD3",
+        "Level4(P7&P8)",
+        "Level6(S3&S4)",
+      ];
+      return finalGrades.includes(grade);
+    };
+
+    // Function to get next class level
+    const getNextClass = (currentClass) => {
+      // For Primary classes (P1-P8)
+      if (currentClass.startsWith("P")) {
+        const currentLevel = parseInt(currentClass.substring(1));
+        if (currentLevel < 8) {
+          return `P${currentLevel + 1}`;
+        }
+      }
+      // For Secondary classes (S1-S4)
+      else if (currentClass.startsWith("S")) {
+        const currentLevel = parseInt(currentClass.substring(1));
+        if (currentLevel < 4) {
+          return `S${currentLevel + 1}`;
+        }
+      }
+      // For ECD classes
+      else if (currentClass.startsWith("ECD")) {
+        const currentLevel = parseInt(currentClass.substring(3));
+        if (currentLevel < 3) {
+          return `ECD${currentLevel + 1}`;
+        }
+      }
+      // For ALP levels
+      else if (currentClass.includes("Level")) {
+        if (currentClass === "Level1(P1&P2)") return "Level2(P3&P4)";
+        if (currentClass === "Level2(P3&P4)") return "Level3(P5&P6)";
+        if (currentClass === "Level3(P5&P6)") return "Level4(P7&P8)";
+      }
+      // For ASP(ASEP) levels
+      else if (currentClass.includes("Level5")) return "Level6(S3&S4)";
+
+      // Return current class if no progression rule matches
+      return currentClass;
     };
 
     // Get all students data first
@@ -872,49 +908,52 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
 
       // If there's a progress entry, check if we need to set isAwaitingTransition
       if (updatedFields.progress) {
-        updatedFields.progress.isAwaitingTransition =
-          // Set to true if student is in final grade
-          isInFinalGrade(student.education, student.class) ||
-          // Or if they're being promoted
-          updatedFields.progress.status === "Promoted";
+        // Check if current grade is a final grade
+        const isFinal = isInFinalGrade(student.class);
+        updatedFields.progress.isAwaitingTransition = isFinal;
+
+        // Update class only if not in final grade and being promoted
+        if (updatedFields.progress.status === "Promoted" && !isFinal) {
+          updatedFields.progress.class = getNextClass(student.class);
+        } else {
+          updatedFields.progress.class = student.class;
+        }
 
         // Update remarks if in final grade
-        if (isInFinalGrade(student.education, student.class)) {
+        if (isFinal) {
           updatedFields.progress.remarks +=
             " - Ready for transition to next level";
         }
       }
 
-      const update = { modifiedBy: loggedInUser };
-
       // Create the update operation
       const updateOperation = {
         filter: { _id: student._id },
-        update: { $set: { modifiedBy: loggedInUser } }
+        update: { $set: { modifiedBy: loggedInUser } },
       };
 
       // Add progress and academicHistory as push operations if they exist
       if (updatedFields.progress) {
         updateOperation.update.$push = {
           ...updateOperation.update.$push,
-          progress: updatedFields.progress
+          progress: updatedFields.progress,
         };
       }
 
       if (updatedFields.academicHistory) {
         updateOperation.update.$push = {
           ...updateOperation.update.$push,
-          academicHistory: updatedFields.academicHistory
+          academicHistory: updatedFields.academicHistory,
         };
       }
 
       // Add any other fields as $set operations
       const otherFields = Object.keys(updatedFields).filter(
-        key => key !== 'progress' && key !== 'academicHistory'
+        (key) => key !== "progress" && key !== "academicHistory"
       );
-      
+
       if (otherFields.length > 0) {
-        otherFields.forEach(field => {
+        otherFields.forEach((field) => {
           updateOperation.update.$set[field] = updatedFields[field];
         });
       }
@@ -1140,13 +1179,13 @@ const registerLearnerDuringSync = async (req, res) => {
           { upsert: true, new: true }
         );
 
-        // Format: YY (last 2 digits of year) + AAA (first 3 letters of school code) + P (grade letter) + NN (counter)
         const yearCode = year.toString().slice(-2);
         const schoolPrefix = schoolCode.slice(0, 3).toUpperCase();
-        const gradeLetter = gradeToLetter(grade);
         const counterCode = counter.lastNumber.toString().padStart(2, "0");
 
-        return `${yearCode}${schoolPrefix}${gradeLetter}${counterCode}`;
+        return `${yearCode}${schoolPrefix}${gradeToLetter(
+          grade
+        )}${counterCode}`;
       } catch (error) {
         console.error("Error generating learner unique ID:", error);
         throw error;
