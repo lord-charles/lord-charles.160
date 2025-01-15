@@ -851,12 +851,53 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         .json({ message: "No fields to update provided in updateFields" });
     }
 
-    const bulkOperations = ids.map((id) => ({
-      updateOne: {
-        filter: { _id: id },
-        update: { $set: { ...updateFields, modifiedBy: loggedInUser } },
-      },
-    }));
+    // Function to check if a class/grade is a final grade
+    const isInFinalGrade = (education, grade) => {
+      const finalGrades = {
+        PRI: "P8",
+        SEC: "S4",
+        ECD: "ECD3",
+        ALP: "Level4(P7&P8)",
+        "ASP(ASEP)": "Level6(S3&S4)",
+      };
+      return finalGrades[education] === grade;
+    };
+
+    // Get all students data first
+    const students = await SchoolData.find({ _id: { $in: ids } });
+
+    const bulkOperations = students.map((student) => {
+      // Deep copy the updateFields to avoid modifying the original
+      const updatedFields = JSON.parse(JSON.stringify(updateFields));
+
+      // If there's a progress entry, check if we need to set isAwaitingTransition
+      if (updatedFields.progress) {
+        updatedFields.progress.isAwaitingTransition =
+          // Set to true if student is in final grade
+          isInFinalGrade(student.education, student.class) ||
+          // Or if they're being promoted
+          updatedFields.progress.status === "Promoted";
+
+        // Update remarks if in final grade
+        if (isInFinalGrade(student.education, student.class)) {
+          updatedFields.progress.remarks +=
+            " - Ready for transition to next level";
+        }
+      }
+
+      return {
+        updateOne: {
+          filter: { _id: student._id },
+          update: {
+            $set: { ...updatedFields, modifiedBy: loggedInUser },
+            $push: {
+              progress: updatedFields.progress,
+              academicHistory: updatedFields.academicHistory,
+            },
+          },
+        },
+      };
+    });
 
     const result = await SchoolData.bulkWrite(bulkOperations);
 
@@ -865,7 +906,10 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
       return res.status(404).json({ message: "No school data updated" });
     }
 
-    res.status(200).json({ message: "School data updated successfully" });
+    res.status(200).json({
+      message: "School data updated successfully",
+      modifiedCount: result.modifiedCount,
+    });
   } catch (error) {
     console.error("Error updating school data:", error);
     return res.status(500).json({ message: "Internal server error" });
