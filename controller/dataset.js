@@ -1159,7 +1159,6 @@ const registerLearnerDuringSync = async (req, res) => {
         message: "Registration period is closed.",
       });
     }
-
     // Extract registration data from the request body
     const {
       year,
@@ -1182,20 +1181,29 @@ const registerLearnerDuringSync = async (req, res) => {
       pregnantOrNursing,
       eieStatus,
       modifiedBy,
+      progress,
       overwrite = false,
     } = req.body;
 
-    const generateUniqueCode = async (schoolCode, grade, year) => {
-      try {
-        // Convert grade number to letter (1->A, 2->B, etc.)
-        const gradeToLetter = (grade) => {
-          const gradeNum = parseInt(grade);
-          if (isNaN(gradeNum)) return "X";
-          return String.fromCharCode(64 + gradeNum); // 65 is ASCII for 'A'
-        };
+    const generateUniqueCode = () => {
+      const currentDate = new Date();
+      const year = String(currentDate.getFullYear()).slice(-2); // Get the last two digits of the year
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+      const day = String(currentDate.getDate()).padStart(2, "0");
+      let hours = String(currentDate.getHours() + 3).padStart(2, "0");
+      const minutes = String(currentDate.getMinutes()).padStart(2, "0");
+      const seconds = String(currentDate.getSeconds()).padStart(2, "0");
 
-        // Find and update the counter, or create if doesn't exist
-        const counter = await LearnerIdCounter.findOneAndUpdate(
+      if (hours > 12) {
+        hours -= 12;
+      }
+
+      return `${year}${month}${day}${hours}${minutes}${seconds}`;
+    };
+
+    const generateReferenceCode = async (schoolCode, grade, year) => {
+      try {
+        const counter = await ReferenceCounter.findOneAndUpdate(
           { schoolCode, grade, year },
           { $inc: { lastNumber: 1 } },
           { upsert: true, new: true }
@@ -1205,15 +1213,12 @@ const registerLearnerDuringSync = async (req, res) => {
         const schoolPrefix = schoolCode.slice(0, 3).toUpperCase();
         const counterCode = counter.lastNumber.toString().padStart(2, "0");
 
-        return `${yearCode}${schoolPrefix}${gradeToLetter(
-          grade
-        )}${counterCode}`;
+        return `${yearCode}${schoolPrefix}${grade}${counterCode}`;
       } catch (error) {
         console.error("Error generating learner unique ID:", error);
         throw error;
       }
     };
-
     // Check if a learner with the same details exists
     const existingLearner = await SchoolData.findOne({
       class: studentClass,
@@ -1283,8 +1288,9 @@ const registerLearnerDuringSync = async (req, res) => {
       houseHold,
       pregnantOrNursing,
       eieStatus,
-      reference: await generateUniqueCode(code, studentClass, year),
-      learnerUniqueID: await generateUniqueCode(code, studentClass, year),
+      reference: await generateReferenceCode(code, studentClass, year),
+      learnerUniqueID: generateUniqueCode(code, studentClass, year),
+      progress,
       modifiedBy,
     });
 
