@@ -902,6 +902,32 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     // Get all students data first
     const students = await SchoolData.find({ _id: { $in: ids } });
 
+    // If this is a promotion, update the class field first
+    if (updateFields.progress && updateFields.progress.status === "Promoted") {
+      const classUpdateOperations = students
+        .map((student) => {
+          const isFinal = isInFinalGrade(student.class);
+          // Only update class if not in final grade
+          if (!isFinal) {
+            const nextClass = getNextClass(student.class);
+            return {
+              updateOne: {
+                filter: { _id: student._id },
+                update: { $set: { class: nextClass } },
+              },
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // Remove null operations
+
+      if (classUpdateOperations.length > 0) {
+        await SchoolData.bulkWrite(classUpdateOperations);
+        // Refresh students data after class updates
+        students = await SchoolData.find({ _id: { $in: ids } });
+      }
+    }
+
     const bulkOperations = students.map((student) => {
       // Deep copy the updateFields to avoid modifying the original
       const updatedFields = JSON.parse(JSON.stringify(updateFields));
@@ -912,12 +938,8 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         const isFinal = isInFinalGrade(student.class);
         updatedFields.progress.isAwaitingTransition = isFinal;
 
-        // Update class only if not in final grade and being promoted
-        if (updatedFields.progress.status === "Promoted" && !isFinal) {
-          updatedFields.progress.class = getNextClass(student.class);
-        } else {
-          updatedFields.progress.class = student.class;
-        }
+        // Always use the current class from student data
+        updatedFields.progress.class = student.class;
 
         // Update remarks if in final grade
         if (isFinal) {
