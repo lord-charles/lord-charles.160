@@ -26,7 +26,18 @@ const schoolDataSchema = new mongoose.Schema(
     eieStatus: String,
     isPromoted: { type: Boolean, default: false },
     isDroppedOut: { type: Boolean, default: false },
-    isAbsentDuringEnrolment: { type: Boolean, default: false },
+    academicHistory: [
+      {
+        year: { type: Number },
+        status: {
+          promoted: { type: Boolean, default: false },
+          droppedOut: { type: Boolean, default: false },
+          repeated: { type: Boolean, default: false },
+          absentDuringEnrolment: { type: Boolean, default: false },
+        },
+        date: { type: Date, default: Date.now },
+      },
+    ],
     isValidated: {
       type: Boolean,
       default: null,
@@ -47,16 +58,6 @@ const schoolDataSchema = new mongoose.Schema(
     dateCTEFPaid: { type: String },
     learnerUniqueID: Number,
     reference: String,
-    dateCorrectedOnSSSAMS: Date,
-    dateApproved: Date,
-    signatureOnPaymentList: Number,
-    dateCollectedAtSchool: Date,
-    accountabilityCTEFReceived: Date,
-    accountabilityCTEFSerialNumber: String,
-    CTPaid: Number,
-    uniqueReceivedP5Girls: Number,
-    uniqueReceivedNewSchools: Number,
-    uniqueReceived: Number,
     attendance: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -231,8 +232,11 @@ schoolDataSchema.index({
   "disabilities.disabilities.difficultyTalking": 1,
   "disabilities.disabilities.difficultyWalking": 1,
 });
-schoolDataSchema.index({ code: 1, isDroppedOut: 1 });
-schoolDataSchema.index({ isDroppedOut: 1 }, { sparse: true });
+schoolDataSchema.index({ code: 1, "academicHistory.status.droppedOut": 1 });
+schoolDataSchema.index(
+  { "academicHistory.status.droppedOut": 1 },
+  { sparse: true }
+);
 
 const SchoolData = mongoose.model("schooldata2023", schoolDataSchema);
 
