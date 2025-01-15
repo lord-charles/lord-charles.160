@@ -650,6 +650,9 @@ const getLearnersV2 = async (req, res) => {
           _id: "$_id", // Group by learner ID to re-assemble the document
           school: { $first: "$school" },
           code: { $first: "$code" },
+          state10: { $first: "$state10" },
+          county28: { $first: "$county28" },
+          payam28: { $first: "$payam28" },
           education: { $first: "$education" },
           firstName: { $first: "$firstName" },
           middleName: { $first: "$middleName" },
