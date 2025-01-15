@@ -900,11 +900,11 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     };
 
     // Get all students data first
-    const students = await SchoolData.find({ _id: { $in: ids } });
+    let studentsData = await SchoolData.find({ _id: { $in: ids } });
 
     // If this is a promotion, update the class field first
     if (updateFields.progress && updateFields.progress.status === "Promoted") {
-      const classUpdateOperations = students
+      const classUpdateOperations = studentsData
         .map((student) => {
           const isFinal = isInFinalGrade(student.class);
           // Only update class if not in final grade
@@ -924,11 +924,11 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
       if (classUpdateOperations.length > 0) {
         await SchoolData.bulkWrite(classUpdateOperations);
         // Refresh students data after class updates
-        students = await SchoolData.find({ _id: { $in: ids } });
+        studentsData = await SchoolData.find({ _id: { $in: ids } });
       }
     }
 
-    const bulkOperations = students.map((student) => {
+    const bulkOperations = studentsData.map((student) => {
       // Deep copy the updateFields to avoid modifying the original
       const updatedFields = JSON.parse(JSON.stringify(updateFields));
 
