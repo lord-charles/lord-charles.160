@@ -885,18 +885,41 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         }
       }
 
-      return {
-        updateOne: {
-          filter: { _id: student._id },
-          update: {
-            $set: { ...updatedFields, modifiedBy: loggedInUser },
-            $push: {
-              progress: updatedFields.progress,
-              academicHistory: updatedFields.academicHistory,
-            },
-          },
-        },
+      const update = { modifiedBy: loggedInUser };
+
+      // Create the update operation
+      const updateOperation = {
+        filter: { _id: student._id },
+        update: { $set: { modifiedBy: loggedInUser } }
       };
+
+      // Add progress and academicHistory as push operations if they exist
+      if (updatedFields.progress) {
+        updateOperation.update.$push = {
+          ...updateOperation.update.$push,
+          progress: updatedFields.progress
+        };
+      }
+
+      if (updatedFields.academicHistory) {
+        updateOperation.update.$push = {
+          ...updateOperation.update.$push,
+          academicHistory: updatedFields.academicHistory
+        };
+      }
+
+      // Add any other fields as $set operations
+      const otherFields = Object.keys(updatedFields).filter(
+        key => key !== 'progress' && key !== 'academicHistory'
+      );
+      
+      if (otherFields.length > 0) {
+        otherFields.forEach(field => {
+          updateOperation.update.$set[field] = updatedFields[field];
+        });
+      }
+
+      return { updateOne: updateOperation };
     });
 
     const result = await SchoolData.bulkWrite(bulkOperations);
