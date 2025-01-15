@@ -807,6 +807,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       houseHold,
       pregnantOrNursing,
       modifiedBy,
+      academicHistory,
     };
 
     const schoolData = await SchoolData.findByIdAndUpdate(id, updateData, {
@@ -826,6 +827,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
 const updateSchoolDataFieldsBulk = async (req, res) => {
   try {
     const { ids, loggedInUser, updateFields } = req.body;
+    console.log(updateFields);
 
     // Validate if any fields are provided in req.body
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
