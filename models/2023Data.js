@@ -205,9 +205,20 @@ const schoolDataSchema = new mongoose.Schema(
             "Returned",
             "Transferred",
             "Graduated",
+            "Transition",
           ],
           required: true,
         },
+        isAwaitingTransition: {
+          type: Boolean,
+          required: false,
+          default: false,
+        },
+        // isWithDisability: {
+        //   type: Boolean,
+        //   required: false,
+        //   default: false,
+        // },
         remarks: {
           type: String,
           required: false,
