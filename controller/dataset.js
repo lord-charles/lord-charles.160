@@ -1013,7 +1013,6 @@ const getSingleStudents_2023 = async (req, res) => {
     // Sort the progress array by createdAt in descending order
     if (student.progress && student.progress.length > 0) {
       const statusPriority = {
-        Enrolled: 1,
         Promoted: 2,
         Repeated: 3,
         Returned: 4,
@@ -1021,6 +1020,7 @@ const getSingleStudents_2023 = async (req, res) => {
         DroppedOut: 6,
         Graduated: 7,
         Transition: 8,
+        Enrolled: 9,
       };
 
       student.progress.sort((a, b) => {
