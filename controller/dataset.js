@@ -1010,21 +1010,24 @@ const getSingleStudents_2023 = async (req, res) => {
       return res.status(404).json({ message: "no student found!" });
     }
 
-    // Sort the progress array by createdAt in descending order
+    // Sort the progress array
     if (student.progress && student.progress.length > 0) {
       const statusPriority = {
-        Promoted: 2,
-        Repeated: 3,
-        Returned: 4,
-        Transferred: 5,
-        DroppedOut: 6,
-        Graduated: 7,
-        Transition: 8,
-        Enrolled: 9,
+        Promoted: 1,
+        Repeated: 2,
+        Returned: 3,
+        Transferred: 4,
+        DroppedOut: 5,
+        Graduated: 6,
+        Transition: 7,
       };
 
       student.progress.sort((a, b) => {
-        // First compare by createdAt timestamp
+        // Always put Enrolled status last
+        if (a.status === "Enrolled" && b.status !== "Enrolled") return 1;
+        if (b.status === "Enrolled" && a.status !== "Enrolled") return -1;
+
+        // For non-Enrolled statuses, sort by timestamp
         const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
         const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
         const dateDiff = dateB - dateA;
