@@ -1010,7 +1010,7 @@ const getSingleStudents_2023 = async (req, res) => {
       return res.status(404).json({ message: "no student found!" });
     }
 
-    // Sort the progress array by year in descending order
+    // Sort the progress array by createdAt in descending order
     if (student.progress && student.progress.length > 0) {
       const statusPriority = {
         Enrolled: 1,
@@ -1024,7 +1024,13 @@ const getSingleStudents_2023 = async (req, res) => {
       };
 
       student.progress.sort((a, b) => {
-        // First compare by year
+        // First compare by createdAt timestamp
+        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+        const dateDiff = dateB - dateA;
+        if (dateDiff !== 0) return dateDiff;
+
+        // If same timestamp, compare by year
         const yearDiff = b.year - a.year;
         if (yearDiff !== 0) return yearDiff;
 
