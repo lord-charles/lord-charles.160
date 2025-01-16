@@ -1010,6 +1010,31 @@ const getSingleStudents_2023 = async (req, res) => {
       return res.status(404).json({ message: "no student found!" });
     }
 
+    // Sort the progress array by year in descending order
+    if (student.progress && student.progress.length > 0) {
+      const statusPriority = {
+        Enrolled: 1,
+        Promoted: 2,
+        Repeated: 3,
+        Returned: 4,
+        Transferred: 5,
+        DroppedOut: 6,
+        Graduated: 7,
+        Transition: 8,
+      };
+
+      student.progress.sort((a, b) => {
+        // First compare by year
+        const yearDiff = b.year - a.year;
+        if (yearDiff !== 0) return yearDiff;
+
+        // If same year, sort by status priority
+        return (
+          (statusPriority[a.status] || 999) - (statusPriority[b.status] || 999)
+        );
+      });
+    }
+
     res.status(200).json(student);
   } catch (error) {
     res.status(500).json({ message: error });
@@ -1765,9 +1790,9 @@ const stateMaleFemaleStat = async (req, res) => {
       {
         $project: {
           state: "$_id",
-          totalPupils: 1,
-          totalFemale: 1,
-          totalMale: 1,
+          totalPupils: "$totalPupils",
+          totalFemale: "$totalFemale",
+          totalMale: "$totalMale",
           _id: 0,
           id: { $arrayElemAt: ["$ids", 0] },
         },
