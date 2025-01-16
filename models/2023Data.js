@@ -214,17 +214,13 @@ const schoolDataSchema = new mongoose.Schema(
           required: false,
           default: false,
         },
-        // isWithDisability: {
-        //   type: Boolean,
-        //   required: false,
-        //   default: false,
-        // },
         remarks: {
           type: String,
           required: false,
           default: "",
         },
       },
+      { timestamps: true },
     ],
   },
   {
