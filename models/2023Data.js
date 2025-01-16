@@ -219,8 +219,11 @@ const schoolDataSchema = new mongoose.Schema(
           required: false,
           default: "",
         },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
-      { timestamps: true },
     ],
   },
   {
