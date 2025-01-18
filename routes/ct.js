@@ -9,16 +9,6 @@ router.get("/:id", cashTransferController.getCashTransferById);
 router.put("/:id", cashTransferController.updateCashTransfer);
 router.delete("/:id", cashTransferController.deleteCashTransfer);
 router.get("/stat-card/data", cashTransferController.getStatCardData);
-
-// Advanced routes
-router.get(
-  "/school/type/:type",
-  cashTransferController.getTransfersBySchoolType
-);
-router.get("/totals/approved", cashTransferController.getTotalApprovedByState);
-router.post(
-  "/validate-approve/:id",
-  cashTransferController.validateAndApproveTransfer
-);
+router.get("/get/unique-schools", cashTransferController.getUniqueCtSchools);
 
 module.exports = router;

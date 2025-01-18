@@ -64,60 +64,6 @@ exports.deleteCashTransfer = async (req, res) => {
   }
 };
 
-// Advanced query: Get transfers by school type
-exports.getTransfersBySchoolType = async (req, res) => {
-  try {
-    const { type } = req.params;
-    const transfers = await CashTransfer.find({ "school.type": type });
-    res.status(200).json(transfers);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Advanced query: Get total approved amounts by state
-exports.getTotalApprovedByState = async (req, res) => {
-  try {
-    const results = await CashTransfer.aggregate([
-      {
-        $group: {
-          _id: "$location.state10",
-          totalApproved: { $sum: "$amounts.approved.amount" },
-        },
-      },
-    ]);
-    res.status(200).json(results);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Validate and approve transfer
-exports.validateAndApproveTransfer = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { validationData, approvalData } = req.body;
-
-    const cashTransfer = await CashTransfer.findByIdAndUpdate(
-      id,
-      {
-        $set: {
-          validation: validationData,
-          approval: approvalData,
-        },
-      },
-      { new: true, runValidators: true }
-    );
-
-    if (!cashTransfer) {
-      return res.status(404).json({ error: "Cash transfer not found" });
-    }
-    res.status(200).json(cashTransfer);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
 exports.getStatCardData = async (req, res) => {
   try {
     const { tranche, state, county, payam, year } = req.query;
@@ -383,5 +329,148 @@ exports.getStatCardData = async (req, res) => {
   } catch (error) {
     console.error("Error fetching stats:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// exports.getUniqueCtSchools = async (req, res) => {
+//   try {
+//     const { year, tranche } = req.query;
+
+//     // Determine the tranche to use: either from params or the latest tranche
+//     let trancheFilter = tranche ? parseInt(tranche, 10) : null;
+//     if (!trancheFilter) {
+//       const latestTranche = await CashTransfer.findOne()
+//         .sort({ tranche: -1 })
+//         .select("tranche");
+//       trancheFilter = latestTranche ? latestTranche.tranche : null;
+//     }
+
+//     if (!trancheFilter) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "No tranche data available." });
+//     }
+
+//     // Fetch distinct schools based on their code and project additional fields
+//     const schools = await CashTransfer.aggregate([
+//       {
+//         $match: {
+//           tranche: trancheFilter,
+//           ...(year ? { year: parseInt(year) } : {}),
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: "$school.code",
+//           tranche: { $first: "$tranche" },
+//           year: { $first: "$year" },
+//           location: { $first: "$location" },
+//           schoolName: { $first: "$school.name" },
+//           schoolType: { $first: "$school.type" },
+//           schoolOwnership: { $first: "$school.ownership" },
+//           schoolCode: { $first: "$school.code" },
+//           amounts: { $first: "$amounts" },
+//         },
+//       },
+//       {
+//         $project: {
+//           _id: 0,
+//           tranche: 1,
+//           year: 1,
+//           location: 1,
+//           school: {
+//             name: "$schoolName",
+//             type: "$schoolType",
+//             ownership: "$schoolOwnership",
+//             code: "$schoolCode",
+//           },
+//           amounts: 1,
+//         },
+//       },
+//     ]);
+
+//     res.status(200).json({ success: true, data: schools });
+//   } catch (error) {
+//     console.error("Error fetching schools:", error);
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Failed to fetch schools", error });
+//   }
+// };
+exports.getUniqueCtSchools = async (req, res) => {
+  try {
+    const { year, tranche } = req.query;
+
+    // Build match conditions dynamically
+    const matchConditions = {};
+
+    if (tranche) {
+      matchConditions.tranche = parseInt(tranche, 10);
+    } else {
+      const latestTranche = await CashTransfer.findOne()
+        .sort({ tranche: -1 })
+        .select("tranche");
+      if (latestTranche) {
+        matchConditions.tranche = latestTranche.tranche;
+      }
+    }
+
+    if (year) {
+      matchConditions.year = parseInt(year);
+    }
+
+    // Log match conditions for debugging
+    console.log("Match conditions:", matchConditions);
+
+    const schools = await CashTransfer.aggregate([
+      {
+        $match: matchConditions,
+      },
+      {
+        $group: {
+          _id: "$school.code",
+          tranche: { $first: "$tranche" },
+          year: { $first: "$year" },
+          location: { $first: "$location" },
+          schoolName: { $first: "$school.name" },
+          schoolType: { $first: "$school.type" },
+          schoolOwnership: { $first: "$school.ownership" },
+          schoolCode: { $first: "$school.code" },
+          amounts: { $first: "$amounts" },
+          learnerCount: { $sum: 1 }, // Add count of learners per school
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          tranche: 1,
+          year: 1,
+          location: 1,
+          school: {
+            name: "$schoolName",
+            type: "$schoolType",
+            ownership: "$schoolOwnership",
+            code: "$schoolCode",
+          },
+          amounts: 1,
+          learnerCount: 1,
+        },
+      },
+      { $sort: { "school.name": 1 } }, // Sort schools by name
+    ]);
+
+    // Log count for debugging
+    console.log("Number of schools found:", schools.length);
+
+    res.status(200).json({
+      success: true,
+      count: schools.length,
+      data: schools,
+    });
+  } catch (error) {
+    console.error("Error fetching schools:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch schools", error });
   }
 };

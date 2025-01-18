@@ -79,7 +79,6 @@ const countyPupilTotal = async (req, res) => {
         },
       },
     ];
-
     // Execute the aggregation pipeline
     const result = await Dataset.aggregate(pipeline);
 
@@ -863,63 +862,147 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
       return finalGrades.includes(grade);
     };
 
-    // Function to get next class level
-    const getNextClass = (currentClass) => {
+    // Function to get next class level (both promotion and demotion)
+    const getNextClass = (currentClass, isDemotion = false) => {
       // For Primary classes (P1-P8)
       if (currentClass.startsWith("P")) {
         const currentLevel = parseInt(currentClass.substring(1));
-        if (currentLevel < 8) {
+        if (isDemotion && currentLevel > 1) {
+          return `P${currentLevel - 1}`;
+        } else if (!isDemotion && currentLevel < 8) {
           return `P${currentLevel + 1}`;
         }
       }
       // For Secondary classes (S1-S4)
       else if (currentClass.startsWith("S")) {
         const currentLevel = parseInt(currentClass.substring(1));
-        if (currentLevel < 4) {
+        if (isDemotion && currentLevel > 1) {
+          return `S${currentLevel - 1}`;
+        } else if (!isDemotion && currentLevel < 4) {
           return `S${currentLevel + 1}`;
         }
       }
       // For ECD classes
       else if (currentClass.startsWith("ECD")) {
         const currentLevel = parseInt(currentClass.substring(3));
-        if (currentLevel < 3) {
+        if (isDemotion && currentLevel > 1) {
+          return `ECD${currentLevel - 1}`;
+        } else if (!isDemotion && currentLevel < 3) {
           return `ECD${currentLevel + 1}`;
         }
       }
       // For ALP levels
       else if (currentClass.includes("Level")) {
-        if (currentClass === "Level1(P1&P2)") return "Level2(P3&P4)";
-        if (currentClass === "Level2(P3&P4)") return "Level3(P5&P6)";
-        if (currentClass === "Level3(P5&P6)") return "Level4(P7&P8)";
+        const levelMap = {
+          "Level1(P1&P2)": { prev: null, next: "Level2(P3&P4)" },
+          "Level2(P3&P4)": { prev: "Level1(P1&P2)", next: "Level3(P5&P6)" },
+          "Level3(P5&P6)": { prev: "Level2(P3&P4)", next: "Level4(P7&P8)" },
+          "Level4(P7&P8)": { prev: "Level3(P5&P6)", next: null },
+          "Level5(S1&S2)": { prev: null, next: "Level6(S3&S4)" },
+          "Level6(S3&S4)": { prev: "Level5(S1&S2)", next: null },
+        };
+        return isDemotion
+          ? levelMap[currentClass]?.prev
+          : levelMap[currentClass]?.next;
       }
-      // For ASP(ASEP) levels
-      else if (currentClass.includes("Level5")) return "Level6(S3&S4)";
 
-      // Return current class if no progression rule matches
+      // Return current class if no progression/regression rule matches
       return currentClass;
+    };
+
+    // Function to validate class change
+    const isValidClassChange = (currentClass, targetClass) => {
+      // Get numeric level from class string
+      const getLevel = (cls) => {
+        if (cls.startsWith("P")) return parseInt(cls.substring(1));
+        if (cls.startsWith("S")) return parseInt(cls.substring(1)) + 8;
+        if (cls.startsWith("ECD")) return parseInt(cls.substring(3));
+        return null;
+      };
+
+      const currentLevel = getLevel(currentClass);
+      const targetLevel = getLevel(targetClass);
+
+      // If both classes have numeric levels, check if difference is only 1
+      if (currentLevel !== null && targetLevel !== null) {
+        return Math.abs(currentLevel - targetLevel) === 1;
+      }
+
+      // For ALP levels, check if they are adjacent in the sequence
+      const alpSequence = [
+        "Level1(P1&P2)",
+        "Level2(P3&P4)",
+        "Level3(P5&P6)",
+        "Level4(P7&P8)",
+      ];
+      const aspSequence = ["Level5(S1&S2)", "Level6(S3&S4)"];
+
+      const currentIdxALP = alpSequence.indexOf(currentClass);
+      const targetIdxALP = alpSequence.indexOf(targetClass);
+      const currentIdxASP = aspSequence.indexOf(currentClass);
+      const targetIdxASP = aspSequence.indexOf(targetClass);
+
+      if (currentIdxALP !== -1 && targetIdxALP !== -1) {
+        return Math.abs(currentIdxALP - targetIdxALP) === 1;
+      }
+
+      if (currentIdxASP !== -1 && targetIdxASP !== -1) {
+        return Math.abs(currentIdxASP - targetIdxASP) === 1;
+      }
+
+      return false;
     };
 
     // Get all students data first
     let studentsData = await SchoolData.find({ _id: { $in: ids } });
 
-    // If this is a promotion, update the class field first
-    if (updateFields.progress && updateFields.progress.status === "Promoted") {
+    // Handle class changes based on status
+    if (updateFields.progress && updateFields.progress.status) {
+      const validStatuses = ['Promoted', 'Demoted', 'ClassChanged', 'PromotionRevoked'];
+      if (!validStatuses.includes(updateFields.progress.status)) {
+        return res.status(400).json({ message: "Invalid progress status provided" });
+      }
+
       const classUpdateOperations = studentsData
         .map((student) => {
           const isFinal = isInFinalGrade(student.class);
-          // Only update class if not in final grade
-          if (!isFinal) {
-            const nextClass = getNextClass(student.class);
+          let nextClass = null;
+
+          switch (updateFields.progress.status) {
+            case "Promoted":
+              // Only update class if not in final grade
+              if (!isFinal) {
+                nextClass = getNextClass(student.class, false);
+              }
+              break;
+            case "Demoted":
+              nextClass = getNextClass(student.class, true);
+              break;
+            case "ClassChanged":
+              // If target class is provided
+              if (updateFields.progress.targetClass) {
+                nextClass = updateFields.progress.targetClass;
+              }
+              break;
+          }
+
+          if (nextClass && nextClass !== student.class) {
             return {
               updateOne: {
                 filter: { _id: student._id },
-                update: { $set: { class: nextClass } },
+                update: {
+                  $set: {
+                    class: nextClass,
+                    modifiedBy: loggedInUser,
+                    lastModifiedDate: new Date('2025-01-18T17:43:55+02:00'),
+                  },
+                },
               },
             };
           }
           return null;
         })
-        .filter(Boolean); // Remove null operations
+        .filter(Boolean);
 
       if (classUpdateOperations.length > 0) {
         await SchoolData.bulkWrite(classUpdateOperations);
@@ -928,30 +1011,74 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
       }
     }
 
+    // Validate updateFields structure
+    if (updateFields.progress) {
+      // Validate education level
+      const validEducationLevels = ['PRI', 'SEC', 'ECD', 'ALP', 'ASP'];
+      if (!validEducationLevels.includes(updateFields.progress.educationLevel)) {
+        return res.status(400).json({ message: "Invalid education level provided" });
+      }
+
+      // Validate reference number format (assuming it should be numeric and 11 digits)
+      if (!/^\d{11}$/.test(updateFields.progress.reference)) {
+        return res.status(400).json({ message: "Invalid reference number format" });
+      }
+
+      // Ensure consistent date usage
+      const progressDate = updateFields.academicHistory?.date || new Date('2025-01-18T17:43:55+02:00').toISOString();
+      updateFields.progress.date = progressDate;
+    }
+
     const bulkOperations = studentsData.map((student) => {
       // Deep copy the updateFields to avoid modifying the original
       const updatedFields = JSON.parse(JSON.stringify(updateFields));
 
-      // If there's a progress entry, check if we need to set isAwaitingTransition
+      // If there's a progress entry, update its fields
       if (updatedFields.progress) {
         // Check if current grade is a final grade
         const isFinal = isInFinalGrade(student.class);
-        updatedFields.progress.isAwaitingTransition = isFinal;
+
+        // Set isAwaitingTransition based on status and grade
+        updatedFields.progress.isAwaitingTransition =
+          updatedFields.progress.status === "Promoted" && isFinal;
 
         // Always use the current class from student data
         updatedFields.progress.class = student.class;
 
-        // Update remarks if in final grade
-        if (isFinal) {
-          updatedFields.progress.remarks +=
-            " - Ready for transition to next level";
+        // Update remarks based on status
+        switch (updatedFields.progress.status) {
+          case "Promoted":
+            if (isFinal) {
+              updatedFields.progress.remarks =
+                "Learner promoted - Ready for transition to next level";
+            } else {
+              updatedFields.progress.remarks = "Learner promoted to next grade";
+            }
+            break;
+          case "Demoted":
+            updatedFields.progress.remarks =
+              "Learner demoted to previous grade";
+            break;
+          case "ClassChanged":
+            updatedFields.progress.remarks =
+              "Learner's class changed due to correction";
+            break;
+          case "PromotionRevoked":
+            updatedFields.progress.remarks =
+              "Learner's previous promotion has been revoked";
+            break;
         }
       }
 
       // Create the update operation
       const updateOperation = {
         filter: { _id: student._id },
-        update: { $set: { modifiedBy: loggedInUser } },
+        update: {
+          $set: {
+            modifiedBy: loggedInUser,
+            lastModifiedDate: new Date('2025-01-18T17:43:55+02:00'),
+          },
+        },
       };
 
       // Add progress and academicHistory as push operations if they exist
@@ -963,6 +1090,20 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
       }
 
       if (updatedFields.academicHistory) {
+        // Update academicHistory status based on progress status
+        if (updatedFields.progress) {
+          updatedFields.academicHistory.status = {
+            promoted: updatedFields.progress.status === "Promoted",
+            demoted: updatedFields.progress.status === "Demoted",
+            promotionRevoked:
+              updatedFields.progress.status === "PromotionRevoked",
+            classChanged: updatedFields.progress.status === "ClassChanged",
+            droppedOut: false,
+            repeated: false,
+            absentDuringEnrolment: false,
+          };
+        }
+
         updateOperation.update.$push = {
           ...updateOperation.update.$push,
           academicHistory: updatedFields.academicHistory,
@@ -1049,8 +1190,6 @@ const getSingleStudents_2023 = async (req, res) => {
     res.status(500).json({ message: error });
   }
 };
-
-// 2024
 
 const registerStudent2024 = async (req, res) => {
   try {
@@ -2418,7 +2557,7 @@ const getUniqueSchoolsDetailsPayam = async (req, res) => {
     // Aggregate pipeline to retrieve unique schools based on specified payam28
     const uniqueSchools = await SchoolData.aggregate([
       {
-        $match: { payam28: payam28, ...matchCondition }, // Include the match condition for modifiedBy
+        $match: { payam28, ...matchCondition }, // Include the match condition for modifiedBy
       },
       {
         $group: {
@@ -2756,7 +2895,7 @@ const overallMaleFemaleStat = async (req, res) => {
       },
       {
         $project: {
-          _id: 0, // Remove MongoDB's _id from results
+          _id: 0, // Remove MongoDB's default `_id`
           totalFemale: 1,
           totalMale: 1,
           femaleWithDisabilities: 1,
@@ -2798,7 +2937,7 @@ const overallMaleFemaleStat = async (req, res) => {
       },
       {
         $project: {
-          _id: 0, // Remove MongoDB's _id from results
+          _id: 0, // Remove MongoDB's default `_id`
           droppedOutFemale: 1,
           droppedOutMale: 1,
         },
