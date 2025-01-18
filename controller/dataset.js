@@ -958,9 +958,16 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
 
     // Handle class changes based on status
     if (updateFields.progress && updateFields.progress.status) {
-      const validStatuses = ['Promoted', 'Demoted', 'ClassChanged', 'PromotionRevoked'];
+      const validStatuses = [
+        "Promoted",
+        "Demoted",
+        "ClassChanged",
+        "PromotionRevoked",
+      ];
       if (!validStatuses.includes(updateFields.progress.status)) {
-        return res.status(400).json({ message: "Invalid progress status provided" });
+        return res
+          .status(400)
+          .json({ message: "Invalid progress status provided" });
       }
 
       const classUpdateOperations = studentsData
@@ -994,7 +1001,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
                   $set: {
                     class: nextClass,
                     modifiedBy: loggedInUser,
-                    lastModifiedDate: new Date('2025-01-18T17:43:55+02:00'),
+                    lastModifiedDate: new Date("2025-01-18T17:43:55+02:00"),
                   },
                 },
               },
@@ -1014,18 +1021,19 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     // Validate updateFields structure
     if (updateFields.progress) {
       // Validate education level
-      const validEducationLevels = ['PRI', 'SEC', 'ECD', 'ALP', 'ASP'];
-      if (!validEducationLevels.includes(updateFields.progress.educationLevel)) {
-        return res.status(400).json({ message: "Invalid education level provided" });
-      }
-
-      // Validate reference number format (assuming it should be numeric and 11 digits)
-      if (!/^\d{11}$/.test(updateFields.progress.reference)) {
-        return res.status(400).json({ message: "Invalid reference number format" });
+      const validEducationLevels = ["PRI", "SEC", "ECD", "ALP", "ASP"];
+      if (
+        !validEducationLevels.includes(updateFields.progress.educationLevel)
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Invalid education level provided" });
       }
 
       // Ensure consistent date usage
-      const progressDate = updateFields.academicHistory?.date || new Date('2025-01-18T17:43:55+02:00').toISOString();
+      const progressDate =
+        updateFields.academicHistory?.date ||
+        new Date("2025-01-18T17:43:55+02:00").toISOString();
       updateFields.progress.date = progressDate;
     }
 
@@ -1076,7 +1084,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         update: {
           $set: {
             modifiedBy: loggedInUser,
-            lastModifiedDate: new Date('2025-01-18T17:43:55+02:00'),
+            lastModifiedDate: new Date("2025-01-18T17:43:55+02:00"),
           },
         },
       };
