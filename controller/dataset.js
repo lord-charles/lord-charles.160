@@ -832,10 +832,28 @@ const updateSchoolDataFields_2023 = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const generateReferenceCode = async (schoolCode, grade, year) => {
+  try {
+    const counter = await ReferenceCounter.findOneAndUpdate(
+      { schoolCode, grade, year },
+      { $inc: { lastNumber: 1 } },
+      { upsert: true, new: true }
+    );
 
+    const yearCode = year.toString().slice(-2);
+    const schoolPrefix = schoolCode.slice(0, 3).toUpperCase();
+    const counterCode = counter.lastNumber.toString().padStart(2, "0");
+
+    return `${yearCode}${schoolPrefix}${grade}${counterCode}`;
+  } catch (error) {
+    console.error("Error generating learner unique ID:", error);
+    throw error;
+  }
+};
 const updateSchoolDataFieldsBulk = async (req, res) => {
   try {
     const { ids, loggedInUser, updateFields } = req.body;
+    const currentDate = new Date();
     console.log(updateFields);
 
     // Validate if any fields are provided in req.body
@@ -910,49 +928,6 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
       return currentClass;
     };
 
-    // Function to validate class change
-    const isValidClassChange = (currentClass, targetClass) => {
-      // Get numeric level from class string
-      const getLevel = (cls) => {
-        if (cls.startsWith("P")) return parseInt(cls.substring(1));
-        if (cls.startsWith("S")) return parseInt(cls.substring(1)) + 8;
-        if (cls.startsWith("ECD")) return parseInt(cls.substring(3));
-        return null;
-      };
-
-      const currentLevel = getLevel(currentClass);
-      const targetLevel = getLevel(targetClass);
-
-      // If both classes have numeric levels, check if difference is only 1
-      if (currentLevel !== null && targetLevel !== null) {
-        return Math.abs(currentLevel - targetLevel) === 1;
-      }
-
-      // For ALP levels, check if they are adjacent in the sequence
-      const alpSequence = [
-        "Level1(P1&P2)",
-        "Level2(P3&P4)",
-        "Level3(P5&P6)",
-        "Level4(P7&P8)",
-      ];
-      const aspSequence = ["Level5(S1&S2)", "Level6(S3&S4)"];
-
-      const currentIdxALP = alpSequence.indexOf(currentClass);
-      const targetIdxALP = alpSequence.indexOf(targetClass);
-      const currentIdxASP = aspSequence.indexOf(currentClass);
-      const targetIdxASP = aspSequence.indexOf(targetClass);
-
-      if (currentIdxALP !== -1 && targetIdxALP !== -1) {
-        return Math.abs(currentIdxALP - targetIdxALP) === 1;
-      }
-
-      if (currentIdxASP !== -1 && targetIdxASP !== -1) {
-        return Math.abs(currentIdxASP - targetIdxASP) === 1;
-      }
-
-      return false;
-    };
-
     // Get all students data first
     let studentsData = await SchoolData.find({ _id: { $in: ids } });
 
@@ -963,11 +938,78 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         "Demoted",
         "ClassChanged",
         "PromotionRevoked",
+        "Transferred",
       ];
       if (!validStatuses.includes(updateFields.progress.status)) {
         return res
           .status(400)
           .json({ message: "Invalid progress status provided" });
+      }
+
+      // Handle transfer details if status is Transferred
+      if (
+        updateFields.progress.status === "Transferred" &&
+        updateFields.transfer
+      ) {
+        const {
+          sourceSchool,
+          sourceCode,
+          destinationSchool,
+          destinationCode,
+          reason,
+          state,
+          county,
+          payam,
+          currentGrade,
+        } = updateFields.transfer;
+
+        const referenceCode = generateReferenceCode(
+          destinationCode,
+          currentGrade,
+          new Date().getFullYear()
+        );
+
+        // Validate transfer details
+        if (
+          !sourceSchool ||
+          !sourceCode ||
+          !destinationSchool ||
+          !destinationCode ||
+          !reason ||
+          !state ||
+          !county ||
+          !payam
+        ) {
+          return res.status(400).json({
+            message:
+              "Missing required transfer details (source or destination school details)",
+          });
+        }
+
+        // Update student school details
+        const transferUpdateOperations = studentsData.map((student) => ({
+          updateOne: {
+            filter: { _id: student._id },
+            update: {
+              $set: {
+                state10: state,
+                county28: county,
+                payam28: payam,
+                school: destinationSchool,
+                code: destinationCode,
+                reference: referenceCode,
+                modifiedBy: loggedInUser,
+                lastModifiedDate: currentDate,
+              },
+            },
+          },
+        }));
+
+        if (transferUpdateOperations.length > 0) {
+          await SchoolData.bulkWrite(transferUpdateOperations);
+          // Refresh students data after school updates
+          studentsData = await SchoolData.find({ _id: { $in: ids } });
+        }
       }
 
       const classUpdateOperations = studentsData
@@ -1001,7 +1043,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
                   $set: {
                     class: nextClass,
                     modifiedBy: loggedInUser,
-                    lastModifiedDate: new Date("2025-01-18T17:43:55+02:00"),
+                    lastModifiedDate: currentDate,
                   },
                 },
               },
@@ -1032,8 +1074,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
 
       // Ensure consistent date usage
       const progressDate =
-        updateFields.academicHistory?.date ||
-        new Date("2025-01-18T17:43:55+02:00").toISOString();
+        updateFields.academicHistory?.date || currentDate.toISOString();
       updateFields.progress.date = progressDate;
     }
 
@@ -1075,6 +1116,16 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
             updatedFields.progress.remarks =
               "Learner's previous promotion has been revoked";
             break;
+          case "Transferred":
+            const {
+              sourceSchool,
+              sourceCode,
+              destinationSchool,
+              destinationCode,
+              reason,
+            } = updatedFields.transfer || {};
+            updatedFields.progress.remarks = `Learner transferred from ${sourceSchool}(${sourceCode}) to ${destinationSchool}(${destinationCode}). Reason: ${reason}`;
+            break;
         }
       }
 
@@ -1084,7 +1135,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         update: {
           $set: {
             modifiedBy: loggedInUser,
-            lastModifiedDate: new Date("2025-01-18T17:43:55+02:00"),
+            lastModifiedDate: currentDate,
           },
         },
       };
