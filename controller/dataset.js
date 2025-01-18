@@ -963,7 +963,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
           currentGrade,
         } = updateFields.transfer;
 
-        const referenceCode = generateReferenceCode(
+        const referenceCode = await generateReferenceCode(
           destinationCode,
           currentGrade,
           new Date().getFullYear()
