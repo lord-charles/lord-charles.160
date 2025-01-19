@@ -3028,7 +3028,46 @@ const overallMaleFemaleStat = async (req, res) => {
 
     const droppedOutPipeline = [
       {
-        $match: droppedOutMatchStage, // Filter for dropped-out records
+        $match: {
+          academicHistory: {
+            $elemMatch: {
+              year: enrollmentYear,
+              "status.droppedOut": true,
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          latestHistory: {
+            $reduce: {
+              input: {
+                $filter: {
+                  input: "$academicHistory",
+                  cond: {
+                    $and: [
+                      { $eq: ["$$this.year", parseInt(enrollmentYear)] },
+                      { $eq: ["$$this.status.droppedOut", true] },
+                    ],
+                  },
+                },
+              },
+              initialValue: null,
+              in: {
+                $cond: [
+                  { $gt: ["$$this.date", "$$value.date"] },
+                  "$$this",
+                  "$$value",
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          "latestHistory.status.droppedOut": true,
+        },
       },
       {
         $group: {
@@ -3043,7 +3082,7 @@ const overallMaleFemaleStat = async (req, res) => {
       },
       {
         $project: {
-          _id: 0, // Remove MongoDB's default `_id`
+          _id: 0,
           droppedOutFemale: 1,
           droppedOutMale: 1,
         },
