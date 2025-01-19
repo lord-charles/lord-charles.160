@@ -2866,30 +2866,30 @@ const getPromotedLearnersCountByLocation = async (req, res) => {
       {
         $addFields: {
           latestHistory: {
-            $reduce: {
-              input: {
-                $filter: {
-                  input: { $ifNull: ["$academicHistory", []] },
-                  as: "history",
-                  cond: {
-                    $and: [
-                      { $eq: ["$$this.year", targetYear] },
-                      { $eq: ["$$this.status.promoted", true] },
-                    ],
+            $let: {
+              vars: {
+                filteredHistory: {
+                  $filter: {
+                    input: { $ifNull: ["$academicHistory", []] },
+                    as: "history",
+                    cond: {
+                      $and: [
+                        { $eq: ["$$history.year", targetYear] },
+                        { $eq: ["$$history.status.promoted", true] },
+                      ],
+                    },
                   },
                 },
               },
-              initialValue: null,
               in: {
-                $cond: [
+                $arrayElemAt: [
                   {
-                    $gt: [
-                      "$$this.date",
-                      { $ifNull: ["$$value.date", new Date(0).toISOString()] },
-                    ],
+                    $sortArray: {
+                      input: "$$filteredHistory",
+                      sortBy: { date: -1 },
+                    },
                   },
-                  "$$this",
-                  { $ifNull: ["$$value", "$$this"] },
+                  0,
                 ],
               },
             },
@@ -3096,30 +3096,30 @@ const overallMaleFemaleStat = async (req, res) => {
       {
         $addFields: {
           latestHistory: {
-            $reduce: {
-              input: {
-                $filter: {
-                  input: { $ifNull: ["$academicHistory", []] },
-                  as: "history",
-                  cond: {
-                    $and: [
-                      { $eq: ["$$this.year", parseInt(enrollmentYear)] },
-                      { $eq: ["$$this.status.droppedOut", true] },
-                    ],
+            $let: {
+              vars: {
+                filteredHistory: {
+                  $filter: {
+                    input: { $ifNull: ["$academicHistory", []] },
+                    as: "history",
+                    cond: {
+                      $and: [
+                        { $eq: ["$$history.year", parseInt(enrollmentYear)] },
+                        { $eq: ["$$history.status.droppedOut", true] },
+                      ],
+                    },
                   },
                 },
               },
-              initialValue: null,
               in: {
-                $cond: [
+                $arrayElemAt: [
                   {
-                    $gt: [
-                      "$$this.date",
-                      { $ifNull: ["$$value.date", new Date(0).toISOString()] },
-                    ],
+                    $sortArray: {
+                      input: "$$filteredHistory",
+                      sortBy: { date: -1 },
+                    },
                   },
-                  "$$this",
-                  { $ifNull: ["$$value", "$$this"] },
+                  0,
                 ],
               },
             },
