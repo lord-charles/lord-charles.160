@@ -631,19 +631,55 @@ const getLearnersV2 = async (req, res) => {
               else: "No", // Otherwise flag as "No"
             },
           },
-          // Flag isPromoted and isDroppedOut as "Yes" or "No"
+          // Flag isPromoted and isDroppedOut based on academicHistory
           isPromoted: {
             $cond: {
-              if: { $eq: ["$isPromoted", true] }, // If isPromoted is true
-              then: "Yes", // Flag as "Yes"
-              else: "No", // Otherwise flag as "No"
+              if: {
+                $gt: [
+                  {
+                    $size: {
+                      $filter: {
+                        input: "$academicHistory",
+                        as: "history",
+                        cond: {
+                          $and: [
+                            { $eq: ["$$history.year", enrollmentYear] },
+                            { $eq: ["$$history.status.promoted", true] },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  0,
+                ],
+              },
+              then: "Yes",
+              else: "No",
             },
           },
           isDroppedOut: {
             $cond: {
-              if: { $eq: ["$isDroppedOut", true] }, // If isDroppedOut is true
-              then: "Yes", // Flag as "Yes"
-              else: "No", // Otherwise flag as "No"
+              if: {
+                $gt: [
+                  {
+                    $size: {
+                      $filter: {
+                        input: "$academicHistory",
+                        as: "history",
+                        cond: {
+                          $and: [
+                            { $eq: ["$$history.year", enrollmentYear] },
+                            { $eq: ["$$history.status.droppedOut", true] },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  0,
+                ],
+              },
+              then: "Yes",
+              else: "No",
             },
           },
         },
