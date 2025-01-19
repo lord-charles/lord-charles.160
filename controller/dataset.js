@@ -2920,11 +2920,24 @@ const overallMaleFemaleStat = async (req, res) => {
 
     // Build dynamic match stage for non-dropped-out records
     const matchStage = { isDroppedOut: false };
+    const matchStage2 = {};
 
-    if (county28) matchStage.county28 = county28;
-    if (payam28) matchStage.payam28 = payam28;
-    if (state10) matchStage.state10 = state10;
-    if (code) matchStage.code = code;
+    if (county28) {
+      matchStage.county28 = county28;
+      matchStage2.county28 = county28;
+    }
+    if (payam28) {
+      matchStage.payam28 = payam28;
+      matchStage2.payam28 = payam28;
+    }
+    if (state10) {
+      matchStage.state10 = state10;
+      matchStage2.state10 = state10;
+    }
+    if (code) {
+      matchStage.code = code;
+      matchStage2.code = code;
+    }
     if (enrollmentYear) {
       matchStage["progress"] = {
         $elemMatch: { year: parseInt(enrollmentYear) },
@@ -3029,6 +3042,7 @@ const overallMaleFemaleStat = async (req, res) => {
     const droppedOutPipeline = [
       {
         $match: {
+          ...matchStage2,
           academicHistory: {
             $elemMatch: {
               year: enrollmentYear,
