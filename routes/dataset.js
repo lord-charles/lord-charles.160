@@ -47,7 +47,6 @@ const {
   getLearnersV2,
 } = require("../controller/dataset");
 const { updateDocuments, updateSchoolData } = require("../controller/update");
-
 router.get("/", dataSet);
 router.get("/get/county", countyPupilTotal);
 router.post("/get/county/payam", countyPayamPupilTotals);
@@ -55,7 +54,6 @@ router.post("/get/county/payam/schools", payamSchoolPupilTotals);
 router.post("/get/county/payam/schools/students", getStudentsInClass_2023);
 
 // 2023 dataset
-
 router.get("/get/2023_data", dataSet_2023);
 router.get("/get/2023_data/state", statePupilTotal_2023);
 router.post("/get/2023_data/county", countyPupilTotal_2023);
@@ -398,54 +396,6 @@ router.post("/fetchSchoolsEnrollmentToday", fetchSchoolsEnrollmentToday);
  *         description: Server error
  */
 router.post("/totalStudentsPerStatePromoted", totalStudentsPerStatePromoted);
-
-/**
- * @swagger
- * /api/dataset/getDisabledLearnersCountByLocation:
- *   post:
- *     summary: Retrieve statistics on learners with disabilities
- *     description: Provides detailed analytics on students with disabilities categorized by location and type
- *     tags: [Inclusive Education]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               state:
- *                 type: string
- *               county:
- *                 type: string
- *               payam:
- *                 type: string
- *     responses:
- *       200:
- *         description: Successfully retrieved disability statistics
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 totalCount:
- *                   type: integer
- *                   description: Total number of learners with disabilities
- *                 byGender:
- *                   type: object
- *                   properties:
- *                     male:
- *                       type: integer
- *                     female:
- *                       type: integer
- *                 byDisabilityType:
- *                   type: object
- *                   additionalProperties:
- *                     type: integer
- */
-router.post(
-  "/getDisabledLearnersCountByLocation",
-  getDisabledLearnersCountByLocation
-);
 
 /**
  * @swagger

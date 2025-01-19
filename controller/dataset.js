@@ -2798,16 +2798,22 @@ const getLearnerCountByLocation = async (req, res) => {
 
 const getPromotedLearnersCountByLocation = async (req, res) => {
   try {
-    // Destructure the optional query parameters from the request
-    const { year, state10, county28, payam28, code, enrollmentYear } = req.body;
+    const { state10, county28, payam28, code, enrollmentYear } = req.body;
+
+    const targetYear = enrollmentYear || new Date().getFullYear();
 
     // Build the query object dynamically
     const query = {
-      isPromoted: true, // Only promoted learners
-      isDroppedOut: false, // Exclude learners who dropped out
+      isDroppedOut: false,
+      academicHistory: {
+        $elemMatch: {
+          year: targetYear,
+          "status.promoted": true,
+          "status.droppedOut": false,
+        },
+      },
     };
 
-    if (year) query.year = year;
     if (state10) query.state10 = state10;
     if (county28) query.county28 = county28;
     if (payam28) query.payam28 = payam28;
@@ -2818,13 +2824,54 @@ const getPromotedLearnersCountByLocation = async (req, res) => {
       };
     }
 
-    // Get the count of promoted learners based on the query
-    const promotedLearnersCount = (await SchoolData.countDocuments(query)) || 0;
+    // Use aggregation to get the count of students with their latest promotion status
+    const promotedLearnersCount = await SchoolData.aggregate([
+      { $match: query },
+      {
+        $addFields: {
+          latestHistory: {
+            $reduce: {
+              input: {
+                $filter: {
+                  input: "$academicHistory",
+                  cond: {
+                    $and: [
+                      { $eq: ["$$this.year", targetYear] },
+                      { $eq: ["$$this.status.promoted", true] },
+                    ],
+                  },
+                },
+              },
+              initialValue: null,
+              in: {
+                $cond: [
+                  { $gt: ["$$this.date", "$$value.date"] },
+                  "$$this",
+                  "$$value",
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          "latestHistory.status.promoted": true,
+        },
+      },
+      {
+        $count: "total",
+      },
+    ]);
+
+    const count =
+      promotedLearnersCount.length > 0 ? promotedLearnersCount[0].total : 0;
 
     // Respond with the count of promoted learners
     return res.status(200).json({
       success: true,
-      count: promotedLearnersCount,
+      count,
+      year: targetYear,
     });
   } catch (error) {
     console.error("Error fetching promoted learners count:", error);
