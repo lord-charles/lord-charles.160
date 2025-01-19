@@ -643,7 +643,12 @@ const getLearnersV2 = async (req, res) => {
                         as: "history",
                         cond: {
                           $and: [
-                            { $eq: ["$$history.year", enrollmentYear] },
+                            {
+                              $eq: [
+                                "$$history.year",
+                                parseInt(enrollmentYear, 10),
+                              ],
+                            },
                             { $eq: ["$$history.status.promoted", true] },
                           ],
                         },
@@ -668,7 +673,12 @@ const getLearnersV2 = async (req, res) => {
                         as: "history",
                         cond: {
                           $and: [
-                            { $eq: ["$$history.year", enrollmentYear] },
+                            {
+                              $eq: [
+                                "$$history.year",
+                                parseInt(enrollmentYear, 10),
+                              ],
+                            },
                             { $eq: ["$$history.status.droppedOut", true] },
                           ],
                         },
