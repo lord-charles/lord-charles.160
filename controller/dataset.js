@@ -639,7 +639,7 @@ const getLearnersV2 = async (req, res) => {
                   {
                     $size: {
                       $filter: {
-                        input: "$academicHistory",
+                        input: { $ifNull: ["$academicHistory", []] },
                         as: "history",
                         cond: {
                           $and: [
@@ -664,7 +664,7 @@ const getLearnersV2 = async (req, res) => {
                   {
                     $size: {
                       $filter: {
-                        input: "$academicHistory",
+                        input: { $ifNull: ["$academicHistory", []] },
                         as: "history",
                         cond: {
                           $and: [
@@ -2869,7 +2869,8 @@ const getPromotedLearnersCountByLocation = async (req, res) => {
             $reduce: {
               input: {
                 $filter: {
-                  input: "$academicHistory",
+                  input: { $ifNull: ["$academicHistory", []] },
+                  as: "history",
                   cond: {
                     $and: [
                       { $eq: ["$$this.year", targetYear] },
@@ -3093,7 +3094,8 @@ const overallMaleFemaleStat = async (req, res) => {
             $reduce: {
               input: {
                 $filter: {
-                  input: "$academicHistory",
+                  input: { $ifNull: ["$academicHistory", []] },
+                  as: "history",
                   cond: {
                     $and: [
                       { $eq: ["$$this.year", parseInt(enrollmentYear)] },
