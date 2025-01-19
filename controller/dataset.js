@@ -689,7 +689,13 @@ const getLearnersV2 = async (req, res) => {
                 ],
               },
               then: "Yes",
-              else: "No",
+              else: {
+                $cond: {
+                  if: { $eq: ["$isDroppedOut", true] },
+                  then: "Yes",
+                  else: "No",
+                },
+              },
             },
           },
         },
@@ -3114,7 +3120,9 @@ const overallMaleFemaleStat = async (req, res) => {
                     as: "history",
                     cond: {
                       $and: [
-                        { $eq: ["$$history.year", parseInt(enrollmentYear)] },
+                        {
+                          $eq: ["$$history.year", parseInt(enrollmentYear, 10)],
+                        },
                         { $eq: ["$$history.status.droppedOut", true] },
                       ],
                     },
