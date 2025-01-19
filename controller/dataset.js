@@ -2882,9 +2882,14 @@ const getPromotedLearnersCountByLocation = async (req, res) => {
               initialValue: null,
               in: {
                 $cond: [
-                  { $gt: ["$$this.date", "$$value.date"] },
+                  {
+                    $gt: [
+                      "$$this.date",
+                      { $ifNull: ["$$value.date", new Date(0).toISOString()] },
+                    ],
+                  },
                   "$$this",
-                  "$$value",
+                  { $ifNull: ["$$value", "$$this"] },
                 ],
               },
             },
@@ -3107,9 +3112,14 @@ const overallMaleFemaleStat = async (req, res) => {
               initialValue: null,
               in: {
                 $cond: [
-                  { $gt: ["$$this.date", "$$value.date"] },
+                  {
+                    $gt: [
+                      "$$this.date",
+                      { $ifNull: ["$$value.date", new Date(0).toISOString()] },
+                    ],
+                  },
                   "$$this",
-                  "$$value",
+                  { $ifNull: ["$$value", "$$this"] },
                 ],
               },
             },
