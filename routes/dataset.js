@@ -46,7 +46,11 @@ const {
   overallMaleFemaleStat,
   getLearnersV2,
 } = require("../controller/dataset");
-const { updateDocuments, updateSchoolData } = require("../controller/update");
+const {
+  updateDocuments,
+  updateSchoolData,
+  updateSchoolsDocuments,
+} = require("../controller/update");
 router.get("/", dataSet);
 router.get("/get/county", countyPupilTotal);
 router.post("/get/county/payam", countyPayamPupilTotals);
@@ -230,6 +234,8 @@ router.post(
 
 router.post("/updateDocuments", updateDocuments);
 router.post("/updateSchoolData", updateSchoolData);
+router.post("/updateSchoolsDocuments", updateSchoolsDocuments);
+
 router.post("/registerLearnerDuringSync", registerLearnerDuringSync);
 /**
  * @swagger
