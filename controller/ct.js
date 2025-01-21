@@ -419,9 +419,6 @@ exports.getUniqueCtSchools = async (req, res) => {
       matchConditions.year = parseInt(year);
     }
 
-    // Log match conditions for debugging
-    console.log("Match conditions:", matchConditions);
-
     const schools = await CashTransfer.aggregate([
       {
         $match: matchConditions,
@@ -431,13 +428,15 @@ exports.getUniqueCtSchools = async (req, res) => {
           _id: "$school.code",
           tranche: { $first: "$tranche" },
           year: { $first: "$year" },
-          location: { $first: "$location" },
+          state10: { $first: "$location.state10" },
+          county10: { $first: "$location.county10" },
+          payam10: { $first: "$location.payam10" },
           schoolName: { $first: "$school.name" },
           schoolType: { $first: "$school.type" },
           schoolOwnership: { $first: "$school.ownership" },
           schoolCode: { $first: "$school.code" },
           amounts: { $first: "$amounts" },
-          learnerCount: { $sum: 1 }, // Add count of learners per school
+          learnerCount: { $sum: 1 },
         },
       },
       {
@@ -445,7 +444,9 @@ exports.getUniqueCtSchools = async (req, res) => {
           _id: 0,
           tranche: 1,
           year: 1,
-          location: 1,
+          state10: 1,
+          county10: 1,
+          payam10: 1,
           school: {
             name: "$schoolName",
             type: "$schoolType",
@@ -456,11 +457,8 @@ exports.getUniqueCtSchools = async (req, res) => {
           learnerCount: 1,
         },
       },
-      { $sort: { "school.name": 1 } }, // Sort schools by name
+      { $sort: { "school.name": 1 } },
     ]);
-
-    // Log count for debugging
-    console.log("Number of schools found:", schools.length);
 
     res.status(200).json({
       success: true,
