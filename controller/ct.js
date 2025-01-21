@@ -340,11 +340,19 @@ exports.getStatCardData = async (req, res) => {
 
 exports.getUniqueCtSchools = async (req, res) => {
   try {
-    const { year, tranche } = req.query;
+    const { tranche, state, county, payam, year } = req.query;
 
-    // Build match conditions dynamically
     const matchConditions = {};
 
+    if (state) {
+      matchConditions["location.state10"] = state;
+    }
+    if (county) {
+      matchConditions["location.county10"] = county;
+    }
+    if (payam) {
+      matchConditions["location.payam10"] = payam;
+    }
     if (tranche) {
       matchConditions.tranche = parseInt(tranche, 10);
     } else {
