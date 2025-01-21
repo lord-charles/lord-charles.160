@@ -425,19 +425,25 @@ exports.getLearnerByCode = async (req, res) => {
       });
     }
 
-    if (!tranche) {
-      return res.status(400).json({
-        success: false,
-        message: "Tranche is required",
-      });
+    // Build match conditions
+    const matchConditions = {
+      "school.code": code,
+    };
+
+    if (tranche) {
+      matchConditions.tranche = parseInt(tranche);
+    } else {
+      const latestTranche = await CashTransfer.findOne()
+        .sort({ tranche: -1 })
+        .select("tranche");
+      if (latestTranche) {
+        matchConditions.tranche = latestTranche.tranche;
+      }
     }
 
     const pipeline = [
       {
-        $match: {
-          "school.code": code,
-          tranche: parseInt(tranche),
-        },
+        $match: matchConditions,
       },
       {
         $addFields: {
@@ -544,6 +550,7 @@ exports.getLearnerByCode = async (req, res) => {
           year: 1,
         },
       },
+      { $sort: { "learner.name.firstName": 1 } },
     ];
 
     const learners = await CashTransfer.aggregate(pipeline);
@@ -557,6 +564,7 @@ exports.getLearnerByCode = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      count: learners.length,
       data: learners,
     });
   } catch (error) {
