@@ -10,5 +10,6 @@ router.put("/:id", cashTransferController.updateCashTransfer);
 router.delete("/:id", cashTransferController.deleteCashTransfer);
 router.get("/stat-card/data", cashTransferController.getStatCardData);
 router.get("/get/unique-schools", cashTransferController.getUniqueCtSchools);
+router.get("/get/learners", cashTransferController.getLearnerByCode);
 
 module.exports = router;
