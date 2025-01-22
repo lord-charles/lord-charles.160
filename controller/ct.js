@@ -385,6 +385,17 @@ exports.getUniqueCtSchools = async (req, res) => {
           schoolCode: { $first: "$school.code" },
           amounts: { $first: "$amounts" },
           learnerCount: { $sum: 1 },
+          totalAmountAccounted: {
+            $sum: {
+              $ifNull: ["$accountability.amountAccounted", 0],
+            },
+          },
+          // Get the first valid date accounted
+          firstDateAccounted: {
+            $first: {
+              $ifNull: ["$accountability.dateAccounted", "Not Accounted"],
+            },
+          },
         },
       },
       {
@@ -403,6 +414,10 @@ exports.getUniqueCtSchools = async (req, res) => {
           },
           amounts: 1,
           learnerCount: 1,
+          accountability: {
+            amountAccounted: "$totalAmountAccounted",
+            dateAccounted: "$firstDateAccounted",
+          },
         },
       },
       { $sort: { "school.name": 1 } },
@@ -559,7 +574,6 @@ exports.getLearnerByCode = async (req, res) => {
           accountability: 1,
           approval: 1,
           year: 1,
-          accountability: 1,
         },
       },
       { $sort: { "learner.name.firstName": 1 } },
