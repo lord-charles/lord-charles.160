@@ -109,7 +109,6 @@ const logIn = asyncHandler(async (req, res) => {
   const secret = "charles-works-smart";
   const { username, password } = req.body;
   const user = await User.findOne({ username, password });
-  console.log(user);
 
   if (!user) {
     res.status(404).json({ message: "Wrong username!" });
@@ -135,7 +134,13 @@ const logIn = asyncHandler(async (req, res) => {
       secret,
       { expiresIn: "1d" }
     );
-    res.status(200).json({ user: user.username, token });
+    res.status(200).json({
+      user: user.username,
+      token,
+      userType: user.userType,
+      firstname: user.firstname,
+      lastname: user.lastname,
+    });
   } else {
     res.status(404).json({ message: "Wrong password!" });
   }
