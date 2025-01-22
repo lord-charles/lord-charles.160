@@ -341,7 +341,6 @@ exports.getStatCardData = async (req, res) => {
 exports.getUniqueCtSchools = async (req, res) => {
   try {
     const { tranche, state, county, payam, year } = req.query;
-
     const matchConditions = {};
 
     if (state) {
@@ -424,7 +423,7 @@ exports.getUniqueCtSchools = async (req, res) => {
 
 exports.getLearnerByCode = async (req, res) => {
   try {
-    const { code, tranche } = req.query;
+    const { code, tranche, year } = req.query;
 
     if (!code) {
       return res.status(400).json({
@@ -447,6 +446,10 @@ exports.getLearnerByCode = async (req, res) => {
       if (latestTranche) {
         matchConditions.tranche = latestTranche.tranche;
       }
+    }
+
+    if (year) {
+      matchConditions.year = parseInt(year);
     }
 
     const pipeline = [
