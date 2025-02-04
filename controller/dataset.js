@@ -1410,7 +1410,7 @@ const registerStudent2024 = async (req, res) => {
     // Save the registration data to the database
     const reg = await newRegistration2023.save();
     console.log(
-      `${reg.firstName} in state ${reg.state10}, reference${reg.reference} learnerUniqueID ${reg.learnerUniqueID}, school ${reg.school} registered`
+      `${reg.firstName} in state ${reg.state10}, eieStatus: ${reg.eieStatus}, reference${reg.reference} learnerUniqueID ${reg.learnerUniqueID}, school ${reg.school} registered`
     );
 
     res
@@ -1552,7 +1552,7 @@ const registerLearnerDuringSync = async (req, res) => {
 
     // Log the registration details
     console.log(
-      `${firstName} in state ${state}, county ${county}, payam ${payam}, school ${schoolName} registered`
+      `${firstName} in state ${state}, county ${county}, payam ${payam}, eieStatus: ${eieStatus},school ${schoolName} registered`
     );
 
     // Create and save the new learner
@@ -1580,6 +1580,7 @@ const registerLearnerDuringSync = async (req, res) => {
       learnerUniqueID: generateUniqueCode(code, studentClass, year),
       progress,
       modifiedBy,
+      eieStatus,
     });
 
     await newLearner.save();
