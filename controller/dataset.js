@@ -815,6 +815,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       pregnantOrNursing,
       modifiedBy,
       academicHistory,
+      eieStatus,
     } = req.body;
 
     const updateData = {
@@ -869,6 +870,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       pregnantOrNursing,
       modifiedBy,
       academicHistory,
+      eieStatus,
     };
 
     const schoolData = await SchoolData.findByIdAndUpdate(id, updateData, {
@@ -1340,6 +1342,7 @@ const registerStudent2024 = async (req, res) => {
       pregnantOrNursing,
       modifiedBy,
       progress,
+      eieStatus,
     } = req.body;
 
     const generateUniqueCode = () => {
@@ -1401,6 +1404,7 @@ const registerStudent2024 = async (req, res) => {
       learnerUniqueID: generateUniqueCode(code, studentClass, year),
       modifiedBy,
       progress,
+      eieStatus,
     });
 
     // Save the registration data to the database
