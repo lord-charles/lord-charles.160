@@ -24,18 +24,26 @@ const userSchema = new mongoose.Schema(
     address: String,
     userType: {
       type: String,
-      enum: [
-        "Teacher",
-        "HeadTeacher",
-        "ClassTeacher",
-        "VolunteerTeacher",
-        "DeputyHeadTeacher",
-        "Secretariate",
-        "SuperAdmin",
-        "SeniorTeacher",
-        "lwd",
-        "ct",
-      ],
+      // enum: [
+      //   "Teacher",
+      //   "HeadTeacher",
+      //   "ClassTeacher",
+      //   "VolunteerTeacher",
+      //   "DeputyHeadTeacher",
+      //   "Secretariate",
+      //   "SuperAdmin",
+      //   "SeniorTeacher",
+      //   "lwd",
+      //   "ct",
+      // ],
+    },
+    role: {
+      name: {
+        type: String
+      },
+      permissions: {
+        type: [String],
+      },
     },
     dutyAssigned: [
       {

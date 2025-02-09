@@ -2,7 +2,6 @@ const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const validateMongodbId = require("../utils/validateMongodbId");
-const sendEmail = require("./emailCtl");
 const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
 const userModel = require("../models/userModel");
@@ -19,6 +18,7 @@ const createUser = asyncHandler(async (req, res) => {
     isAdmin,
     address,
     userType,
+    role,
     dutyAssigned,
     statesAsigned,
     county28,
@@ -97,6 +97,7 @@ const createUser = asyncHandler(async (req, res) => {
     modifiedBy,
     disabilities,
     yearJoined: new Date().getFullYear(),
+    role
   });
 
   await user.save();
@@ -208,7 +209,17 @@ const logIn = asyncHandler(async (req, res) => {
 // };
 const getUsers = async (req, res) => {
   try {
-    const response = await User.find().limit(10);
+    const excludedUserTypes = [
+      "Teacher",
+      "HeadTeacher",
+      "ClassTeacher",
+      "VolunteerTeacher",
+      "DeputyHeadTeacher",
+      "SeniorTeacher"
+    ];
+    
+    const response = await User.find({ userType: { $nin: excludedUserTypes } });
+    
 
     res.status(200).json(response);
   } catch (error) {
@@ -422,6 +433,7 @@ const updateUser = asyncHandler(async (req, res) => {
     modifiedBy,
     disabilities,
     isDroppedOut,
+    role
   } = req.body;
   validateMongodbId(id);
   const updatedFields = {
@@ -464,6 +476,7 @@ const updateUser = asyncHandler(async (req, res) => {
     modifiedBy,
     disabilities,
     isDroppedOut,
+    role
     // passwordHash: password ? await bcrypt.hash(password, 10) : undefined,
   };
 
