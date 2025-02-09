@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 // Create a new role
 const createRole = asyncHandler(async (req, res) => {
   try {
-    const { name, permissions } = req.body;
+    const { name, permissions, roles } = req.body;
 
     // Check if role already exists
     const roleExists = await Role.findOne({ name });
@@ -17,6 +17,7 @@ const createRole = asyncHandler(async (req, res) => {
     const role = await Role.create({
       name,
       permissions,
+      roles,
     });
 
     res.status(201).json({
