@@ -1655,6 +1655,7 @@ const payamSchoolDownload = async (req, res) => {
       isDisbursed: 1,
       CTEFSerialNumber: 1,
       isWithDisability: 1,
+      eieStatus: 1,
     };
 
     // Calculate skip value based on pagination
