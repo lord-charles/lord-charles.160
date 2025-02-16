@@ -417,7 +417,7 @@ const countyPayamPupilTotals_2023 = async (req, res) => {
       {
         $project: {
           _id: 0,
-          payam28: "$_id", // Return the normalized payam name
+          _id: "$_id",
           totalPupils: 1,
         },
       },
@@ -441,27 +441,25 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
         .json({ success: false, error: "Payam name is required" });
     }
 
-    // Normalize input values
+    // Normalize input to lowercase for consistent comparison
     const normalizedPayam = payam28.toLowerCase();
-    const normalizedCounty = county28 ? county28.toLowerCase() : null;
 
-    // Match stage using $expr for case-insensitive comparison
-    const matchConditions = [
-      { $eq: [{ $toLower: "$payam28" }, normalizedPayam] },
-    ];
-
+    // Base match stage with case-insensitive filtering using `$toLower`
+    const matchStage = {
+      $expr: {
+        $eq: [{ $toLower: "$payam28" }, normalizedPayam],
+      },
+    };
     if (county28) {
-      matchConditions.push({
-        $eq: [{ $toLower: "$county28" }, normalizedCounty],
-      });
+      matchStage.$expr.$and = [
+        {
+          $eq: [{ $toLower: "$county28" }, county28.toLowerCase()],
+        },
+      ];
     }
     if (state10) {
-      matchConditions.push({ $eq: ["$state10", state10] });
+      matchStage.state10 = state10;
     }
-
-    const matchStage = {
-      $expr: { $and: matchConditions },
-    };
 
     // Define the aggregation pipeline
     const pipeline = [{ $match: matchStage }];
@@ -497,8 +495,8 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
       {
         $group: {
           _id: "$code",
-          school: { $first: "$normalizedSchool" },
-          payam: { $first: "$normalizedPayam" },
+          school: { $first: "$normalizedSchool" }, // Use normalized school
+          payam: { $first: "$normalizedPayam" }, // Use normalized payam
         },
       },
       {
@@ -520,7 +518,6 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
-
 
 
 const getStudentsInSchool_2023 = async (req, res) => {
