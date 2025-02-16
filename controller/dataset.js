@@ -92,8 +92,7 @@ const countyPupilTotal = async (req, res) => {
 const countyPayamPupilTotals = async (req, res) => {
   try {
     // Extract countyName from the request parameters
-    const { countyName, state10 } = req.body;
-    console.log(countyName, state10);
+    const { countyName } = req.body;
 
     // Validate if countyName is provided
     if (!countyName) {
@@ -105,24 +104,12 @@ const countyPayamPupilTotals = async (req, res) => {
     // Fetch data from the database
     const result = await Dataset.aggregate([
       {
-        $match: { countyName: countyName, state10: state10 },
-      },
-      {
-        $addFields: {
-          normalizedPayamName: { $toLower: "$payamName" }, // Normalize payamName to lowercase
-        },
+        $match: { countyName: countyName },
       },
       {
         $group: {
-          _id: "$normalizedPayamName", // Group by normalized payamName
+          _id: "$payamName",
           totalPupils: { $sum: { $ifNull: ["$pupilCount", 0] } },
-        },
-      },
-      {
-        $project: {
-          _id: 0, // Exclude MongoDB's default `_id`
-          payamName: "$_id", // Return the normalized payamName
-          totalPupils: 1, // Include total pupils count
         },
       },
     ]);
@@ -134,7 +121,6 @@ const countyPayamPupilTotals = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
-
 
 const payamSchoolPupilTotals = async (req, res) => {
   try {
@@ -405,43 +391,38 @@ const countyPupilTotal_2023 = async (req, res) => {
 
 const countyPayamPupilTotals_2023 = async (req, res) => {
   try {
-    // Extract countyName from the request parameters
-    const { countyName, state10 } = req.body;
-    console.log(countyName, state10);
+    const { county28 } = req.body;
 
-    // Validate if countyName is provided
-    if (!countyName) {
+    if (!county28) {
       return res
         .status(400)
         .json({ success: false, error: "County name is required" });
     }
 
-    // Fetch data from the database
-    const result = await Dataset.aggregate([
+    const result = await SchoolData.aggregate([
       {
-        $match: { countyName: countyName, state10: state10 },
+        $match: { county28: { $regex: new RegExp(`^${county28}$`, "i") } }, // Case-insensitive match
       },
       {
         $addFields: {
-          normalizedPayamName: { $toLower: "$payamName" }, // Normalize payamName to lowercase
+          normalizedPayam: { $toLower: "$payam28" }, // Normalize payam28 to lowercase
         },
       },
       {
         $group: {
-          _id: "$normalizedPayamName", // Group by normalized payamName
-          totalPupils: { $sum: { $ifNull: ["$pupilCount", 0] } },
+          _id: "$normalizedPayam",
+          totalPupils: { $sum: 1 },
         },
       },
       {
         $project: {
-          _id: 0, // Exclude MongoDB's default `_id`
-          payamName: "$_id", // Return the normalized payamName
-          totalPupils: 1, // Include total pupils count
+          _id: 0,
+          payam28: "$_id", // Return the normalized payam name
+          totalPupils: 1,
         },
       },
     ]);
 
-    // Return the result
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching county payam pupil totals:", error);
@@ -449,28 +430,38 @@ const countyPayamPupilTotals_2023 = async (req, res) => {
   }
 };
 
+
 const payamSchoolPupilTotals_2023 = async (req, res) => {
   try {
-    // Extract payam28 and isDisabled from the request body
     const { payam28, county28, state10, isDisabled } = req.body;
-    console.log('fetched schools')
 
-
-    // Validate if payam28 is provided
     if (!payam28) {
       return res
         .status(400)
         .json({ success: false, error: "Payam name is required" });
     }
 
-    // Base match stage to filter by payam28
-    const matchStage = { payam28 };
+    // Normalize input values
+    const normalizedPayam = payam28.toLowerCase();
+    const normalizedCounty = county28 ? county28.toLowerCase() : null;
+
+    // Match stage using $expr for case-insensitive comparison
+    const matchConditions = [
+      { $eq: [{ $toLower: "$payam28" }, normalizedPayam] },
+    ];
+
     if (county28) {
-      matchStage.county28 = county28;
+      matchConditions.push({
+        $eq: [{ $toLower: "$county28" }, normalizedCounty],
+      });
     }
     if (state10) {
-      matchStage.state10 = state10;
+      matchConditions.push({ $eq: ["$state10", state10] });
     }
+
+    const matchStage = {
+      $expr: { $and: matchConditions },
+    };
 
     // Define the aggregation pipeline
     const pipeline = [{ $match: matchStage }];
@@ -495,27 +486,27 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
       });
     }
 
-    // Normalize school name to lowercase to handle case insensitivity
+    // Normalize payam and school names, then group by unique school code
     pipeline.push(
       {
         $addFields: {
-          normalizedSchoolName: { $toLower: "$school" }
-        }
+          normalizedPayam: { $toLower: "$payam28" },
+          normalizedSchool: { $toLower: "$school" },
+        },
       },
       {
         $group: {
-          _id: "$normalizedSchoolName",
-          code: { $first: "$code" }, 
-          school: { $first: "$school" }, 
-          payam: { $first: "$payam28" }, 
+          _id: "$code",
+          school: { $first: "$normalizedSchool" },
+          payam: { $first: "$normalizedPayam" },
         },
       },
       {
         $project: {
-          _id: 0, 
-          code: 1, 
-          school: 1, 
-          payam: 1, 
+          _id: 0,
+          code: "$_id",
+          school: 1,
+          payam: 1,
         },
       }
     );
@@ -523,13 +514,13 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     // Execute the aggregation pipeline
     const result = await SchoolData.aggregate(pipeline);
 
-    // Return the result
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching payam school pupil totals:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 
 const getStudentsInSchool_2023 = async (req, res) => {
