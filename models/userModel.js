@@ -40,17 +40,14 @@ const userSchema = new mongoose.Schema(
     role: {
       name: {
         type: String,
-        required: true,
         unique: true,
         trim: true,
       },
       permissions: {
         type: [String],
-        required: true,
       },
       roles: {
         type: [String],
-        required: true,
       },
     },
     dutyAssigned: [
