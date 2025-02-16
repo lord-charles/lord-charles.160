@@ -1021,6 +1021,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         "ClassChanged",
         "PromotionRevoked",
         "Transferred",
+        "DroppedOut"
       ];
       if (!validStatuses.includes(updateFields.progress.status)) {
         return res
@@ -1198,6 +1199,10 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
             updatedFields.progress.remarks =
               "Learner's previous promotion has been revoked";
             break;
+          case "DroppedOut":
+            updatedFields.progress.remarks =
+            "Learner dropped out";
+
           case "Transferred":
             const {
               sourceSchool,
