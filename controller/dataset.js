@@ -92,7 +92,8 @@ const countyPupilTotal = async (req, res) => {
 const countyPayamPupilTotals = async (req, res) => {
   try {
     // Extract countyName from the request parameters
-    const { countyName } = req.body;
+    const { countyName, state10 } = req.body;
+    console.log(countyName, state10);
 
     // Validate if countyName is provided
     if (!countyName) {
@@ -104,12 +105,24 @@ const countyPayamPupilTotals = async (req, res) => {
     // Fetch data from the database
     const result = await Dataset.aggregate([
       {
-        $match: { countyName: countyName },
+        $match: { countyName: countyName, state10: state10 },
+      },
+      {
+        $addFields: {
+          normalizedPayamName: { $toLower: "$payamName" }, // Normalize payamName to lowercase
+        },
       },
       {
         $group: {
-          _id: "$payamName",
+          _id: "$normalizedPayamName", // Group by normalized payamName
           totalPupils: { $sum: { $ifNull: ["$pupilCount", 0] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude MongoDB's default `_id`
+          payamName: "$_id", // Return the normalized payamName
+          totalPupils: 1, // Include total pupils count
         },
       },
     ]);
@@ -121,6 +134,7 @@ const countyPayamPupilTotals = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 const payamSchoolPupilTotals = async (req, res) => {
   try {
@@ -427,6 +441,7 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     // Extract payam28 and isDisabled from the request body
     const { payam28, county28, state10, isDisabled } = req.body;
 
+
     // Validate if payam28 is provided
     if (!payam28) {
       return res
@@ -466,21 +481,27 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
       });
     }
 
-    // Group by unique school code and collect relevant details
+    // Normalize school name to lowercase to handle case insensitivity
     pipeline.push(
       {
+        $addFields: {
+          normalizedSchoolName: { $toLower: "$school" }
+        }
+      },
+      {
         $group: {
-          _id: "$code", // Unique school code
-          school: { $first: "$school" }, // School name
-          payam: { $first: "$payam28" }, // Payam
+          _id: "$normalizedSchoolName",
+          code: { $first: "$code" }, 
+          school: { $first: "$school" }, 
+          payam: { $first: "$payam28" }, 
         },
       },
       {
         $project: {
-          _id: 0, // Exclude MongoDB's default `_id`
-          code: "$_id", // Include unique school code
-          school: 1,
-          payam: 1,
+          _id: 0, 
+          code: 1, 
+          school: 1, 
+          payam: 1, 
         },
       }
     );
@@ -495,6 +516,7 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 const getStudentsInSchool_2023 = async (req, res) => {
   try {
