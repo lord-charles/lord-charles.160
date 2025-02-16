@@ -391,45 +391,42 @@ const countyPupilTotal_2023 = async (req, res) => {
 
 const countyPayamPupilTotals_2023 = async (req, res) => {
   try {
-    const { county28 } = req.body;
-
+    // Extract county28 from the request parameters
+    const { county28, state10 } = req.body;
+  // Validate if county28 is provided
     if (!county28) {
       return res
         .status(400)
         .json({ success: false, error: "County name is required" });
     }
+  const match = { county28 }; 
 
+  if (state10) {
+    match.state10 = state10; 
+  }
+
+
+  
+    // Fetch data from the database
     const result = await SchoolData.aggregate([
       {
-        $match: { county28: { $regex: new RegExp(`^${county28}$`, "i") } }, // Case-insensitive match
-      },
-      {
-        $addFields: {
-          normalizedPayam: { $toLower: "$payam28" }, // Normalize payam28 to lowercase
-        },
+        $match:match , // Use county28 instead of countyName
       },
       {
         $group: {
-          _id: "$normalizedPayam",
-          totalPupils: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          _id: "$_id",
-          totalPupils: 1,
+          _id: "$payam28", // Use payam28 instead of payamName
+          totalPupils: { $sum: 1 }, // Count documents per payam
         },
       },
     ]);
 
+    // Return the result
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching county payam pupil totals:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
-
 
 const payamSchoolPupilTotals_2023 = async (req, res) => {
   try {
@@ -1696,16 +1693,7 @@ const payamSchoolDownload = async (req, res) => {
 
     // Aggregation pipeline to match, project, skip, and limit documents
     const pipeline = [
-      {
-        $match: {
-          $expr: {
-            $and: [
-              { $eq: [{ $toLower: "$payam28" }, payam28.toLowerCase()] }, 
-              { $eq: [{ $toLower: "$county28" }, county28.toLowerCase()] }, 
-            ],
-          },
-        },
-      },
+      { $match: { payam28, county28 } },
       { $project: PROJECTION_FIELDS },
       { $skip: skip },
       { $limit: PAGE_SIZE },

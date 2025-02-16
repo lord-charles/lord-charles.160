@@ -217,9 +217,9 @@ const getUsers = async (req, res) => {
       "DeputyHeadTeacher",
       "SeniorTeacher"
     ];
-
+    
     const response = await User.find({ userType: { $nin: excludedUserTypes } });
-
+    
 
     res.status(200).json(response);
   } catch (error) {
@@ -766,16 +766,7 @@ const payamSchoolDownload = async (req, res) => {
 
     // Aggregation pipeline to match, project, skip, and limit documents
     const pipeline = [
-      {
-        $match: {
-          $expr: {
-            $and: [
-              { $eq: [{ $toLower: "$payam28" }, payam28.toLowerCase()] },
-              { $eq: [{ $toLower: "$county28" }, county28.toLowerCase()] },
-            ],
-          },
-        },
-      },
+      { $match: { payam28,county28 } },
       { $project: PROJECTION_FIELDS },
       { $skip: skip },
       { $limit: PAGE_SIZE },
@@ -1138,11 +1129,11 @@ const getTeachersStatusCountByLocation = async (req, res) => {
         result.length > 0
           ? result[0]
           : {
-            activeCount: 0,
-            inactiveCount: 0,
-            droppedOutCount: 0,
-            notDroppedOutCount: 0,
-          },
+              activeCount: 0,
+              inactiveCount: 0,
+              droppedOutCount: 0,
+              notDroppedOutCount: 0,
+            },
     });
   } catch (error) {
     console.error("Error fetching teacher status counts:", error);
