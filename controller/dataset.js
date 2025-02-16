@@ -405,25 +405,38 @@ const countyPupilTotal_2023 = async (req, res) => {
 
 const countyPayamPupilTotals_2023 = async (req, res) => {
   try {
-    // Extract county28 from the request parameters
-    const { county28 } = req.body;
+    // Extract countyName from the request parameters
+    const { countyName, state10 } = req.body;
+    console.log(countyName, state10);
 
-    // Validate if county28 is provided
-    if (!county28) {
+    // Validate if countyName is provided
+    if (!countyName) {
       return res
         .status(400)
         .json({ success: false, error: "County name is required" });
     }
 
     // Fetch data from the database
-    const result = await SchoolData.aggregate([
+    const result = await Dataset.aggregate([
       {
-        $match: { county28: county28 }, // Use county28 instead of countyName
+        $match: { countyName: countyName, state10: state10 },
+      },
+      {
+        $addFields: {
+          normalizedPayamName: { $toLower: "$payamName" }, // Normalize payamName to lowercase
+        },
       },
       {
         $group: {
-          _id: "$payam28", // Use payam28 instead of payamName
-          totalPupils: { $sum: 1 }, // Count documents per payam
+          _id: "$normalizedPayamName", // Group by normalized payamName
+          totalPupils: { $sum: { $ifNull: ["$pupilCount", 0] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude MongoDB's default `_id`
+          payamName: "$_id", // Return the normalized payamName
+          totalPupils: 1, // Include total pupils count
         },
       },
     ]);
@@ -440,6 +453,7 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
   try {
     // Extract payam28 and isDisabled from the request body
     const { payam28, county28, state10, isDisabled } = req.body;
+    console.log('fetched schools')
 
 
     // Validate if payam28 is provided
