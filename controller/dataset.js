@@ -444,22 +444,29 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     // Normalize input to lowercase for consistent comparison
     const normalizedPayam = payam28.toLowerCase();
 
-    // Base match stage with case-insensitive filtering using `$toLower`
+    // Construct match stage dynamically
+    const matchConditions = [
+      { $eq: [{ $toLower: "$payam28" }, normalizedPayam] }, // Match Payam
+    ];
+
+    if (county28) {
+      matchConditions.push({
+        $eq: [{ $toLower: "$county28" }, county28.toLowerCase()],
+      });
+    }
+
+    if (state10) {
+      matchConditions.push({
+        $eq: ["$state10", state10], // Direct match for state10 (case-sensitive)
+      });
+    }
+
+    // Final match stage
     const matchStage = {
       $expr: {
-        $eq: [{ $toLower: "$payam28" }, normalizedPayam],
+        $and: matchConditions, // Ensure all conditions match
       },
     };
-    if (county28) {
-      matchStage.$expr.$and = [
-        {
-          $eq: [{ $toLower: "$county28" }, county28.toLowerCase()],
-        },
-      ];
-    }
-    if (state10) {
-      matchStage.state10 = state10;
-    }
 
     // Define the aggregation pipeline
     const pipeline = [{ $match: matchStage }];
@@ -488,7 +495,6 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     pipeline.push(
       {
         $addFields: {
-          normalizedPayam: { $toLower: "$payam28" },
           normalizedSchool: { $toLower: "$school" },
         },
       },
@@ -496,7 +502,6 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
         $group: {
           _id: "$code",
           school: { $first: "$normalizedSchool" }, // Use normalized school
-          payam: { $first: "$normalizedPayam" }, // Use normalized payam
         },
       },
       {
@@ -504,7 +509,6 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
           _id: 0,
           code: "$_id",
           school: 1,
-          payam: 1,
         },
       }
     );
