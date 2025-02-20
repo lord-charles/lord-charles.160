@@ -392,19 +392,25 @@ const countyPupilTotal_2023 = async (req, res) => {
 const countyPayamPupilTotals_2023 = async (req, res) => {
   try {
     // Extract county28 from the request parameters
-    const { county28 } = req.body;
-
+    const { county28, state10 } = req.body;
     // Validate if county28 is provided
     if (!county28) {
       return res
         .status(400)
         .json({ success: false, error: "County name is required" });
     }
+    const match = { county28 };
+
+    if (state10) {
+      match.state10 = state10;
+    }
+
+
 
     // Fetch data from the database
     const result = await SchoolData.aggregate([
       {
-        $match: { county28: county28 }, // Use county28 instead of countyName
+        $match: match, // Use county28 instead of countyName
       },
       {
         $group: {
@@ -424,24 +430,40 @@ const countyPayamPupilTotals_2023 = async (req, res) => {
 
 const payamSchoolPupilTotals_2023 = async (req, res) => {
   try {
-    // Extract payam28 and isDisabled from the request body
     const { payam28, county28, state10, isDisabled } = req.body;
 
-    // Validate if payam28 is provided
     if (!payam28) {
       return res
         .status(400)
         .json({ success: false, error: "Payam name is required" });
     }
 
-    // Base match stage to filter by payam28
-    const matchStage = { payam28 };
+    // Normalize input to lowercase for consistent comparison
+    const normalizedPayam = payam28.toLowerCase();
+
+    // Construct match stage dynamically
+    const matchConditions = [
+      { $eq: [{ $toLower: "$payam28" }, normalizedPayam] }, // Match Payam
+    ];
+
     if (county28) {
-      matchStage.county28 = county28;
+      matchConditions.push({
+        $eq: [{ $toLower: "$county28" }, county28.toLowerCase()],
+      });
     }
+
     if (state10) {
-      matchStage.state10 = state10;
+      matchConditions.push({
+        $eq: ["$state10", state10], // Direct match for state10 (case-sensitive)
+      });
     }
+
+    // Final match stage
+    const matchStage = {
+      $expr: {
+        $and: matchConditions, // Ensure all conditions match
+      },
+    };
 
     // Define the aggregation pipeline
     const pipeline = [{ $match: matchStage }];
@@ -466,21 +488,24 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
       });
     }
 
-    // Group by unique school code and collect relevant details
+    // Normalize payam and school names, then group by unique school code
     pipeline.push(
       {
+        $addFields: {
+          normalizedSchool: { $toLower: "$school" },
+        },
+      },
+      {
         $group: {
-          _id: "$code", // Unique school code
-          school: { $first: "$school" }, // School name
-          payam: { $first: "$payam28" }, // Payam
+          _id: "$code",
+          school: { $first: "$normalizedSchool" }, // Use normalized school
         },
       },
       {
         $project: {
-          _id: 0, // Exclude MongoDB's default `_id`
-          code: "$_id", // Include unique school code
+          _id: 0,
+          code: "$_id",
           school: 1,
-          payam: 1,
         },
       }
     );
@@ -488,13 +513,13 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     // Execute the aggregation pipeline
     const result = await SchoolData.aggregate(pipeline);
 
-    // Return the result
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching payam school pupil totals:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
+
 
 const getStudentsInSchool_2023 = async (req, res) => {
   try {
@@ -993,6 +1018,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         "ClassChanged",
         "PromotionRevoked",
         "Transferred",
+        "DroppedOut"
       ];
       if (!validStatuses.includes(updateFields.progress.status)) {
         return res
@@ -1170,6 +1196,10 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
             updatedFields.progress.remarks =
               "Learner's previous promotion has been revoked";
             break;
+          case "DroppedOut":
+            updatedFields.progress.remarks =
+              "Learner dropped out";
+
           case "Transferred":
             const {
               sourceSchool,
@@ -1619,7 +1649,7 @@ const deleteStudentById = async (req, res) => {
 
 const payamSchoolDownload = async (req, res) => {
   try {
-    const { payam28, page } = req.body;
+    const { payam28, county28, page } = req.body;
 
     // Input validation
     if (!payam28) {
@@ -1655,6 +1685,7 @@ const payamSchoolDownload = async (req, res) => {
       isDisbursed: 1,
       CTEFSerialNumber: 1,
       isWithDisability: 1,
+      eieStatus: 1,
     };
 
     // Calculate skip value based on pagination
@@ -1662,7 +1693,7 @@ const payamSchoolDownload = async (req, res) => {
 
     // Aggregation pipeline to match, project, skip, and limit documents
     const pipeline = [
-      { $match: { payam28: payam28, isDroppedOut: false } },
+      { $match: { payam28 } },
       { $project: PROJECTION_FIELDS },
       { $skip: skip },
       { $limit: PAGE_SIZE },

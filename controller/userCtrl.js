@@ -723,7 +723,7 @@ const saveAddress = asyncHandler(async (req, res) => {
 
 const payamSchoolDownload = async (req, res) => {
   try {
-    const { payam28, page } = req.body;
+    const { payam28,county28, page } = req.body;
 
     // Input validation
     if (!payam28) {
@@ -766,7 +766,7 @@ const payamSchoolDownload = async (req, res) => {
 
     // Aggregation pipeline to match, project, skip, and limit documents
     const pipeline = [
-      { $match: { payam28 } },
+      { $match: { payam28,county28 } },
       { $project: PROJECTION_FIELDS },
       { $skip: skip },
       { $limit: PAGE_SIZE },

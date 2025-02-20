@@ -5,7 +5,6 @@ const {
   countyPupilTotal,
   countyPayamPupilTotals,
   payamSchoolPupilTotals,
-  getStudentsInSchool,
   dataSet_2023,
   statePupilTotal_2023,
   countyPupilTotal_2023,
