@@ -1,23 +1,63 @@
 const schoolData = require("../models/school-data");
+const SchoolData2023 = require('../models/2023Data');
+
 
 // Create a new school entry
 exports.createSchool = async (req, res) => {
   try {
+ // Check if a school with the same code or emisId exists
+ const existingSchool = await schoolData.findOne({
+  $or: [{ code: req.body.code }, { emisId: req.body.emisId }]
+});
+
+if (existingSchool) {
+  return res.status(400).json({ message: "School with the same code or emisId already exists." });
+}
+
     const newSchool = new schoolData(req.body);
     const savedSchool = await newSchool.save();
-    res
-      .status(201)
-      .json({ message: "School created successfully", data: savedSchool });
+
+    const testLearner = new SchoolData2023({
+      year: new Date().getFullYear(),
+      state28: savedSchool.state10,
+      county28: savedSchool.county28,
+      payam28: savedSchool.payam28,
+      state10: savedSchool.state10,
+      county10: savedSchool.county28,
+      payam10: savedSchool.payam28,
+      school: savedSchool.schoolName,
+      class: "P1",
+      code: savedSchool.code,
+      education: "PRI",
+      form: 1,
+      formstream: 1,
+      gender: "M",
+      dob: "2015-01-01",
+      age: 10,
+      firstName: "Test",
+      middleName: "Student",
+      lastName: "Learner",
+    
+    });
+
+    await testLearner.save();
+
+    res.status(201).json({ 
+      message: "School and test learner created successfully", 
+      data: {
+        school: savedSchool,
+        testLearner: testLearner
+      }
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error creating school", error: error.message });
+    res.status(500).json({ message: "Error creating school and test learner", error: error.message });
   }
 };
 
 // Get all schools with optional filtering
 exports.getAllSchools = async (req, res) => {
   try {
+    
     const { schoolType, state10, county10, payam10 } = req.query;
     const filter = {};
 

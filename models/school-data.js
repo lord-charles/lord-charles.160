@@ -9,12 +9,10 @@ const SchoolDataSchema = new Schema(
     county28: { type: String, required: true },
     schoolName: { type: String, required: true },
     schoolOwnerShip: {
-      type: String,
-      enum: ["Community", "Private", "Faith", "Public"],
+      type: String
     },
     schoolType: {
-      type: String,
-      enum: ["PRI", "SEC", "ECD", "ALP", "ASP", "CGS"],
+      type: String
     },
     headTeacher: {
       name: { type: String },
@@ -22,8 +20,8 @@ const SchoolDataSchema = new Schema(
       email: { type: String },
     },
     pta: {
-      name: { type: String, required: true },
-      phoneNumber: { type: String, required: true },
+      name: { type: String },
+      phoneNumber: { type: String},
     },
     reporter: {
       name: { type: String },
@@ -101,19 +99,19 @@ const SchoolDataSchema = new Schema(
     },
 
     calendar: {
-      year: { type: Number, required: true }, // Academic year (e.g., 2024)
+      year: { type: Number }, 
       terms: [
         {
-          termNumber: { type: Number, required: true }, // Term number (1, 2, 3)
-          startDate: { type: Date, required: true }, // Start date of the term
-          endDate: { type: Date, required: true }, // End date of the term
+          termNumber: { type: Number }, 
+          startDate: { type: Date }, 
+          endDate: { type: Date }, 
         },
       ],
       holidays: [
         {
-          holidayName: { type: String, required: true }, // Name of the holiday
-          startDate: { type: Date, required: true }, // Start date of the holiday
-          endDate: { type: Date, required: true }, // End date of the holiday
+          holidayName: { type: String }, 
+          startDate: { type: Date }, 
+          endDate: { type: Date }, 
         },
       ],
     },
@@ -133,7 +131,7 @@ const SchoolDataSchema = new Schema(
     },
     lastVisited: [
       {
-        date: { type: Date, required: true },
+        date: { type: Date },
         byWho: { type: String },
         comments: { type: String },
       },
