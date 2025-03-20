@@ -766,7 +766,7 @@ const payamSchoolDownload = async (req, res) => {
 
     // Aggregation pipeline to match, project, skip, and limit documents
     const pipeline = [
-      { $match: { payam28,county28 } },
+      { $match: { payam28,county28, isDroppedOut: false } },
       { $project: PROJECTION_FIELDS },
       { $skip: skip },
       { $limit: PAGE_SIZE },
