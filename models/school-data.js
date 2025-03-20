@@ -11,6 +11,11 @@ const SchoolDataSchema = new Schema(
     schoolOwnerShip: {
       type: String
     },
+    isEnrollmentComplete: [{
+      year: { type: Number },
+      isComplete: { type: Boolean, default: false },
+      completedBy: { type: String },
+    }],
     schoolType: {
       type: String
     },

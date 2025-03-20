@@ -220,4 +220,7 @@ router.get("/schools/criteria", schoolController.getSchoolsByCriteria);
  */
 router.get("/schools/count-by-type", schoolController.countSchoolsByType);
 
+router.post("/:id/enrollment/complete", schoolController.markEnrollmentComplete);
+router.get("/enrollment/completed", schoolController.getSchoolsWithCompletedEnrollment);
+
 module.exports = router;

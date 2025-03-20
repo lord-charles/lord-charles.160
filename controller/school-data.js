@@ -5,14 +5,14 @@ const SchoolData2023 = require('../models/2023Data');
 // Create a new school entry
 exports.createSchool = async (req, res) => {
   try {
- // Check if a school with the same code or emisId exists
- const existingSchool = await schoolData.findOne({
-  $or: [{ code: req.body.code }, { emisId: req.body.emisId }]
-});
+    // Check if a school with the same code or emisId exists
+    const existingSchool = await schoolData.findOne({
+      $or: [{ code: req.body.code }, { emisId: req.body.emisId }]
+    });
 
-if (existingSchool) {
-  return res.status(400).json({ message: "School with the same code or emisId already exists." });
-}
+    if (existingSchool) {
+      return res.status(400).json({ message: "School with the same code or emisId already exists." });
+    }
 
     const newSchool = new schoolData(req.body);
     const savedSchool = await newSchool.save();
@@ -37,13 +37,13 @@ if (existingSchool) {
       firstName: "Test",
       middleName: "Student",
       lastName: "Learner",
-    
+
     });
 
     await testLearner.save();
 
-    res.status(201).json({ 
-      message: "School and test learner created successfully", 
+    res.status(201).json({
+      message: "School and test learner created successfully",
       data: {
         school: savedSchool,
         testLearner: testLearner
@@ -57,7 +57,7 @@ if (existingSchool) {
 // Get all schools with optional filtering
 exports.getAllSchools = async (req, res) => {
   try {
-    
+
     const { schoolType, state10, county10, payam10 } = req.query;
     const filter = {};
 
@@ -87,6 +87,64 @@ exports.getAllSchools = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error retrieving schools", error: error.message });
+  }
+};
+
+// Fetch schools whose enrollment is complete
+exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
+  try {
+    const projection = {
+      code: 1,
+      schoolName: 1,
+      schoolType: 1,
+      state10: 1,
+      county28: 1,
+      payam28: 1,
+      schoolOwnerShip: 1,
+      schoolType: 1,
+      emisId: 1,
+      isEnrollmentComplete: 1
+    };
+    const completedSchools = await schoolData.find({
+      "isEnrollmentComplete.isComplete": true
+    }, projection);
+
+    res.json(completedSchools);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+// Mark enrollment as complete
+exports.markEnrollmentComplete = async (req, res) => {
+  try {
+    const { year, completedBy } = req.body;
+    const schoolId = req.params.id;
+
+    const school = await schoolData.findById(schoolId);
+    if (!school) {
+      return res.status(404).json({ message: "School not found" });
+    }
+
+    // Check if enrollment for the given year exists, if not, create it
+    const enrollmentIndex = school.isEnrollmentComplete.findIndex(e => e.year === year);
+
+    if (enrollmentIndex !== -1) {
+      // Update existing entry
+      school.isEnrollmentComplete[enrollmentIndex].isComplete = true;
+      school.isEnrollmentComplete[enrollmentIndex].completedBy = completedBy;
+      school.isEnrollmentComplete[enrollmentIndex].year = year;
+
+
+    } else {
+      // Create new entry
+      school.isEnrollmentComplete.push({ year, isComplete: true, completedBy });
+    }
+
+    await school.save();
+    res.json({ message: "Enrollment marked as complete", school });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
 
