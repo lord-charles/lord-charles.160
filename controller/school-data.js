@@ -1,5 +1,6 @@
 const schoolData = require("../models/school-data");
 const SchoolData2023 = require('../models/2023Data');
+const SchoolData = require("../models/2023Data");
 
 
 // Create a new school entry
@@ -118,7 +119,7 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
 // Mark enrollment as complete
 exports.markEnrollmentComplete = async (req, res) => {
   try {
-    const { year, completedBy } = req.body;
+    const { year, completedBy,comments, percentageComplete,isComplete } = req.body;
     const schoolId = req.params.id;
 
     const school = await schoolData.findById(schoolId);
@@ -131,14 +132,17 @@ exports.markEnrollmentComplete = async (req, res) => {
 
     if (enrollmentIndex !== -1) {
       // Update existing entry
-      school.isEnrollmentComplete[enrollmentIndex].isComplete = true;
+      school.isEnrollmentComplete[enrollmentIndex].isComplete = isComplete
       school.isEnrollmentComplete[enrollmentIndex].completedBy = completedBy;
       school.isEnrollmentComplete[enrollmentIndex].year = year;
+      school.isEnrollmentComplete[enrollmentIndex].comments = comments;
+      school.isEnrollmentComplete[enrollmentIndex].percentageComplete = percentageComplete;
+
 
 
     } else {
       // Create new entry
-      school.isEnrollmentComplete.push({ year, isComplete: true, completedBy });
+      school.isEnrollmentComplete.push({ year, isComplete, completedBy ,comments, percentageComplete});
     }
 
     await school.save();
@@ -147,6 +151,8 @@ exports.markEnrollmentComplete = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
+
 
 // Get a single school by ID
 exports.getSchoolById = async (req, res) => {
