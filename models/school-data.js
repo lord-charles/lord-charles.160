@@ -15,8 +15,8 @@ const SchoolDataSchema = new Schema(
       year: { type: Number },
       isComplete: { type: Boolean, default: false },
       completedBy: { type: String },
-      comments: { type: String }, 
-      percentageComplete:{ type: Number },
+      comments: { type: String },
+      percentageComplete: { type: Number },
     }],
     schoolType: {
       type: String
@@ -28,7 +28,7 @@ const SchoolDataSchema = new Schema(
     },
     pta: {
       name: { type: String },
-      phoneNumber: { type: String},
+      phoneNumber: { type: String },
     },
     reporter: {
       name: { type: String },
@@ -79,9 +79,7 @@ const SchoolDataSchema = new Schema(
     emisId: { type: String },
 
     radioCoverage: {
-      stations: [{ type: Schema.Types.ObjectId, ref: "RadioStation" }],
-      programme: { type: Boolean, default: false },
-      programmeGroup: { type: String },
+      stations: [{ name: String, isActive: Boolean }],
     },
 
     cellphoneCoverage: {
@@ -106,19 +104,19 @@ const SchoolDataSchema = new Schema(
     },
 
     calendar: {
-      year: { type: Number }, 
+      year: { type: Number },
       terms: [
         {
-          termNumber: { type: Number }, 
-          startDate: { type: Date }, 
-          endDate: { type: Date }, 
+          termNumber: { type: Number },
+          startDate: { type: Date },
+          endDate: { type: Date },
         },
       ],
       holidays: [
         {
-          holidayName: { type: String }, 
-          startDate: { type: Date }, 
-          endDate: { type: Date }, 
+          holidayName: { type: String },
+          startDate: { type: Date },
+          endDate: { type: Date },
         },
       ],
     },
