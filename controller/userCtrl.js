@@ -217,9 +217,9 @@ const getUsers = async (req, res) => {
       "DeputyHeadTeacher",
       "SeniorTeacher"
     ];
-    
+
     const response = await User.find({ userType: { $nin: excludedUserTypes } });
-    
+
 
     res.status(200).json(response);
   } catch (error) {
@@ -268,7 +268,10 @@ const getUserByCriteria = async (req, res) => {
     if (county28) query.county28 = county28;
     if (payam28) query.payam28 = payam28;
     if (state10) query.state10 = state10;
-    if (school) query.school = school;
+    if (school) query.school = school
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
     if (code) query.code = code;
     if (year) query.year = year;
     if (position) query.position = position;
@@ -723,7 +726,7 @@ const saveAddress = asyncHandler(async (req, res) => {
 
 const payamSchoolDownload = async (req, res) => {
   try {
-    const { payam28,county28, page } = req.body;
+    const { payam28, county28, page } = req.body;
 
     // Input validation
     if (!payam28) {
@@ -766,7 +769,7 @@ const payamSchoolDownload = async (req, res) => {
 
     // Aggregation pipeline to match, project, skip, and limit documents
     const pipeline = [
-      { $match: { payam28,county28, isDroppedOut: false } },
+      { $match: { payam28, county28, isDroppedOut: false } },
       { $project: PROJECTION_FIELDS },
       { $skip: skip },
       { $limit: PAGE_SIZE },
@@ -776,7 +779,7 @@ const payamSchoolDownload = async (req, res) => {
     const schoolData = await User.aggregate(pipeline);
 
     // Count the total number of documents matching the query
-    const totalCount = await User.countDocuments({ payam28,isDroppedOut: false });
+    const totalCount = await User.countDocuments({ payam28, isDroppedOut: false });
 
     // Calculate the total number of pages
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -1129,11 +1132,11 @@ const getTeachersStatusCountByLocation = async (req, res) => {
         result.length > 0
           ? result[0]
           : {
-              activeCount: 0,
-              inactiveCount: 0,
-              droppedOutCount: 0,
-              notDroppedOutCount: 0,
-            },
+            activeCount: 0,
+            inactiveCount: 0,
+            droppedOutCount: 0,
+            notDroppedOutCount: 0,
+          },
     });
   } catch (error) {
     console.error("Error fetching teacher status counts:", error);
