@@ -280,7 +280,7 @@ const getUserByCriteria = async (req, res) => {
     if (trainingLevel) query.trainingLevel = trainingLevel;
     if (professionalQual) query.professionalQual = professionalQual;
     if (teacherUniqueID) query.teacherUniqueID = teacherUniqueID;
-
+console.log(query)
     // Execute the query
     const users = await User.find(query).select({
       firstname: 1,
