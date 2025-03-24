@@ -280,7 +280,6 @@ const getUserByCriteria = async (req, res) => {
     if (trainingLevel) query.trainingLevel = trainingLevel;
     if (professionalQual) query.professionalQual = professionalQual;
     if (teacherUniqueID) query.teacherUniqueID = teacherUniqueID;
-console.log(query)
     // Execute the query
     const users = await User.find(query).select({
       firstname: 1,
@@ -333,9 +332,12 @@ const getUsersBySchool = async (req, res) => {
 
     // Create a query object to find users by school
     const query = {
-      school: school,
+      school: school
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" "),
     };
-
+console.log(query)
     // Specify the fields to include in the projection
     const projection = {
       firstname: 1,
