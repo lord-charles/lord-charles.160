@@ -776,7 +776,7 @@ const payamSchoolDownload = async (req, res) => {
     const schoolData = await User.aggregate(pipeline);
 
     // Count the total number of documents matching the query
-    const totalCount = await User.countDocuments({ payam28 });
+    const totalCount = await User.countDocuments({ payam28,isDroppedOut: false });
 
     // Calculate the total number of pages
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
