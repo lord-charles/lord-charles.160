@@ -337,7 +337,6 @@ const getUsersBySchool = async (req, res) => {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(" "),
     };
-console.log(query)
     // Specify the fields to include in the projection
     const projection = {
       firstname: 1,

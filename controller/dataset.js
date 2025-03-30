@@ -405,8 +405,6 @@ const countyPayamPupilTotals_2023 = async (req, res) => {
       match.state10 = state10;
     }
 
-
-
     // Fetch data from the database
     const result = await SchoolData.aggregate([
       {
@@ -519,7 +517,6 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
-
 
 const getStudentsInSchool_2023 = async (req, res) => {
   try {
@@ -1018,7 +1015,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         "ClassChanged",
         "PromotionRevoked",
         "Transferred",
-        "DroppedOut"
+        "DroppedOut",
       ];
       if (!validStatuses.includes(updateFields.progress.status)) {
         return res
@@ -1197,8 +1194,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
               "Learner's previous promotion has been revoked";
             break;
           case "DroppedOut":
-            updatedFields.progress.remarks =
-              "Learner dropped out";
+            updatedFields.progress.remarks = "Learner dropped out";
 
           case "Transferred":
             const {
@@ -1241,7 +1237,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
             promotionRevoked:
               updatedFields.progress.status === "PromotionRevoked",
             classChanged: updatedFields.progress.status === "ClassChanged",
-            droppedOut: false,
+            droppedOut: updateFields.isDroppedOut || false,
             repeated: false,
             absentDuringEnrolment: false,
           };
@@ -1703,7 +1699,10 @@ const payamSchoolDownload = async (req, res) => {
     const schoolData = await SchoolData.aggregate(pipeline);
 
     // Count the total number of documents matching the query
-    const totalCount = await SchoolData.countDocuments({ payam28, isDroppedOut: false });
+    const totalCount = await SchoolData.countDocuments({
+      payam28,
+      isDroppedOut: false,
+    });
 
     // Calculate the total number of pages
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -2452,11 +2451,17 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
 
     if (req.body.startDate && req.body.endDate) {
       // Handle date range
-      start = moment.tz(req.body.startDate, "Africa/Nairobi").startOf("day").toDate();
+      start = moment
+        .tz(req.body.startDate, "Africa/Nairobi")
+        .startOf("day")
+        .toDate();
       end = moment.tz(req.body.endDate, "Africa/Nairobi").endOf("day").toDate();
     } else if (req.body.date) {
       // Handle single date
-      start = moment.tz(req.body.date, "Africa/Nairobi").startOf("day").toDate();
+      start = moment
+        .tz(req.body.date, "Africa/Nairobi")
+        .startOf("day")
+        .toDate();
       end = moment.tz(req.body.date, "Africa/Nairobi").endOf("day").toDate();
     } else {
       // Default to current date in Nairobi timezone
@@ -2517,17 +2522,17 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
                         {
                           $and: [
                             { $gte: ["$_id.createdAt", start] },
-                            { $lte: ["$_id.createdAt", end] }
-                          ]
+                            { $lte: ["$_id.createdAt", end] },
+                          ],
                         },
                         {
                           $and: [
                             { $gte: ["$_id.updatedAt", start] },
-                            { $lte: ["$_id.updatedAt", end] }
-                          ]
-                        }
-                      ]
-                    }
+                            { $lte: ["$_id.updatedAt", end] },
+                          ],
+                        },
+                      ],
+                    },
                   ],
                 },
                 "$studentCount",
@@ -2544,14 +2549,15 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
             $push: {
               enumerator: "$_id.enumerator",
               totalStudentsByEnumerator: "$totalStudentsByEnumerator",
-              totalStudentsDroppedByEnumerator: "$totalStudentsDroppedOutByEnumerator",
+              totalStudentsDroppedByEnumerator:
+                "$totalStudentsDroppedOutByEnumerator",
             },
           },
           payam28: { $first: "$_id.payam28" },
           state10: { $first: "$_id.state10" },
           county28: { $first: "$_id.county28" },
           totalStudents: { $sum: "$totalStudentsByEnumerator" },
-          totalDropped: { $sum: "$totalStudentsDroppedOutByEnumerator" }
+          totalDropped: { $sum: "$totalStudentsDroppedOutByEnumerator" },
         },
       },
       {
@@ -2562,14 +2568,14 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
           state10: 1,
           county28: 1,
           totalStudents: 1,
-          totalDropped: 1
+          totalDropped: 1,
         },
       },
       {
         $sort: {
-          totalStudents: -1
-        }
-      }
+          totalStudents: -1,
+        },
+      },
     ];
 
     const result = await SchoolData.aggregate(pipeline);
@@ -2579,15 +2585,15 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
       data: result,
       queryPeriod: {
         start: start.toISOString(),
-        end: end.toISOString()
-      }
+        end: end.toISOString(),
+      },
     });
   } catch (error) {
     console.error("Error fetching schools enrollment:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: "Internal Server Error",
-      message: error.message 
+      message: error.message,
     });
   }
 };
@@ -3142,7 +3148,7 @@ const overallMaleFemaleStat = async (req, res) => {
       },
       {
         $project: {
-          _id: 0, 
+          _id: 0,
           totalFemale: 1,
           totalMale: 1,
           femaleWithDisabilities: 1,
