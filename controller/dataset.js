@@ -2448,24 +2448,24 @@ const totalNewStudentsPerStateDisabled = async (req, res) => {
 
 const fetchSchoolsEnrollmentToday = async (req, res) => {
   try {
-    // Get the current date in UTC
-    const currentDateUTC = moment.utc();
+    let start, end;
 
-    // Convert UTC time to Nairobi time zone
-    const currentDateNairobi = currentDateUTC.clone().tz("Africa/Nairobi");
+    if (req.body.startDate && req.body.endDate) {
+      // Handle date range
+      start = moment.tz(req.body.startDate, "Africa/Nairobi").startOf("day").toDate();
+      end = moment.tz(req.body.endDate, "Africa/Nairobi").endOf("day").toDate();
+    } else if (req.body.date) {
+      // Handle single date
+      start = moment.tz(req.body.date, "Africa/Nairobi").startOf("day").toDate();
+      end = moment.tz(req.body.date, "Africa/Nairobi").endOf("day").toDate();
+    } else {
+      // Default to current date in Nairobi timezone
+      const currentDateNairobi = moment.tz("Africa/Nairobi");
+      start = currentDateNairobi.clone().startOf("day").toDate();
+      end = currentDateNairobi.clone().endOf("day").toDate();
+    }
 
-    // Set the start of the day in Nairobi time zone and subtract 3 hours
-    const startOfDayNairobi = currentDateNairobi.clone().startOf("day");
-
-    // Set the end of the day in Nairobi time zone and subtract 3 hours
-    const endOfDayNairobi = currentDateNairobi.clone().endOf("day");
-
-    // Format dates to MongoDB format
-    const start = new Date(startOfDayNairobi);
-    const end = new Date(endOfDayNairobi);
-
-    console.log(start);
-    console.log(end);
+    console.log("Query period:", { start, end });
 
     const pipeline = [
       {
@@ -2483,6 +2483,7 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
             enumerator: "$modifiedBy",
             isDroppedOut: "$isDroppedOut",
             createdAt: "$createdAt",
+            updatedAt: "$updatedAt",
             payam28: "$payam28",
             state10: "$state10",
             county28: "$county28",
@@ -2511,8 +2512,22 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
                 {
                   $and: [
                     { $eq: ["$_id.isDroppedOut", false] },
-                    { $gte: ["$_id.createdAt", start] },
-                    { $lte: ["$_id.createdAt", end] },
+                    {
+                      $or: [
+                        {
+                          $and: [
+                            { $gte: ["$_id.createdAt", start] },
+                            { $lte: ["$_id.createdAt", end] }
+                          ]
+                        },
+                        {
+                          $and: [
+                            { $gte: ["$_id.updatedAt", start] },
+                            { $lte: ["$_id.updatedAt", end] }
+                          ]
+                        }
+                      ]
+                    }
                   ],
                 },
                 "$studentCount",
@@ -2529,13 +2544,14 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
             $push: {
               enumerator: "$_id.enumerator",
               totalStudentsByEnumerator: "$totalStudentsByEnumerator",
-              totalStudentsDroppedByEnumerator:
-                "$totalStudentsDroppedOutByEnumerator",
+              totalStudentsDroppedByEnumerator: "$totalStudentsDroppedOutByEnumerator",
             },
           },
           payam28: { $first: "$_id.payam28" },
           state10: { $first: "$_id.state10" },
           county28: { $first: "$_id.county28" },
+          totalStudents: { $sum: "$totalStudentsByEnumerator" },
+          totalDropped: { $sum: "$totalStudentsDroppedOutByEnumerator" }
         },
       },
       {
@@ -2545,16 +2561,34 @@ const fetchSchoolsEnrollmentToday = async (req, res) => {
           payam28: 1,
           state10: 1,
           county28: 1,
+          totalStudents: 1,
+          totalDropped: 1
         },
       },
+      {
+        $sort: {
+          totalStudents: -1
+        }
+      }
     ];
 
     const result = await SchoolData.aggregate(pipeline);
 
-    res.status(200).json(result);
+    res.status(200).json({
+      success: true,
+      data: result,
+      queryPeriod: {
+        start: start.toISOString(),
+        end: end.toISOString()
+      }
+    });
   } catch (error) {
-    console.log("Error fetching schools enrollment:", error);
-    res.status(500).json({ success: false, error: "Internal Server Error" });
+    console.error("Error fetching schools enrollment:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Internal Server Error",
+      message: error.message 
+    });
   }
 };
 
@@ -3108,7 +3142,7 @@ const overallMaleFemaleStat = async (req, res) => {
       },
       {
         $project: {
-          _id: 0, // Remove MongoDB's default `_id`
+          _id: 0, 
           totalFemale: 1,
           totalMale: 1,
           femaleWithDisabilities: 1,
