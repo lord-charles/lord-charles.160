@@ -1,7 +1,5 @@
 const schoolData = require("../models/school-data");
 const SchoolData2023 = require('../models/2023Data');
-const SchoolData = require("../models/2023Data");
-
 
 // Create a new school entry
 exports.createSchool = async (req, res) => {
@@ -94,7 +92,12 @@ exports.getAllSchools = async (req, res) => {
 // Fetch schools whose enrollment is complete
 exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
   try {
-    const projection = {
+    const currentYear = new Date().getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
+    const endOfYear = new Date(currentYear, 11, 31);
+
+    // First get schools with completed enrollment
+    const schoolProjection = {
       code: 1,
       schoolName: 1,
       schoolType: 1,
@@ -106,11 +109,137 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
       emisId: 1,
       isEnrollmentComplete: 1
     };
-    const completedSchools = await schoolData.find({
-      "isEnrollmentComplete.percentageComplete": { $gte: 1 }
-    }, projection);
 
-    res.json(completedSchools);
+    const completedSchools = await schoolData.find({
+      "isEnrollmentComplete": {
+        $elemMatch: {
+          "year": currentYear,
+          "percentageComplete": { $gte: 1 }
+        }
+      }
+    }, schoolProjection);
+
+    // For each school, get learner statistics from 2023Data
+    const schoolsWithStats = await Promise.all(
+      completedSchools.map(async (school) => {
+        const learnerStats = await SchoolData2023.aggregate([
+          {
+            $match: {
+              code: school.code,
+              $or: [
+                { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
+                { createdAt: { $gte: startOfYear, $lte: endOfYear } }
+              ]
+            }
+          },
+          {
+            $group: {
+              _id: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $ne: ["$class", null] },
+                      { $ne: ["$class", "undefined"] },
+                      { $ne: ["$class", ""] }
+                    ]
+                  },
+                  then: "$class",
+                  else: "Unknown"
+                }
+              },
+              totalLearners: { $sum: 1 },
+              maleLearners: {
+                $sum: { $cond: [{ $eq: ["$gender", "M"] }, 1, 0] }
+              },
+              femaleLearners: {
+                $sum: { $cond: [{ $eq: ["$gender", "F"] }, 1, 0] }
+              },
+              learnersWithDisability: {
+                $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] }
+              },
+              // Count current year learners using year field
+              currentYearLearners: {
+                $sum: { $cond: [{ $eq: ["$year", currentYear] }, 1, 0] }
+              },
+              currentYearMale: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        { $eq: ["$gender", "M"] },
+                        { $eq: ["$year", currentYear] }
+                      ]
+                    },
+                    1,
+                    0
+                  ]
+                }
+              },
+              currentYearFemale: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        { $eq: ["$gender", "F"] },
+                        { $eq: ["$year", currentYear] }
+                      ]
+                    },
+                    1,
+                    0
+                  ]
+                }
+              },
+              currentYearWithDisability: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        { $eq: ["$isWithDisability", true] },
+                        { $eq: ["$year", currentYear] }
+                      ]
+                    },
+                    1,
+                    0
+                  ]
+                }
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              class: { $cond: { if: { $eq: ["$_id", "Unknown"] }, then: "Unknown", else: "$_id" } },
+              total: "$totalLearners",
+              male: "$maleLearners",
+              female: "$femaleLearners",
+              withDisability: "$learnersWithDisability",
+              currentYear: {
+                total: "$currentYearLearners",
+                male: "$currentYearMale",
+                female: "$currentYearFemale",
+                withDisability: "$currentYearWithDisability"
+              }
+            }
+          }
+        ]);
+
+        return {
+          ...school.toObject(),
+          learnerStats: learnerStats.reduce((acc, stat) => {
+            acc[stat.class] = {
+              total: stat.total,
+              male: stat.male,
+              female: stat.female,
+              withDisability: stat.withDisability,
+              currentYear: stat.currentYear
+            };
+            return acc;
+          }, {})
+        };
+      })
+    );
+
+    res.json(schoolsWithStats);
   } catch (error) {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
@@ -151,7 +280,6 @@ exports.markEnrollmentComplete = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
-
 
 
 // Get a single school by ID
@@ -266,5 +394,221 @@ exports.countSchoolsByType = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error aggregating school data", error: error.message });
+  }
+};
+
+// Get learner statistics by state
+exports.getLearnerStatsByState = async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    
+    // Create date objects with timezone offset
+    const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
+    const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+
+    const learnerStats = await SchoolData2023.aggregate([
+      {
+        $match: {
+          $or: [
+            { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
+            { createdAt: { $gte: startOfYear, $lte: endOfYear } }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: {
+            state10: "$state10",
+          },
+          newLearners: {
+            $sum: { $cond: [{ $eq: ["$year", currentYear] }, 1, 0] }
+          },
+          maleLearners: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$gender", "M"] },
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          },
+          femaleLearners: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$gender", "F"] },
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          },
+          learnersWithDisability: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$isWithDisability", true] },
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id.state10",
+          new: "$newLearners",
+          male: "$maleLearners",
+          female: "$femaleLearners",
+          withDisability: "$learnersWithDisability"
+        }
+      },
+      {
+        $sort: {
+          state10: 1
+        }
+      }
+    ]);
+
+    res.json(learnerStats);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+// Get school types count by state
+exports.getSchoolTypesByState = async (req, res) => {
+  try {
+    const schoolTypeStats = await schoolData.aggregate([
+      {
+        $match: {
+          schoolType: { $in: ["SEC", "PRI", "ECD", "CGS", "ALP", "ASP"] }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            state10: "$state10",
+            schoolType: "$schoolType"
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id.state10",
+          schoolTypes: {
+            $push: {
+              type: "$_id.schoolType",
+              count: "$count"
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          state10: "$_id",
+          SEC: {
+            $reduce: {
+              input: "$schoolTypes",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $eq: ["$$this.type", "SEC"] },
+                  "$$this.count",
+                  "$$value"
+                ]
+              }
+            }
+          },
+          PRI: {
+            $reduce: {
+              input: "$schoolTypes",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $eq: ["$$this.type", "PRI"] },
+                  "$$this.count",
+                  "$$value"
+                ]
+              }
+            }
+          },
+          ECD: {
+            $reduce: {
+              input: "$schoolTypes",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $eq: ["$$this.type", "ECD"] },
+                  "$$this.count",
+                  "$$value"
+                ]
+              }
+            }
+          },
+          CGS: {
+            $reduce: {
+              input: "$schoolTypes",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $eq: ["$$this.type", "CGS"] },
+                  "$$this.count",
+                  "$$value"
+                ]
+              }
+            }
+          },
+          ALP: {
+            $reduce: {
+              input: "$schoolTypes",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $eq: ["$$this.type", "ALP"] },
+                  "$$this.count",
+                  "$$value"
+                ]
+              }
+            }
+          },
+          ASP: {
+            $reduce: {
+              input: "$schoolTypes",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $eq: ["$$this.type", "ASP"] },
+                  "$$this.count",
+                  "$$value"
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $sort: {
+          state10: 1
+        }
+      }
+    ]);
+
+    res.json(schoolTypeStats);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };

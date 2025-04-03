@@ -223,4 +223,8 @@ router.get("/schools/count-by-type", schoolController.countSchoolsByType);
 router.post("/:id/enrollment/complete", schoolController.markEnrollmentComplete);
 router.get("/enrollment/completed", schoolController.getSchoolsWithCompletedEnrollment);
 
+//dashboard stats
+router.get("/learner-stats-by-state", schoolController.getLearnerStatsByState);
+router.get("/school-types-by-state", schoolController.getSchoolTypesByState);
+
 module.exports = router;

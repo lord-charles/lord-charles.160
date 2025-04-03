@@ -266,6 +266,15 @@ schoolDataSchema.index(
   { sparse: true }
 );
 
+schoolDataSchema.index({ "isEnrollmentComplete.year": 1 });
+schoolDataSchema.index({ "isEnrollmentComplete.percentageComplete": 1 });
+
+schoolDataSchema.index({ code: 1, updatedAt: 1 });
+schoolDataSchema.index({ code: 1, createdAt: 1 });
+schoolDataSchema.index({ code: 1, class: 1 });
+schoolDataSchema.index({ code: 1, "isWithDisability": 1 });
+
+
 const SchoolData = mongoose.model("schooldata2023", schoolDataSchema);
 
 module.exports = SchoolData;
