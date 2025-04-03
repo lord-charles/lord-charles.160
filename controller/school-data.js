@@ -107,7 +107,7 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
       isEnrollmentComplete: 1
     };
     const completedSchools = await schoolData.find({
-      "isEnrollmentComplete.isComplete": true
+      "isEnrollmentComplete.percentageComplete": { $gte: 1 }
     }, projection);
 
     res.json(completedSchools);
