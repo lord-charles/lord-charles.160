@@ -126,6 +126,7 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
           {
             $match: {
               code: school.code,
+              isDroppedOut: false,
               $or: [
                 { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
                 { createdAt: { $gte: startOfYear, $lte: endOfYear } }
