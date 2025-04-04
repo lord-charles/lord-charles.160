@@ -2060,7 +2060,7 @@ const stateMaleFemaleStat = async (req, res) => {
   try {
     const { year } = req.body;
 
-    const query = {};
+    const query = { isDroppedOut: false };
     if (year) {
       query.year = year;
     }
