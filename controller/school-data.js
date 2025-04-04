@@ -413,7 +413,8 @@ exports.getLearnerStatsByState = async (req, res) => {
           $or: [
             { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
             { createdAt: { $gte: startOfYear, $lte: endOfYear } }
-          ]
+          ],
+          isDroppedOut: false
         }
       },
       {
