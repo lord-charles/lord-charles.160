@@ -249,7 +249,7 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
 // Mark enrollment as complete
 exports.markEnrollmentComplete = async (req, res) => {
   try {
-    const { year, completedBy,comments, percentageComplete,isComplete } = req.body;
+    const { year, completedBy,comments, percentageComplete,isComplete,learnerEnrollmentComplete } = req.body;
     const schoolId = req.params.id;
 
     const school = await schoolData.findById(schoolId);
@@ -267,12 +267,13 @@ exports.markEnrollmentComplete = async (req, res) => {
       school.isEnrollmentComplete[enrollmentIndex].year = year;
       school.isEnrollmentComplete[enrollmentIndex].comments = comments;
       school.isEnrollmentComplete[enrollmentIndex].percentageComplete = percentageComplete;
+      school.isEnrollmentComplete[enrollmentIndex].learnerEnrollmentComplete = learnerEnrollmentComplete;
 
 
 
     } else {
       // Create new entry
-      school.isEnrollmentComplete.push({ year, isComplete, completedBy ,comments, percentageComplete});
+      school.isEnrollmentComplete.push({ year, isComplete, completedBy ,comments, percentageComplete,learnerEnrollmentComplete});
     }
 
     await school.save();

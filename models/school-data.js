@@ -17,6 +17,7 @@ const SchoolDataSchema = new Schema(
       completedBy: { type: String },
       comments: { type: String },
       percentageComplete: { type: Number },
+      learnerEnrollmentComplete: { type: Boolean, default: false },
     }],
     schoolType: {
       type: String
