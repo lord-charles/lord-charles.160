@@ -1514,7 +1514,7 @@ const registerStudent2024 = async (req, res) => {
         }
       }
     }
-    console.log("isWithDisability:", isWithDisability);
+    console.log(disabilities,"isWithDisability:", isWithDisability);
 
     const generateUniqueCode = () => {
       const currentDate = new Date();
