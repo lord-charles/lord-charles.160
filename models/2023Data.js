@@ -249,9 +249,23 @@ const schoolDataSchema = new mongoose.Schema(
   }
 );
 
-schoolDataSchema.index({ class: 1 });
+// Compound index to replace individual class and code indexes
+schoolDataSchema.index({ code: 1, class: 1 });
+
+// Reuse code + timestamp fields as compound indexes
+schoolDataSchema.index({ code: 1, updatedAt: 1 });
+schoolDataSchema.index({ code: 1, createdAt: 1 });
+
+// Compound index for code + disability flag
+schoolDataSchema.index({ code: 1, isWithDisability: 1 });
+
+// Individual index for payam28 (assuming queried alone)
 schoolDataSchema.index({ payam28: 1 });
-schoolDataSchema.index({ code: 1 });
+
+// Compound index for academicHistory + code (drops separate sparse index)
+schoolDataSchema.index({ code: 1, "academicHistory.status.droppedOut": 1 });
+
+// Compound index on disabilities (no changes unless you query them together)
 schoolDataSchema.index({
   "disabilities.disabilities.difficultyHearing": 1,
   "disabilities.disabilities.difficultyRecalling": 1,
@@ -260,19 +274,12 @@ schoolDataSchema.index({
   "disabilities.disabilities.difficultyTalking": 1,
   "disabilities.disabilities.difficultyWalking": 1,
 });
-schoolDataSchema.index({ code: 1, "academicHistory.status.droppedOut": 1 });
-schoolDataSchema.index(
-  { "academicHistory.status.droppedOut": 1 },
-  { sparse: true }
-);
 
-schoolDataSchema.index({ "isEnrollmentComplete.year": 1 });
-schoolDataSchema.index({ "isEnrollmentComplete.percentageComplete": 1 });
-
-schoolDataSchema.index({ code: 1, updatedAt: 1 });
-schoolDataSchema.index({ code: 1, createdAt: 1 });
-schoolDataSchema.index({ code: 1, class: 1 });
-schoolDataSchema.index({ code: 1, "isWithDisability": 1 });
+// Compound index for enrollment tracking
+schoolDataSchema.index({
+  "isEnrollmentComplete.year": 1,
+  "isEnrollmentComplete.percentageComplete": 1,
+});
 
 
 const SchoolData = mongoose.model("schooldata2023", schoolDataSchema);
