@@ -1506,16 +1506,16 @@ const registerStudent2024 = async (req, res) => {
       if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
         const fields = firstDisability.disabilities;
         if (typeof fields === 'object') {
-          // Count disabilities where value is not 1 (indicating some level of difficulty)
-          const disabilityCount = Object.values(fields)
-            .filter(val => typeof val === 'number' && val !== 1)
-            .length;
-          isWithDisability = disabilityCount > 0;
+          // Sum up all disability values
+          const disabilitySum = Object.values(fields)
+            .filter(val => typeof val === 'number')
+            .reduce((sum, val) => sum + val, 0);
+          isWithDisability = disabilitySum > 6;
         }
       }
     }
-    
-console.log("isWithDisability:", isWithDisability);
+    console.log("isWithDisability:", isWithDisability);
+
     const generateUniqueCode = () => {
       const currentDate = new Date();
       const year = String(currentDate.getFullYear()).slice(-2);
@@ -1647,19 +1647,20 @@ const registerLearnerDuringSync = async (req, res) => {
     } = req.body;
 
     let isWithDisability = false;
-    if (disabilities && Array.isArray(disabilities)) {
-      const firstDisability = disabilities[0];
-      if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
-        const fields = firstDisability.disabilities;
-        if (typeof fields === 'object') {
-          // Count disabilities where value is not 1 (indicating some level of difficulty)
-          const disabilityCount = Object.values(fields)
-            .filter(val => typeof val === 'number' && val !== 1)
-            .length;
-          isWithDisability = disabilityCount > 0;
-        }
-      }
+if (disabilities && Array.isArray(disabilities)) {
+  const firstDisability = disabilities[0];
+  if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
+    const fields = firstDisability.disabilities;
+    if (typeof fields === 'object') {
+      // Sum up all disability values
+      const disabilitySum = Object.values(fields)
+        .filter(val => typeof val === 'number')
+        .reduce((sum, val) => sum + val, 0);
+      isWithDisability = disabilitySum > 6;
     }
+  }
+}
+console.log("isWithDisability:", isWithDisability);
     
 
     const generateUniqueCode = () => {
