@@ -615,3 +615,102 @@ exports.getSchoolTypesByState = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
+// Get overall learner statistics
+exports.getOverallLearnerStats = async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
+    const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+
+    // Get statistics by education type (PRI, SEC, etc)
+    const schoolTypeStats = await SchoolData2023.aggregate([
+      {
+        $match: {
+          $or: [
+            { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
+            { createdAt: { $gte: startOfYear, $lte: endOfYear } }
+          ],
+          isDroppedOut: false
+        }
+      },
+      {
+        $group: {
+          _id: "$education",
+          totalLearners: { $sum: 1 },
+          maleLearners: {
+            $sum: { $cond: [{ $in: ["$gender", ["M", "Male"]] }, 1, 0] }
+          },
+          femaleLearners: {
+            $sum: { $cond: [{ $in: ["$gender", ["F", "Female"]] }, 1, 0] }
+          },
+          learnersWithDisability: {
+            $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          schoolType: "$_id",
+          total: "$totalLearners",
+          male: "$maleLearners",
+          female: "$femaleLearners",
+          withDisability: "$learnersWithDisability"
+        }
+      }
+    ]);
+
+    // Get overall totals
+    const overallStats = await SchoolData2023.aggregate([
+      {
+        $match: {
+          $or: [
+            { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
+            { createdAt: { $gte: startOfYear, $lte: endOfYear } }
+          ],
+          isDroppedOut: false
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalLearners: { $sum: 1 },
+          maleLearners: {
+            $sum: { $cond: [{ $in: ["$gender", ["M", "Male"]] }, 1, 0] }
+          },
+          femaleLearners: {
+            $sum: { $cond: [{ $in: ["$gender", ["F", "Female"]] }, 1, 0] }
+          },
+          learnersWithDisability: {
+            $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          total: "$totalLearners",
+          male: "$maleLearners",
+          female: "$femaleLearners",
+          withDisability: "$learnersWithDisability"
+        }
+      }
+    ]);
+
+    res.json({
+      overall: overallStats[0] || {
+        total: 0,
+        male: 0,
+        female: 0,
+        withDisability: 0
+      },
+      bySchoolType: schoolTypeStats
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Error fetching learner statistics", 
+      error: error.message 
+    });
+  }
+};

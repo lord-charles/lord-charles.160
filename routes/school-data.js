@@ -227,4 +227,7 @@ router.get("/enrollment/completed", schoolController.getSchoolsWithCompletedEnro
 router.get("/learner-stats-by-state", schoolController.getLearnerStatsByState);
 router.get("/school-types-by-state", schoolController.getSchoolTypesByState);
 
+//school module statcards
+router.get("/overall-learner-stats", schoolController.getOverallLearnerStats);
+
 module.exports = router;
