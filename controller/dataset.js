@@ -1506,15 +1506,14 @@ const registerStudent2024 = async (req, res) => {
       if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
         const fields = firstDisability.disabilities;
         if (typeof fields === 'object') {
-          // Sum up all disability values
+          // Sum up all disability values (converting strings to numbers)
           const disabilitySum = Object.values(fields)
-            .filter(val => typeof val === 'number')
-            .reduce((sum, val) => sum + val, 0);
+            .reduce((sum, val) => sum + parseInt(val || '0', 10), 0);
           isWithDisability = disabilitySum > 6;
         }
       }
     }
-    console.log(disabilities,"isWithDisability:", isWithDisability);
+    console.log("isWithDisability:", isWithDisability);
 
     const generateUniqueCode = () => {
       const currentDate = new Date();
@@ -1652,10 +1651,9 @@ if (disabilities && Array.isArray(disabilities)) {
   if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
     const fields = firstDisability.disabilities;
     if (typeof fields === 'object') {
-      // Sum up all disability values
+      // Sum up all disability values (converting strings to numbers)
       const disabilitySum = Object.values(fields)
-        .filter(val => typeof val === 'number')
-        .reduce((sum, val) => sum + val, 0);
+        .reduce((sum, val) => sum + parseInt(val || '0', 10), 0);
       isWithDisability = disabilitySum > 6;
     }
   }
