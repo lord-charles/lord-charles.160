@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const cors = require("cors");
 const { notFound, errorHandler } = require("./middlewares/error-handler");
+const { cacheMiddleware } = require("./middlewares/cacheMiddleware");
 const dotenv = require("dotenv");
 dotenv.config();
 const PORT = process.env.PORT || 9000;
@@ -71,6 +72,9 @@ app.use(morgan("dev"));
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+// Apply cache middleware to all routes (10 minutes cache)
+app.use(cacheMiddleware(600));
 
 // API Routes
 app.use("/express/data-set", dataSet);

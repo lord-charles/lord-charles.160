@@ -33,6 +33,7 @@ const {
   getTeachersByCode,
   overallMaleFemaleStat,
 } = require("../controller/userCtrl");
+const { cachePostMiddleware } = require("../middlewares/cacheMiddleware");
 
 /**
  * @swagger
@@ -322,7 +323,7 @@ router.post("/verifyToken", verifyToken);
 router.delete("/users/delete-user/:id", deleteUser);
 router.get("/users/get/all/count", getUserCount);
 router.patch("/users/update/:id", updateUser);
-router.post("/download/payams/schools", payamSchoolDownload);
+router.post("/download/payams/schools",cachePostMiddleware(600), payamSchoolDownload);
 router.patch("/update/bulk", updateUsersFieldsBulk);
 
 //for Admin
@@ -335,18 +336,19 @@ router.put("/address", authMiddleware, saveAddress);
 
 //dashboard
 
-router.post("/fetchUsersPerState", fetchUsersPerState);
-router.post("/stateMaleFemaleStat", stateMaleFemaleStat);
+router.post("/fetchUsersPerState",cachePostMiddleware(600), fetchUsersPerState);
+router.post("/stateMaleFemaleStat",cachePostMiddleware(600), stateMaleFemaleStat);
 
 // apis sept 2024
-router.post("/getTeacherCountByLocation", getTeacherCountByLocation);
+router.post("/getTeacherCountByLocation",cachePostMiddleware(600), getTeacherCountByLocation);
 router.post(
   "/getTeachersStatusCountByLocation",
+  cachePostMiddleware(600),
   getTeachersStatusCountByLocation
 );
-router.post("/getTeachersPerState", getTeachersPerState);
-router.post("/getActiveTeachersPerState", getActiveTeachersPerState);
-router.post("/getDroppedOutTeachersPerState", getDroppedOutTeachersPerState);
-router.post("/getTeachersByCode", getTeachersByCode);
-router.post("/overallMaleFemaleStat", overallMaleFemaleStat);
+router.post("/getTeachersPerState",cachePostMiddleware(600), getTeachersPerState);
+router.post("/getActiveTeachersPerState",cachePostMiddleware(600), getActiveTeachersPerState);
+router.post("/getDroppedOutTeachersPerState",cachePostMiddleware(600), getDroppedOutTeachersPerState);
+router.post("/getTeachersByCode",cachePostMiddleware(600), getTeachersByCode);
+router.post("/overallMaleFemaleStat",cachePostMiddleware(600), overallMaleFemaleStat);
 module.exports = router;
