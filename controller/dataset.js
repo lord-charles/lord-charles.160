@@ -2957,6 +2957,7 @@ const getLearnerCountByLocation = async (req, res) => {
   }
 };
 
+
 const getPromotedLearnersCountByLocation = async (req, res) => {
   try {
     const { state10, county28, payam28, code, enrollmentYear } = req.body;
@@ -3090,7 +3091,7 @@ const overallMaleFemaleStat = async (req, res) => {
   try {
     const { county28, payam28, state10, code, enrollmentYear } = req.body;
 
-    // Build dynamic match stage for non-dropped-out records
+
     const matchStage = { isDroppedOut: false };
     const matchStage2 = {};
 
@@ -3119,10 +3120,10 @@ const overallMaleFemaleStat = async (req, res) => {
     // Main pipeline
     const pipeline = [
       {
-        $match: matchStage, // Apply filters dynamically
+        $match: matchStage, 
       },
       {
-        $unwind: "$disabilities", // Process each disability array item
+        $unwind: "$disabilities", 
       },
       {
         $addFields: {
@@ -3141,7 +3142,7 @@ const overallMaleFemaleStat = async (req, res) => {
       {
         $addFields: {
           hasDisability: {
-            $gt: ["$totalDisabilities", 6], // Mark as disabled if totalDisabilities > 6
+            $gt: ["$totalDisabilities", 6], 
           },
         },
       },
@@ -3205,11 +3206,11 @@ const overallMaleFemaleStat = async (req, res) => {
     if (payam28) droppedOutMatchStage.payam28 = payam28;
     if (state10) droppedOutMatchStage.state10 = state10;
     if (code) droppedOutMatchStage.code = code;
-    if (enrollmentYear) {
-      droppedOutMatchStage["progress"] = {
-        $elemMatch: { year: parseInt(enrollmentYear) },
-      };
-    }
+    // if (enrollmentYear) {
+    //   droppedOutMatchStage["progress"] = {
+    //     $elemMatch: { year: parseInt(enrollmentYear) },
+    //   };
+    // }
 
     const droppedOutPipeline = [
       {
