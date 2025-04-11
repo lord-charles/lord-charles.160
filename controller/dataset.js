@@ -3215,58 +3215,58 @@ const overallMaleFemaleStat = async (req, res) => {
     const droppedOutPipeline = [
       {
         $match: {
-          ...matchStage2,
-          academicHistory: {
-            $elemMatch: {
-              year: enrollmentYear,
-              "status.droppedOut": true,
-            },
-          },
+          ...droppedOutMatchStage,
+          // academicHistory: {
+          //   $elemMatch: {
+          //     year: enrollmentYear,
+          //     "status.droppedOut": true,
+          //   },
+          // },
         },
       },
-      {
-        $addFields: {
-          latestHistory: {
-            $let: {
-              vars: {
-                filteredHistory: {
-                  $filter: {
-                    input: { $ifNull: ["$academicHistory", []] },
-                    as: "history",
-                    cond: {
-                      $and: [
-                        {
-                          $eq: [
-                            "$$history.year",
-                            parseInt(enrollmentYear, 10),
-                          ],
-                        },
-                        { $eq: ["$$history.status.droppedOut", true] },
-                      ],
-                    },
-                  },
-                },
-              },
-              in: {
-                $arrayElemAt: [
-                  {
-                    $sortArray: {
-                      input: "$$filteredHistory",
-                      sortBy: { date: -1 },
-                    },
-                  },
-                  0,
-                ],
-              },
-            },
-          },
-        },
-      },
-      {
-        $match: {
-          "latestHistory.status.droppedOut": true,
-        },
-      },
+      // {
+      //   $addFields: {
+      //     latestHistory: {
+      //       $let: {
+      //         vars: {
+      //           filteredHistory: {
+      //             $filter: {
+      //               input: { $ifNull: ["$academicHistory", []] },
+      //               as: "history",
+      //               cond: {
+      //                 $and: [
+      //                   {
+      //                     $eq: [
+      //                       "$$history.year",
+      //                       parseInt(enrollmentYear, 10),
+      //                     ],
+      //                   },
+      //                   { $eq: ["$$history.status.droppedOut", true] },
+      //                 ],
+      //               },
+      //             },
+      //           },
+      //         },
+      //         in: {
+      //           $arrayElemAt: [
+      //             {
+      //               $sortArray: {
+      //                 input: "$$filteredHistory",
+      //                 sortBy: { date: -1 },
+      //               },
+      //             },
+      //             0,
+      //           ],
+      //         },
+      //       },
+      //     },
+      //   },
+      // },
+      // {
+      //   $match: {
+      //     "latestHistory.status.droppedOut": true,
+      //   },
+      // },
       {
         $group: {
           _id: null,
