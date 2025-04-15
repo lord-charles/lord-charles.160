@@ -535,18 +535,7 @@ const getStudentsInSchool_2023 = async (req, res) => {
 
     // If isDisabled is provided, modify the query to include disability check
     if (isDisabled) {
-      query.disabilities = {
-        $elemMatch: {
-          $or: [
-            { "disabilities.difficultyHearing": { $gt: 1 } },
-            { "disabilities.difficultyRecalling": { $gt: 1 } },
-            { "disabilities.difficultySeeing": { $gt: 1 } },
-            { "disabilities.difficultySelfCare": { $gt: 1 } },
-            { "disabilities.difficultyTalking": { $gt: 1 } },
-            { "disabilities.difficultyWalking": { $gt: 1 } },
-          ],
-        },
-      };
+      query.isWithDisability = true;
     }
 
     // Use the find method to get documents matching the query
