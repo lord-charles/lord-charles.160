@@ -24,6 +24,7 @@ const roleRoutes = require("./routes/roleRoute");
 const accountabilityRoutes = require("./routes/accountabilityRoutes");
 const budgetCodesRoutes = require("./routes/budgetCodes");
 const ct = require("./routes/ct");
+const disabilityEligibility = require("./routes/disabilityEligibility");
 
 // Swagger
 const swaggerUi = require("swagger-ui-express");
@@ -91,6 +92,7 @@ app.use("/express/roles", roleRoutes);
 app.use("/express/accountability", accountabilityRoutes);
 app.use("/express/budget-codes", budgetCodesRoutes);
 app.use("/express/ct", ct);
+app.use("/express/disability-eligibility", disabilityEligibility);
 
 // Swagger Documentation Route
 app.use("/express/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
