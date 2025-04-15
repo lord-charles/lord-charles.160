@@ -13,6 +13,6 @@ const {
 router.post("/counties", cachePostMiddleware(600), getEligibleCountiesWithDisability);
 router.post("/payams", cachePostMiddleware(600), getEligiblePayamsWithDisability);
 router.post("/schools", cachePostMiddleware(600), getEligibleSchoolsWithDisability);
-router.post("/students", cachePostMiddleware(600), getEligibleStudentsInSchool);
+router.post("/students", getEligibleStudentsInSchool);
 
 module.exports = router;
