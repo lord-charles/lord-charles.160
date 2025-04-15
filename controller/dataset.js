@@ -464,31 +464,14 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
       },
     };
 
-    // Define the aggregation pipeline
-    const pipeline = [{ $match: matchStage }];
 
     // Additional filter for schools with disabled pupils if isDisabled is true
     if (isDisabled) {
-      pipeline.push({
-        $match: {
-          "disabilities.disabilities": {
-            $elemMatch: {
-              $or: [
-                { difficultyHearing: { $gt: 1 } },
-                { difficultyRecalling: { $gt: 1 } },
-                { difficultySeeing: { $gt: 1 } },
-                { difficultySelfCare: { $gt: 1 } },
-                { difficultyTalking: { $gt: 1 } },
-                { difficultyWalking: { $gt: 1 } },
-              ],
-            },
-          },
-        },
-      });
+     matchStage.isWithDisability = true;
     }
 
     // Normalize payam and school names, then group by unique school code
-    pipeline.push(
+    const pipeline = [
       {
         $addFields: {
           normalizedSchool: { $toLower: "$school" },
@@ -507,10 +490,13 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
           school: 1,
         },
       }
-    );
+    ];
 
     // Execute the aggregation pipeline
-    const result = await SchoolData.aggregate(pipeline);
+    const result = await SchoolData.aggregate([
+      { $match: matchStage },
+      ...pipeline
+    ]);
 
     res.status(200).json(result);
   } catch (error) {

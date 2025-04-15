@@ -51,6 +51,8 @@ const {
   updateSchoolData,
   updateSchoolsDocuments,
 } = require("../controller/update");
+
+
 router.get("/", dataSet);
 router.get("/get/county", countyPupilTotal);
 router.post("/get/county/payam", cachePostMiddleware(600), countyPayamPupilTotals);
