@@ -91,7 +91,7 @@ const getStudentsAttendance = async (req, res) => {
     }
 
     // Construct query
-    const query = {absent: true};
+    const query = {};
     if(code){
       query.code = code;
     }
@@ -131,7 +131,7 @@ const getStudentsAttendance = async (req, res) => {
             student: student._id,
             date: { $gte: startDate, $lte: endDate },
           })
-            .select("date absenceReason")
+            .select("date absenceReason absent")
             .exec();
 
           // Return the student with attendance information
