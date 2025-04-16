@@ -30,30 +30,46 @@ const markAttendanceBulk = async (req, res) => {
       });
     }
 
-    // Prepare bulk write operations for both absent and present students
+    // Convert date to start and end of day for comparison
+    const attendanceDate = new Date(date);
+    attendanceDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(attendanceDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    // Prepare bulk write operations using updateOne with upsert
     const operations = allStudents.map(student => ({
-      insertOne: {
-        document: {
+      updateOne: {
+        filter: {
           student: student._id,
-          date: new Date(date),
-          year: new Date(date).getFullYear(),
-          absent: absentStudentIds.has(student._id.toString()),
-          absenceReason: absentStudentIds.has(student._id.toString()) ? (absenceReason || "") : "",
-          county28: student.county28,
-          payam28: student.payam28,
-          state10: student.state10,
-          school: student.school,
-          code: student.code,
-          education: student.education,
-          gender: student.gender,
-          firstName: student.firstName,
-          middleName: student.middleName,
-          lastName: student.lastName,
-          learnerUniqueID: student.learnerUniqueID,
-          reference: student.reference,
-          isWithDisability: student.isWithDisability,
-          class: student.class
-        }
+          date: {
+            $gte: attendanceDate,
+            $lt: nextDay
+          }
+        },
+        update: {
+          $setOnInsert: {
+            student: student._id,
+            date: attendanceDate,
+            year: attendanceDate.getFullYear(),
+            absent: absentStudentIds.has(student._id.toString()),
+            absenceReason: absentStudentIds.has(student._id.toString()) ? (absenceReason || "") : "",
+            county28: student.county28,
+            payam28: student.payam28,
+            state10: student.state10,
+            school: student.school,
+            code: student.code,
+            education: student.education,
+            gender: student.gender,
+            firstName: student.firstName,
+            middleName: student.middleName,
+            lastName: student.lastName,
+            learnerUniqueID: student.learnerUniqueID,
+            reference: student.reference,
+            isWithDisability: student.isWithDisability,
+            class: student.class
+          }
+        },
+        upsert: true
       }
     }));
 
@@ -63,7 +79,9 @@ const markAttendanceBulk = async (req, res) => {
     res.status(200).json({ 
       message: "Attendance marked successfully",
       stats: {
-        total: result.insertedCount,
+        total: result.upsertedCount + result.modifiedCount,
+        new: result.upsertedCount,
+        existing: result.matchedCount,
         present: allStudents.length - studentIds.length,
         absent: studentIds.length
       }
@@ -182,7 +200,7 @@ const deleteAttendanceForDay = async (req, res) => {
     const result = await Attendance.updateMany({
       student: { $in: studentIds },
       date: { $gte: startDate, $lte: endDate },
-    }, {absent: false, absenceReason: null});
+    }, {absent: false, absenceReason: ''});
 
     // Return the result
     res.status(200).json({
