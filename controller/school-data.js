@@ -610,7 +610,7 @@ exports.getSchoolTypesByState = async (req, res) => {
     const schoolTypeStats = await schoolData.aggregate([
       {
         $match: {
-          schoolType: { $in: ["SEC", "PRI", "ECD", "CGS", "ALP", "ASP"] }
+          schoolType: { $in: ["SEC", "PRI", "ECD", "CGS", "ALP", "ASP", "TTI"] }
         }
       },
       {
@@ -709,6 +709,19 @@ exports.getSchoolTypesByState = async (req, res) => {
               in: {
                 $cond: [
                   { $eq: ["$$this.type", "ASP"] },
+                  "$$this.count",
+                  "$$value"
+                ]
+              }
+            }
+          },
+          TTI: {
+            $reduce: {
+              input: "$schoolTypes",
+              initialValue: 0,
+              in: {
+                $cond: [
+                  { $eq: ["$$this.type", "TTI"] },
                   "$$this.count",
                   "$$value"
                 ]
