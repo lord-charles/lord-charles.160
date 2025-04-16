@@ -89,7 +89,7 @@ const getStudentsAttendance = async (req, res) => {
     }
 
     // Construct query
-    const query = {};
+    const query = {absent: true};
     if(code){
       query.code = code;
     }
