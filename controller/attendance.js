@@ -187,7 +187,7 @@ const deleteAttendanceForDay = async (req, res) => {
     // Return the result
     res.status(200).json({
       success: true,
-      message: `${result.deletedCount} attendance records deleted successfully`,
+      message: `${result.modifiedCount} attendance records deleted successfully`,
     });
   } catch (error) {
     console.error("Error deleting attendance records:", error);
