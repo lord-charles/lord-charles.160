@@ -4,6 +4,7 @@ const {
   markAttendanceBulk,
   getStudentsAttendance,
   deleteAttendanceForDay,
+  getLearnersWithAbsenceStatus
 } = require("../controller/attendance");
 
 /**
@@ -120,5 +121,39 @@ router.post("/getStudentsAttendance", getStudentsAttendance);
  *         description: Internal server error
  */
 router.post("/deleteAttendanceForDay", deleteAttendanceForDay);
+
+/**
+ * @swagger
+ * /attendance/getLearnersWithAbsenceStatus:
+ *   post:
+ *     summary: Get learners with absence status
+ *     tags: [Attendance]
+ *     description: This endpoint retrieves learners with their absence status for a specific date.
+ *     requestBody:
+ *       description: School code and attendance date
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 example: "1234567890"
+ *               attendanceDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "2024-12-17"
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved learners with absence status
+ *       400:
+ *         description: Invalid input data
+ *       404:
+ *         description: No learners found
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/getLearnersWithAbsenceStatus", getLearnersWithAbsenceStatus);
 
 module.exports = router;

@@ -42,14 +42,8 @@ const markAttendanceBulk = async (req, res) => {
 
 const getStudentsAttendance = async (req, res) => {
   try {
-    const { schoolName, Class, isDroppedOut, attendanceDate } = req.body;
+    const { schoolName,code, Class, isDroppedOut, attendanceDate } = req.body;
 
-    // Validate required fields
-    if (!schoolName) {
-      return res
-        .status(400)
-        .json({ success: false, error: "School name is required" });
-    }
 
     // Validate isDroppedOut field if provided
     if (isDroppedOut !== undefined && typeof isDroppedOut !== "boolean") {
@@ -59,7 +53,13 @@ const getStudentsAttendance = async (req, res) => {
     }
 
     // Construct query
-    const query = { school: schoolName };
+    const query = {};
+    if(code){
+      query.code = code;
+    }
+    if(schoolName){
+      query.school = schoolName;
+    }
     if (isDroppedOut !== undefined) {
       query.isDroppedOut = isDroppedOut;
     }
@@ -160,8 +160,61 @@ const deleteAttendanceForDay = async (req, res) => {
 
 
 
+const getLearnersWithAbsenceStatus = async (req, res) => {
+  try {
+    const { code, Class, attendanceDate } = req.body;
+    if (!code || !attendanceDate) {
+      return res.status(400).json({
+        success: false,
+        error: "School code and attendanceDate are required",
+      });
+    }
+
+    // Query for non-dropped learners
+    const query = { code, isDroppedOut: false };
+    if (Class) query.class = Class;
+
+    // Only select the required fields
+    const selectFields =
+      "education gender firstName middleName lastName isWithDisability learnerUniqueID reference";
+
+    const learners = await SchoolData.find(query).select(selectFields).exec();
+    if (!learners.length) {
+      return res.status(404).json({ success: false, error: "No learners found" });
+    }
+
+    // Prepare date range for the day
+    const startDate = new Date(attendanceDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(attendanceDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    // For each learner, check if they have an attendance record for that day
+    const results = await Promise.all(
+      learners.map(async (learner) => {
+        const absentRecord = await Attendance.findOne({
+          student: learner._id,
+          date: { $gte: startDate, $lte: endDate },
+        }).exec();
+        const learnerObj = learner.toObject();
+        return {
+          ...learnerObj,
+          isWithDisability: learnerObj.isWithDisability ? "yes" : "no",
+          absent: absentRecord ? "yes" : "no",
+        };
+      })
+    );
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error fetching learners with absence status:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   markAttendanceBulk,
   getStudentsAttendance,
   deleteAttendanceForDay,
+  getLearnersWithAbsenceStatus,
 };
