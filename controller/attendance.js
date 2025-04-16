@@ -3,11 +3,11 @@ const Attendance = require("../models/Attendance");
 
 const markAttendanceBulk = async (req, res) => {
   try {
-    const { studentIds, date, absenceReason, classId } = req.body;
+    const { studentIds, date, absenceReason, classId, code } = req.body;
 
-    if (!Array.isArray(studentIds) || !date || !classId) {
+    if (!Array.isArray(studentIds) || !date || !classId || !code) {
       return res.status(400).json({
-        error: "Invalid request format. Ensure studentIds array, date, and classId are provided.",
+        error: "Invalid request format. Ensure studentIds array, date, classId, and code are provided.",
       });
     }
 
@@ -18,9 +18,10 @@ const markAttendanceBulk = async (req, res) => {
     const allStudents = await SchoolData.find(
       { 
         class: classId,
+        code: code,
         isDroppedOut: false 
       },
-      '_id gender isWithDisability county28 payam28 state10 school code education firstName middleName lastName learnerUniqueID reference'
+      '_id gender isWithDisability county28 payam28 state10 school class code education firstName middleName lastName learnerUniqueID reference'
     );
 
     if (!allStudents.length) {
@@ -50,7 +51,8 @@ const markAttendanceBulk = async (req, res) => {
           lastName: student.lastName,
           learnerUniqueID: student.learnerUniqueID,
           reference: student.reference,
-          isWithDisability: student.isWithDisability
+          isWithDisability: student.isWithDisability,
+          class: student.class
         }
       }
     }));
