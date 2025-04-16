@@ -179,10 +179,10 @@ const deleteAttendanceForDay = async (req, res) => {
     endDate.setHours(23, 59, 59, 999);
 
     // Delete attendance records for the specified date and students
-    const result = await Attendance.deleteMany({
+    const result = await Attendance.updateMany({
       student: { $in: studentIds },
       date: { $gte: startDate, $lte: endDate },
-    });
+    }, {absent: false, absenceReason: null});
 
     // Return the result
     res.status(200).json({
