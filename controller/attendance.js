@@ -47,12 +47,14 @@ const markAttendanceBulk = async (req, res) => {
           }
         },
         update: {
+          $set: {
+            absent: absentStudentIds.has(student._id.toString()),
+            absenceReason: absentStudentIds.has(student._id.toString()) ? (absenceReason || "") : ""
+          },
           $setOnInsert: {
             student: student._id,
             date: attendanceDate,
             year: attendanceDate.getFullYear(),
-            absent: absentStudentIds.has(student._id.toString()),
-            absenceReason: absentStudentIds.has(student._id.toString()) ? (absenceReason || "") : "",
             county28: student.county28,
             payam28: student.payam28,
             state10: student.state10,
