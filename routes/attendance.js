@@ -4,7 +4,8 @@ const {
   markAttendanceBulk,
   getStudentsAttendance,
   deleteAttendanceForDay,
-  getLearnersWithAbsenceStatus
+  getLearnersWithAbsenceStatus,
+  getAttendanceStatCards
 } = require("../controller/attendance");
 
 /**
@@ -156,92 +157,6 @@ router.post("/deleteAttendanceForDay", deleteAttendanceForDay);
  */
 router.post("/getLearnersWithAbsenceStatus", getLearnersWithAbsenceStatus);
 
-/**
- * @swagger
- * /attendance/statistics:
- *   post:
- *     summary: Get attendance statistics with breakdowns
- *     tags: [Attendance]
- *     description: Get comprehensive attendance statistics including total learners, gender distribution, disability status, and attendance breakdown
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - year
- *             properties:
- *               year:
- *                 type: number
- *                 description: Academic year
- *                 example: 2024
- *               state10:
- *                 type: string
- *                 description: Optional state filter
- *               county28:
- *                 type: string
- *                 description: Optional county filter
- *               payam28:
- *                 type: string
- *                 description: Optional payam filter
- *     responses:
- *       200:
- *         description: Statistics retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 total:
- *                   type: number
- *                   description: Total number of learners
- *                 male:
- *                   type: number
- *                   description: Total male learners
- *                 female:
- *                   type: number
- *                   description: Total female learners
- *                 withDisability:
- *                   type: number
- *                   description: Total learners with disability
- *                 maleWithDisability:
- *                   type: number
- *                   description: Male learners with disability
- *                 femaleWithDisability:
- *                   type: number
- *                   description: Female learners with disability
- *                 absent:
- *                   type: number
- *                   description: Total absent learners
- *                 absentMale:
- *                   type: number
- *                   description: Absent male learners
- *                 absentFemale:
- *                   type: number
- *                   description: Absent female learners
- *                 absentWithDisability:
- *                   type: number
- *                   description: Absent learners with disability
- *                 present:
- *                   type: number
- *                   description: Total present learners
- *                 presentMale:
- *                   type: number
- *                   description: Present male learners
- *                 presentFemale:
- *                   type: number
- *                   description: Present female learners
- *                 presentWithDisability:
- *                   type: number
- *                   description: Present learners with disability
- *       400:
- *         description: Invalid input - year is required
- *       404:
- *         description: No learners found for the specified filters
- *       500:
- *         description: Internal server error
- */
-// router.post("/statistics", getAttendanceStatistics);
+ router.post("/statistics", getAttendanceStatCards);
 
 module.exports = router;

@@ -373,10 +373,282 @@ const getAttendanceStatistics = async (req, res) => {
   }
 };
 
+const getAttendanceStatCards = async (req, res) => {
+  try {
+    const {state, county, payam, code, year} = req.query
+
+    const currentDate = new Date();
+    const startOfYear = new Date(parseInt(year), 0, 1);
+    const endOfYear = new Date(parseInt(year), 11, 31);
+    const startOfToday = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+
+
+    let params = { 
+    }
+    if (state) params.state10 = state
+    if (county) params.county28 = county
+    if (payam) params.payam28 = payam
+    if (code) params.code = code
+
+    // Run all aggregations in parallel for better performance
+    const [
+      yearToDateStats,
+      todayStats,
+      averageDailyStats,
+      demographicStats,
+      regionalStats,
+      engagementStats
+    ] = await Promise.all([
+      // 1. Year to Date Summary
+      Attendance.aggregate([
+        {
+          $match: {
+            date: { $gte: startOfYear, $lte: endOfYear },
+            ...params
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalEntries: { $sum: 1 },
+            uniqueStudents: { $addToSet: "$student" },
+            minDate: { $min: "$date" },
+            maxDate: { $max: "$date" }
+          }
+        }
+      ]),
+
+      // 2. Today's Snapshot
+      Attendance.aggregate([
+        {
+          $match: {
+            date: { $gte: startOfToday },
+            ...params
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalRecords: { $sum: 1 },
+            totalAbsent: { $sum: { $cond: ["$absent", 1, 0] } }
+          }
+        }
+      ]),
+
+      // 3. Average Daily Attendance Rate (YTD)
+      Attendance.aggregate([
+        {
+          $match: {
+            date: { $gte: startOfYear, $lte: endOfYear },
+            ...params
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+            totalStudents: { $sum: 1 },
+            absentStudents: { $sum: { $cond: ["$absent", 1, 0] } }
+          }
+        },
+        {
+          $project: {
+            date: "$_id",
+            attendanceRate: {
+              $multiply: [
+                { $divide: [{ $subtract: ["$totalStudents", "$absentStudents"] }, "$totalStudents"] },
+                100
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            avgAttendanceRate: { $avg: "$attendanceRate" },
+            days: {
+              $push: {
+                date: "$date",
+                rate: "$attendanceRate"
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            avgAttendanceRate: 1,
+            peakDay: { $max: "$days" },
+            lowestDay: { $min: "$days" }
+          }
+        }
+      ]),
+
+      // 4. Demographic Breakdown
+      Attendance.aggregate([
+        {
+          $match: {
+            date: { $gte: startOfYear, $lte: endOfYear },
+            absent: true,
+            ...params
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalAbsent: { $sum: 1 },
+            maleAbsent: { $sum: { $cond: [{ $eq: ["$gender", "M"] }, 1, 0] } },
+            femaleAbsent: { $sum: { $cond: [{ $eq: ["$gender", "F"] }, 1, 0] } },
+            disabilityAbsent: { $sum: { $cond: ["$isWithDisability", 1, 0] } }
+          }
+        }
+      ]),
+
+      // 5. Regional Distribution
+      Attendance.aggregate([
+        {
+          $match: {
+            date: { $gte: startOfYear, $lte: endOfYear },
+            absent: true,
+            ...params
+          }
+        },
+        {
+          $group: {
+            _id: {
+              county: "$county28",
+              state: "$state10"
+            },
+            absentCount: { $sum: 1 }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalAbsent: { $sum: "$absentCount" },
+            counties: {
+              $push: {
+                name: "$_id.county",
+                count: "$absentCount"
+              }
+            },
+            states: {
+              $push: {
+                name: "$_id.state",
+                count: "$absentCount"
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            topCounties: { $slice: [{ $sortArray: { input: "$counties", sortBy: { count: -1 } } }, 3] },
+            topStates: { $slice: [{ $sortArray: { input: "$states", sortBy: { count: -1 } } }, 3] },
+            totalAbsent: 1
+          }
+        }
+      ]),
+
+      // 6. Engagement Metrics
+      Attendance.aggregate([
+        {
+          $match: {
+            date: { $gte: startOfToday },
+            ...params
+          }
+        },
+        {
+          $group: {
+            _id: "$school",
+            studentsCount: { $sum: 1 }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            schoolsReporting: { $sum: 1 },
+            totalStudents: { $sum: "$studentsCount" }
+          }
+        }
+      ])
+    ]);
+
+    // Process and format the results
+    const response = {
+      yearToDate: {
+        totalEntries: yearToDateStats[0]?.totalEntries || 0,
+        totalStudents: yearToDateStats[0]?.uniqueStudents?.length || 0,
+        dateRange: {
+          start: yearToDateStats[0]?.minDate,
+          end: yearToDateStats[0]?.maxDate
+        }
+      },
+      todaySnapshot: {
+        recordsLogged: todayStats[0]?.totalRecords || 0,
+        absent: todayStats[0]?.totalAbsent || 0,
+        present: (todayStats[0]?.totalRecords || 0) - (todayStats[0]?.totalAbsent || 0),
+        absenteeRate: todayStats[0]?.totalRecords 
+          ? ((todayStats[0].totalAbsent / todayStats[0].totalRecords) * 100).toFixed(1)
+          : 0
+      },
+      averageAttendance: {
+        overallRate: averageDailyStats[0]?.avgAttendanceRate?.toFixed(1) || 0,
+        peakDay: averageDailyStats[0]?.peakDay || { date: null, rate: 0 },
+        lowestDay: averageDailyStats[0]?.lowestDay || { date: null, rate: 0 }
+      },
+      demographics: {
+        male: {
+          percentage: demographicStats[0]?.totalAbsent 
+            ? ((demographicStats[0].maleAbsent / demographicStats[0].totalAbsent) * 100).toFixed(1)
+            : 0,
+          count: demographicStats[0]?.maleAbsent || 0
+        },
+        female: {
+          percentage: demographicStats[0]?.totalAbsent 
+            ? ((demographicStats[0].femaleAbsent / demographicStats[0].totalAbsent) * 100).toFixed(1)
+            : 0,
+          count: demographicStats[0]?.femaleAbsent || 0
+        },
+        disability: {
+          percentage: demographicStats[0]?.totalAbsent 
+            ? ((demographicStats[0].disabilityAbsent / demographicStats[0].totalAbsent) * 100).toFixed(1)
+            : 0,
+          count: demographicStats[0]?.disabilityAbsent || 0
+        }
+      },
+      regionalDistribution: {
+        topCounties: regionalStats[0]?.topCounties.map(county => ({
+          name: county.name,
+          percentage: ((county.count / regionalStats[0].totalAbsent) * 100).toFixed(1),
+          count: county.count
+        })) || [],
+        topStates: regionalStats[0]?.topStates.map(state => ({
+          name: state.name,
+          percentage: ((state.count / regionalStats[0].totalAbsent) * 100).toFixed(1),
+          count: state.count
+        })) || []
+      },
+      engagement: {
+        schoolsReporting: engagementStats[0]?.schoolsReporting || 0,
+        averageAttendancePerSchool: engagementStats[0]?.totalStudents 
+          ? Math.round(engagementStats[0].totalStudents / engagementStats[0].schoolsReporting)
+          : 0
+      }
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error fetching attendance statistics:", error);
+    res.status(500).json({
+      error: "Failed to fetch attendance statistics",
+      details: error.message
+    });
+  }
+};
+
 module.exports = {
   markAttendanceBulk,
   getStudentsAttendance,
   deleteAttendanceForDay,
   getLearnersWithAbsenceStatus,
   getAttendanceStatistics,
+  getAttendanceStatCards
 };
