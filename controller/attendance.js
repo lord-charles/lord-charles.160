@@ -37,43 +37,49 @@ const markAttendanceBulk = async (req, res) => {
     nextDay.setDate(nextDay.getDate() + 1);
 
     // Prepare bulk write operations using updateOne with upsert
-    const operations = allStudents.map(student => ({
-      updateOne: {
-        filter: {
-          student: student._id,
-          date: {
-            $gte: attendanceDate,
-            $lt: nextDay
-          }
-        },
-        update: {
-          $set: {
-            absent: absentStudentIds.has(student._id.toString()),
-            absenceReason: absentStudentIds.has(student._id.toString()) ? (absenceReason || "") : ""
-          },
-          $setOnInsert: {
+    const operations = allStudents.map(student => {
+      const isInCurrentAbsentList = absentStudentIds.has(student._id.toString());
+      return {
+        updateOne: {
+          filter: {
             student: student._id,
-            date: attendanceDate,
-            year: attendanceDate.getFullYear(),
-            county28: student.county28,
-            payam28: student.payam28,
-            state10: student.state10,
-            school: student.school,
-            code: student.code,
-            education: student.education,
-            gender: student.gender,
-            firstName: student.firstName,
-            middleName: student.middleName,
-            lastName: student.lastName,
-            learnerUniqueID: student.learnerUniqueID,
-            reference: student.reference,
-            isWithDisability: student.isWithDisability,
-            class: student.class
-          }
-        },
-        upsert: true
-      }
-    }));
+            date: {
+              $gte: attendanceDate,
+              $lt: nextDay
+            }
+          },
+          update: {
+            ...(isInCurrentAbsentList && {
+              $set: {
+                absent: true,
+                absenceReason: absenceReason || ""
+              }
+            }),
+            $setOnInsert: {
+              student: student._id,
+              date: attendanceDate,
+              year: attendanceDate.getFullYear(),
+              county28: student.county28,
+              payam28: student.payam28,
+              state10: student.state10,
+              school: student.school,
+              code: student.code,
+              education: student.education,
+              gender: student.gender,
+              firstName: student.firstName,
+              middleName: student.middleName,
+              lastName: student.lastName,
+              learnerUniqueID: student.learnerUniqueID,
+              reference: student.reference,
+              isWithDisability: student.isWithDisability,
+              class: student.class,
+              ...(isInCurrentAbsentList ? {} : { absent: false, absenceReason: "" })
+            }
+          },
+          upsert: true
+        }
+      };
+    });
 
     // Execute bulk write
     const result = await Attendance.bulkWrite(operations);
