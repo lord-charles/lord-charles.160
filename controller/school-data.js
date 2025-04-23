@@ -95,6 +95,12 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
     const currentYear = new Date().getFullYear();
     const startOfYear = new Date(currentYear, 0, 1);
     const endOfYear = new Date(currentYear, 11, 31);
+    const { state, payam, county, code } = req.query;
+    const params = {};
+    if (state) params.state10 = state;
+    if (payam) params.payam10 = payam;
+    if (county) params.county10 = county;
+    if (code) params.code = code;
 
     // First get schools with completed enrollment
     const schoolProjection = {
@@ -116,7 +122,8 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
           "year": currentYear,
           "percentageComplete": { $gte: 1 }
         }
-      }
+      },
+      ...params
     }, schoolProjection);
 
     // For each school, get learner statistics from 2023Data
@@ -249,7 +256,7 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
 // Mark enrollment as complete
 exports.markEnrollmentComplete = async (req, res) => {
   try {
-    const { year, completedBy,comments, percentageComplete,isComplete,learnerEnrollmentComplete } = req.body;
+    const { year, completedBy, comments, percentageComplete, isComplete, learnerEnrollmentComplete } = req.body;
     const schoolId = req.params.id;
 
     const school = await schoolData.findById(schoolId);
@@ -273,7 +280,7 @@ exports.markEnrollmentComplete = async (req, res) => {
 
     } else {
       // Create new entry
-      school.isEnrollmentComplete.push({ year, isComplete, completedBy ,comments, percentageComplete,learnerEnrollmentComplete});
+      school.isEnrollmentComplete.push({ year, isComplete, completedBy, comments, percentageComplete, learnerEnrollmentComplete });
     }
 
     await school.save();
@@ -403,7 +410,7 @@ exports.countSchoolsByType = async (req, res) => {
 exports.getLearnerStatsByState = async (req, res) => {
   try {
     const currentYear = new Date().getFullYear();
-    
+
     // Create date objects with timezone offset
     const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
     const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
@@ -489,7 +496,7 @@ exports.getLearnerStatsByState = async (req, res) => {
     // Calculate and log total learners in different ways for verification
     const totalBySum = learnerStats.reduce((sum, state) => sum + state.total, 0);
     const totalByGender = learnerStats.reduce((sum, state) => sum + state.male + state.female, 0);
-    
+
     // console.log('Total learners (direct sum):', totalBySum);
     // console.log('Total learners (male + female):', totalByGender);
     // console.log('Total new learners:', learnerStats.reduce((sum, state) => sum + state.new, 0));
@@ -597,9 +604,9 @@ exports.getOverallLearnerStats = async (req, res) => {
       bySchoolType: schoolTypeStats
     });
   } catch (error) {
-    res.status(500).json({ 
-      message: "Error fetching learner statistics", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error fetching learner statistics",
+      error: error.message
     });
   }
 };
