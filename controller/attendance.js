@@ -644,11 +644,72 @@ const getAttendanceStatCards = async (req, res) => {
   }
 };
 
+// Get unique schools with attendance for a given date
+const getSchoolsWithAttendance = async (req, res) => {
+  try {
+    let { date } = req.body;
+    // Default to today if not provided
+    if (!date) {
+      const now = new Date();
+      date = now.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    }
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Aggregate attendance by school for the given date
+    const results = await Attendance.aggregate([
+      {
+        $match: {
+          date: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            county28: "$county28",
+            payam28: "$payam28",
+            state10: "$state10",
+            school: "$school",
+            code: "$code",
+            education: "$education"
+          },
+          date: { $first: "$date" },
+          numWithDisability: { $sum: { $cond: ["$isWithDisability", 1, 0] } },
+          absent: { $sum: { $cond: ["$absent", 1, 0] } },
+          present: { $sum: { $cond: [ { $not: ["$absent"] }, 1, 0 ] } }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          date: 1,
+          county28: "$_id.county28",
+          payam28: "$_id.payam28",
+          state10: "$_id.state10",
+          school: "$_id.school",
+          code: "$_id.code",
+          education: "$_id.education",
+          numWithDisability: 1,
+          absent: 1,
+          present: 1
+        }
+      }
+    ]);
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error fetching schools with attendance:", error);
+    res.status(500).json({ error: "Failed to fetch schools with attendance", details: error.message });
+  }
+};
+
 module.exports = {
   markAttendanceBulk,
   getStudentsAttendance,
   deleteAttendanceForDay,
   getLearnersWithAbsenceStatus,
   getAttendanceStatistics,
-  getAttendanceStatCards
+  getAttendanceStatCards,
+  getSchoolsWithAttendance
 };

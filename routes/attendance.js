@@ -5,7 +5,8 @@ const {
   getStudentsAttendance,
   deleteAttendanceForDay,
   getLearnersWithAbsenceStatus,
-  getAttendanceStatCards
+  getAttendanceStatCards,
+  getSchoolsWithAttendance
 } = require("../controller/attendance");
 
 /**
@@ -156,6 +157,35 @@ router.post("/deleteAttendanceForDay", deleteAttendanceForDay);
  *         description: Internal server error
  */
 router.post("/getLearnersWithAbsenceStatus", getLearnersWithAbsenceStatus);
+
+/**
+ * @swagger
+ * /attendance/schoolsWithAttendance:
+ *   post:
+ *     summary: Get unique schools with attendance for a given date
+ *     tags: [Attendance]
+ *     description: Returns a list of unique schools that have attendance records for the specified date (or today if no date provided).
+ *     requestBody:
+ *       description: Optional date in YYYY-MM-DD format to fetch attendance for a specific day
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-04-25"
+ *     responses:
+ *       200:
+ *         description: List of schools with attendance summary
+ *       400:
+ *         description: Invalid input data
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/schoolsWithAttendance", getSchoolsWithAttendance);
 
  router.post("/statistics", getAttendanceStatCards);
 
