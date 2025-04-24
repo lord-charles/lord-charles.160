@@ -4,7 +4,8 @@ const {
   markAttendanceBulk,
   getStudentsAttendance,
   deleteAttendanceForDay,
-  getLearnersWithAbsenceStatus
+  getLearnersWithAbsenceStatus,
+  getAttendanceStatistics
 } = require("../controller/attendance");
 
 /**
@@ -242,6 +243,6 @@ router.post("/getLearnersWithAbsenceStatus", getLearnersWithAbsenceStatus);
  *       500:
  *         description: Internal server error
  */
-// router.post("/statistics", getAttendanceStatistics);
+router.post("/statistics", getAttendanceStatistics);
 
 module.exports = router;
