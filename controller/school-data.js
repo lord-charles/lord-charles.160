@@ -98,8 +98,8 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
     const { state, payam, county, code } = req.query;
     const params = {};
     if (state) params.state10 = state;
-    if (payam) params.payam10 = payam;
-    if (county) params.county10 = county;
+    if (payam) params.payam28 = payam;
+    if (county) params.county28 = county;
     if (code) params.code = code;
 
     // First get schools with completed enrollment
