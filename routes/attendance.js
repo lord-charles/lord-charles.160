@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   markAttendanceBulk,
   getStudentsAttendance,
-  deleteAttendanceForDay,
+  markPresentAttendanceForDay,
   getLearnersWithAbsenceStatus,
   getAttendanceStatCards,
   getSchoolsWithAttendance
@@ -95,7 +95,7 @@ router.post("/getStudentsAttendance", getStudentsAttendance);
 
 /**
  * @swagger
- * /attendance/deleteAttendanceForDay:
+ * /attendance/markPresentAttendanceForDay:
  *   post:
  *     summary: Delete attendance for a specific day
  *     tags: [Attendance]
@@ -122,7 +122,7 @@ router.post("/getStudentsAttendance", getStudentsAttendance);
  *       500:
  *         description: Internal server error
  */
-router.post("/deleteAttendanceForDay", deleteAttendanceForDay);
+router.post("/markPresentAttendance", markPresentAttendanceForDay);
 
 /**
  * @swagger

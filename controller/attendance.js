@@ -180,43 +180,85 @@ const getStudentsAttendance = async (req, res) => {
   }
 };
 
-const deleteAttendanceForDay = async (req, res) => {
+const markPresentAttendanceForDay = async (req, res) => {
   try {
     const { date, studentIds } = req.body;
 
     if (!date) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Date is required" });
+      return res.status(400).json({ success: false, error: "Date is required" });
     }
-
     if (!Array.isArray(studentIds) || !studentIds.length) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Student IDs are required" });
+      return res.status(400).json({ success: false, error: "Student IDs are required" });
     }
 
-    // Convert date to the beginning of the specified day
-    const startDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
+    // Normalize date range for the day
+    const attendanceDate = new Date(date);
+    attendanceDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(attendanceDate);
+    nextDay.setDate(nextDay.getDate() + 1);
 
-    // Convert date to the end of the specified day
-    const endDate = new Date(date);
-    endDate.setHours(23, 59, 59, 999);
+    // Fetch student info for all studentIds
+    const students = await SchoolData.find(
+      { _id: { $in: studentIds } },
+      '_id gender isWithDisability county28 payam28 state10 school class code education firstName middleName lastName learnerUniqueID reference'
+    );
 
-    // Delete attendance records for the specified date and students
-    const result = await Attendance.updateMany({
-      student: { $in: studentIds },
-      date: { $gte: startDate, $lte: endDate },
-    }, {absent: false, absenceReason: ''});
+    if (!students.length) {
+      return res.status(404).json({ success: false, error: "No students found for the provided IDs" });
+    }
 
-    // Return the result
+    // Prepare bulkWrite operations for upsert
+    const operations = students.map(student => ({
+      updateOne: {
+        filter: {
+          student: student._id,
+          date: {
+            $gte: attendanceDate,
+            $lt: nextDay
+          }
+        },
+        update: {
+          $set: {
+            absent: false,
+            absenceReason: ""
+          },
+          $setOnInsert: {
+            student: student._id,
+            date: attendanceDate,
+            year: attendanceDate.getFullYear(),
+            county28: student.county28,
+            payam28: student.payam28,
+            state10: student.state10,
+            school: student.school,
+            code: student.code,
+            education: student.education,
+            gender: student.gender,
+            firstName: student.firstName,
+            middleName: student.middleName,
+            lastName: student.lastName,
+            learnerUniqueID: student.learnerUniqueID,
+            reference: student.reference,
+            isWithDisability: student.isWithDisability,
+            class: student.class
+          }
+        },
+        upsert: true
+      }
+    }));
+
+    const result = await Attendance.bulkWrite(operations);
+
     res.status(200).json({
       success: true,
-      message: `${result.modifiedCount} attendance records deleted successfully`,
+      message: `Attendance marked present for ${students.length} students`,
+      stats: {
+        total: result.upsertedCount + result.modifiedCount,
+        new: result.upsertedCount,
+        updated: result.modifiedCount
+      }
     });
   } catch (error) {
-    console.error("Error deleting attendance records:", error);
+    console.error("Error marking present attendance records:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
@@ -707,7 +749,7 @@ const getSchoolsWithAttendance = async (req, res) => {
 module.exports = {
   markAttendanceBulk,
   getStudentsAttendance,
-  deleteAttendanceForDay,
+  markPresentAttendanceForDay,
   getLearnersWithAbsenceStatus,
   getAttendanceStatistics,
   getAttendanceStatCards,
