@@ -772,7 +772,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       county10,
       payam10,
       school,
-      class: classField, // Rename to avoid using reserved word
+      class: classField, // avoid using reserved word
       code,
       education,
       form,
@@ -814,6 +814,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       modifiedBy,
       academicHistory,
       eieStatus,
+      isValidatedWithDisability
     } = req.body;
 
     const updateData = {
@@ -869,6 +870,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       modifiedBy,
       academicHistory,
       eieStatus,
+      isValidatedWithDisability
     };
 
     const schoolData = await SchoolData.findByIdAndUpdate(id, updateData, {
