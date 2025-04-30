@@ -245,9 +245,47 @@ const getEligibleStudentsInSchool = async (req, res) => {
   }
 };
 
+//validate lwd
+const validateLwd = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { year, validated = true } = req.body;
+
+    if (!id || !year) {
+      return res.status(400).json({ success: false, error: "Student id and year are required" });
+    }
+
+    const student = await SchoolData.findById(id);
+    if (!student) {
+      return res.status(404).json({ success: false, error: "Student not found" });
+    }
+
+    // Find if year already exists in isValidatedWithDisability
+    let found = false;
+    student.isValidatedWithDisability = student.isValidatedWithDisability || [];
+    student.isValidatedWithDisability = student.isValidatedWithDisability.map((entry) => {
+      if (entry.year === year) {
+        found = true;
+        return { year, validated };
+      }
+      return entry;
+    });
+    if (!found) {
+      student.isValidatedWithDisability.push({ year, validated });
+    }
+
+    await student.save();
+    res.status(200).json({ success: true, message: "Student validated successfully" });
+  } catch (error) {
+    console.error("Error validating student:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   getEligibleCountiesWithDisability,
   getEligiblePayamsWithDisability,
   getEligibleSchoolsWithDisability,
-  getEligibleStudentsInSchool
+  getEligibleStudentsInSchool,
+   validateLwd,
 };

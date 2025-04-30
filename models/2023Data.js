@@ -46,6 +46,9 @@ const schoolDataSchema = new mongoose.Schema(
       default: null,
     },
     isWithDisability: { type: Boolean, default: false },
+    isValidatedWithDisability: [
+      { year: { type: Number }, validated: { type: Boolean, default: false } },
+    ],
     invalidationReason: { type: String },
     isDisbursed: {
       type: Boolean,

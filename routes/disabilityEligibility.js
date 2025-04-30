@@ -6,7 +6,8 @@ const {
   getEligibleCountiesWithDisability,
   getEligiblePayamsWithDisability,
   getEligibleSchoolsWithDisability,
-  getEligibleStudentsInSchool
+  getEligibleStudentsInSchool,
+  validateLwd
 } = require("../controller/disabilityEligibility");
 
 
@@ -14,5 +15,6 @@ router.post("/counties", cachePostMiddleware(600), getEligibleCountiesWithDisabi
 router.post("/payams", cachePostMiddleware(600), getEligiblePayamsWithDisability);
 router.post("/schools", cachePostMiddleware(600), getEligibleSchoolsWithDisability);
 router.post("/students", getEligibleStudentsInSchool);
+router.post("/validateLwd/:id", validateLwd);
 
 module.exports = router;
