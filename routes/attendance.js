@@ -6,7 +6,8 @@ const {
   markPresentAttendanceForDay,
   getLearnersWithAbsenceStatus,
   getAttendanceStatCards,
-  getSchoolsWithAttendance
+  getSchoolsWithAttendance,
+  getAllSchools
 } = require("../controller/attendance");
 
 /**
@@ -187,6 +188,8 @@ router.post("/getLearnersWithAbsenceStatus", getLearnersWithAbsenceStatus);
  */
 router.post("/schoolsWithAttendance", getSchoolsWithAttendance);
 
- router.post("/statistics", getAttendanceStatCards);
+router.post("/statistics", getAttendanceStatCards);
+
+router.post("/allSchools", getAllSchools);
 
 module.exports = router;

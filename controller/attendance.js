@@ -1,4 +1,4 @@
-const SchoolData = require("../models/2023Data");
+const schoolData = require("../models/school-data");
 const Attendance = require("../models/Attendance");
 
 const markAttendanceBulk = async (req, res) => {
@@ -16,10 +16,10 @@ const markAttendanceBulk = async (req, res) => {
 
     // Get all students in the class with all required fields
     const allStudents = await SchoolData.find(
-      { 
+      {
         class: classId,
         code: code,
-        isDroppedOut: false 
+        isDroppedOut: false
       },
       '_id gender isWithDisability county28 payam28 state10 school class code education firstName middleName lastName learnerUniqueID reference'
     );
@@ -84,7 +84,7 @@ const markAttendanceBulk = async (req, res) => {
     // Execute bulk write
     const result = await Attendance.bulkWrite(operations);
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Attendance marked successfully",
       stats: {
         total: result.upsertedCount + result.modifiedCount,
@@ -97,16 +97,16 @@ const markAttendanceBulk = async (req, res) => {
 
   } catch (error) {
     console.error("Error marking attendance:", error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to mark attendance. Please try again later.",
-      details: error.message 
+      details: error.message
     });
   }
 };
 
 const getStudentsAttendance = async (req, res) => {
   try {
-    const { schoolName,code, Class, isDroppedOut, attendanceDate } = req.body;
+    const { schoolName, code, Class, isDroppedOut, attendanceDate } = req.body;
 
 
     // Validate isDroppedOut field if provided
@@ -118,10 +118,10 @@ const getStudentsAttendance = async (req, res) => {
 
     // Construct query
     const query = {};
-    if(code){
+    if (code) {
       query.code = code;
     }
-    if(schoolName){
+    if (schoolName) {
       query.school = schoolName;
     }
     if (isDroppedOut !== undefined) {
@@ -417,7 +417,7 @@ const getAttendanceStatistics = async (req, res) => {
 
 const getAttendanceStatCards = async (req, res) => {
   try {
-    const {state, county, payam, code, year} = req.query
+    const { state, county, payam, code, year } = req.query
 
     const currentDate = new Date();
     const startOfYear = new Date(parseInt(year), 0, 1);
@@ -425,7 +425,7 @@ const getAttendanceStatCards = async (req, res) => {
     const startOfToday = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
 
 
-    let params = { 
+    let params = {
     }
     if (state) params.state10 = state
     if (county) params.county28 = county
@@ -627,7 +627,7 @@ const getAttendanceStatCards = async (req, res) => {
         recordsLogged: todayStats[0]?.totalRecords || 0,
         absent: todayStats[0]?.totalAbsent || 0,
         present: (todayStats[0]?.totalRecords || 0) - (todayStats[0]?.totalAbsent || 0),
-        absenteeRate: todayStats[0]?.totalRecords 
+        absenteeRate: todayStats[0]?.totalRecords
           ? ((todayStats[0].totalAbsent / todayStats[0].totalRecords) * 100).toFixed(1)
           : 0
       },
@@ -638,19 +638,19 @@ const getAttendanceStatCards = async (req, res) => {
       },
       demographics: {
         male: {
-          percentage: demographicStats[0]?.totalAbsent 
+          percentage: demographicStats[0]?.totalAbsent
             ? ((demographicStats[0].maleAbsent / demographicStats[0].totalAbsent) * 100).toFixed(1)
             : 0,
           count: demographicStats[0]?.maleAbsent || 0
         },
         female: {
-          percentage: demographicStats[0]?.totalAbsent 
+          percentage: demographicStats[0]?.totalAbsent
             ? ((demographicStats[0].femaleAbsent / demographicStats[0].totalAbsent) * 100).toFixed(1)
             : 0,
           count: demographicStats[0]?.femaleAbsent || 0
         },
         disability: {
-          percentage: demographicStats[0]?.totalAbsent 
+          percentage: demographicStats[0]?.totalAbsent
             ? ((demographicStats[0].disabilityAbsent / demographicStats[0].totalAbsent) * 100).toFixed(1)
             : 0,
           count: demographicStats[0]?.disabilityAbsent || 0
@@ -670,7 +670,7 @@ const getAttendanceStatCards = async (req, res) => {
       },
       engagement: {
         schoolsReporting: engagementStats[0]?.schoolsReporting || 0,
-        averageAttendancePerSchool: engagementStats[0]?.totalStudents 
+        averageAttendancePerSchool: engagementStats[0]?.totalStudents
           ? Math.round(engagementStats[0].totalStudents / engagementStats[0].schoolsReporting)
           : 0
       }
@@ -686,27 +686,36 @@ const getAttendanceStatCards = async (req, res) => {
   }
 };
 
-// Get unique schools with attendance for a given date
+// Get unique schools with attendance for a given date or date range
 const getSchoolsWithAttendance = async (req, res) => {
   try {
-    let { date } = req.body;
-    // Default to today if not provided
-    if (!date) {
-      const now = new Date();
-      date = now.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    let { date, from, to } = req.body;
+    let startDate, endDate;
+    if (from && to) {
+      // Date range
+      startDate = new Date(from);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(to);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      // Single day (either date provided or default to today)
+      if (!date) {
+        const now = new Date();
+        date = now.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+      }
+      startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
     }
-    const startDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(date);
-    endDate.setHours(23, 59, 59, 999);
 
-    // Aggregate attendance by school for the given date
     const results = await Attendance.aggregate([
       {
         $match: {
           date: { $gte: startDate, $lte: endDate }
         }
       },
+      // First group: by school fields and day (YYYY-MM-DD)
       {
         $group: {
           _id: {
@@ -715,27 +724,47 @@ const getSchoolsWithAttendance = async (req, res) => {
             state10: "$state10",
             school: "$school",
             code: "$code",
-            education: "$education"
+            education: "$education",
+            day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }
           },
           date: { $first: "$date" },
           numWithDisability: { $sum: { $cond: ["$isWithDisability", 1, 0] } },
           absent: { $sum: { $cond: ["$absent", 1, 0] } },
-          present: { $sum: { $cond: [ { $not: ["$absent"] }, 1, 0 ] } }
+          present: { $sum: { $cond: [{ $not: ["$absent"] }, 1, 0] } }
+        }
+      },
+      // Second group: by school fields only, count unique days
+      {
+        $group: {
+          _id: {
+            county28: "$_id.county28",
+            payam28: "$_id.payam28",
+            state10: "$_id.state10",
+            school: "$_id.school",
+            code: "$_id.code",
+            education: "$_id.education"
+          },
+          reportCount: { $sum: 1 },
+          numWithDisability: { $sum: "$numWithDisability" },
+          absent: { $sum: "$absent" },
+          present: { $sum: "$present" },
+          lastDate: { $max: "$date" }
         }
       },
       {
         $project: {
           _id: 0,
-          date: 1,
           county28: "$_id.county28",
           payam28: "$_id.payam28",
           state10: "$_id.state10",
           school: "$_id.school",
           code: "$_id.code",
           education: "$_id.education",
+          reportCount: 1,
           numWithDisability: 1,
           absent: 1,
-          present: 1
+          present: 1,
+          lastDate: 1
         }
       }
     ]);
@@ -746,6 +775,120 @@ const getSchoolsWithAttendance = async (req, res) => {
   }
 };
 
+
+// Get all schools with optional filtering and attendance count for current year if no date range is provided
+const getAllSchools = async (req, res) => {
+  try {
+    const { schoolType, state10, county10, payam10, date, from, to } = req.query;
+    const filter = {};
+    if (schoolType) filter.schoolType = schoolType;
+    if (state10) filter.state10 = state10;
+    if (county10) filter.county10 = county10;
+    if (payam10) filter.payam10 = payam10;
+
+    const projection = {
+      code: 1,
+      schoolName: 1,
+      schoolType: 1,
+      state10: 1,
+      county28: 1,
+      payam28: 1,
+      schoolOwnerShip: 1,
+      emisId: 1,
+    };
+
+    // Fetch schools
+    const schools = await schoolData.find(filter, projection);
+
+    // If no date or date range, get attendance counts for current year (number of unique days a school reported attendance)
+    if (!date && !from && !to) {
+      const currentYear = new Date().getFullYear();
+      // Aggregate: count unique days with at least one attendance record per school code for current year
+      const attendanceCounts = await Attendance.aggregate([
+        {
+          $match: {
+            year: currentYear
+          }
+        },
+        {
+          $group: {
+            _id: {
+              code: "$code",
+              day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$_id.code",
+            attendanceDays: { $sum: 1 }
+          }
+        }
+      ]);
+      // Map code to attendanceDays
+      const attendanceMap = {};
+      attendanceCounts.forEach(item => {
+        attendanceMap[item._id] = item.attendanceDays;
+      });
+      // Attach attendanceDays to each school
+      const schoolsWithAttendance = schools.map(school => ({
+        ...school.toObject(),
+        attendanceDays: attendanceMap[school.code] || 0
+      }));
+      return res.status(200).json({ message: "Schools retrieved successfully", data: schoolsWithAttendance });
+    }
+    // If date or date range provided, optionally return attendanceDays for that period
+    if (date || (from && to)) {
+      let startDate, endDate;
+      if (from && to) {
+        startDate = new Date(from);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(to);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+      }
+      const attendanceCounts = await Attendance.aggregate([
+        {
+          $match: {
+            date: { $gte: startDate, $lte: endDate }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              code: "$code",
+              day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$_id.code",
+            attendanceDays: { $sum: 1 }
+          }
+        }
+      ]);
+      const attendanceMap = {};
+      attendanceCounts.forEach(item => {
+        attendanceMap[item._id] = item.attendanceDays;
+      });
+      const schoolsWithAttendance = schools.map(school => ({
+        ...school.toObject(),
+        attendanceDays: attendanceMap[school.code] || 0
+      }));
+      return res.status(200).json({ message: "Schools retrieved successfully", data: schoolsWithAttendance });
+    }
+    // Default fallback (should not happen)
+    res.status(200).json({ message: "Schools retrieved successfully", data: schools });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving schools", error: error.message });
+  }
+};
+
 module.exports = {
   markAttendanceBulk,
   getStudentsAttendance,
@@ -753,5 +896,6 @@ module.exports = {
   getLearnersWithAbsenceStatus,
   getAttendanceStatistics,
   getAttendanceStatCards,
+  getAllSchools,
   getSchoolsWithAttendance
 };
