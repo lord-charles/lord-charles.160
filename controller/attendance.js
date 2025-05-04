@@ -1,5 +1,7 @@
 const schoolData = require("../models/school-data");
 const Attendance = require("../models/Attendance");
+const SchoolData = require("../models/2023Data");
+
 
 const markAttendanceBulk = async (req, res) => {
   try {
