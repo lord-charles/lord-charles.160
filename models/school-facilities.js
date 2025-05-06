@@ -248,7 +248,6 @@ const staffRoomSchema = new Schema(
 
 const SchoolFacilitiesSchema = new Schema(
   {
-    code: { type: String, required: true },
     building: {
       hasBuilding: { type: Boolean, default: false },
       classrooms: {

@@ -36,8 +36,7 @@ const SchoolDataSchema = new Schema(
       name: { type: String },
       phoneNumber: { type: String },
     },
-
-    schoolFacilities: SchoolFacilitiesSchema,
+    facilities: SchoolFacilitiesSchema,
     location: {
       gpsLng: { type: Number },
       gpsLat: { type: Number },
