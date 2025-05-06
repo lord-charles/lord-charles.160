@@ -75,6 +75,8 @@ exports.getAllSchools = async (req, res) => {
       schoolOwnerShip: 1,
       schoolType: 1,
       emisId: 1,
+      "schoolStatus.isOpen": 1
+
     };
 
     const schools = await schoolData.find(filter, projection);
@@ -123,6 +125,7 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
           "percentageComplete": { $gte: 1 }
         }
       },
+      "schoolStatus.isOpen": "open",
       ...params
     }, schoolProjection);
 
