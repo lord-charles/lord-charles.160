@@ -620,7 +620,8 @@ exports.getSchoolTypesByState = async (req, res) => {
     const schoolTypeStats = await schoolData.aggregate([
       {
         $match: {
-          schoolType: { $in: ["SEC", "PRI", "ECD", "CGS", "ALP", "ASP", "TTI"] }
+          schoolType: { $in: ["SEC", "PRI", "ECD", "CGS", "ALP", "ASP", "TTI"] },
+          "schoolStatus.isOpen": "open"
         }
       },
       {
