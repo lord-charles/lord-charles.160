@@ -259,6 +259,7 @@ const SchoolFacilitiesSchema = new Schema(
       latrines: [LatrineSchema],
       library: [LibrarySchema],
       kitchen: [KitchenSchema],
+      hasKitchen: { type: Boolean, default: false },
       hasCleanWater: { type: Boolean, default: false },
       hasInternet: { type: Boolean, default: false },
       numberOfComputers: { type: Number, default: 0 },
@@ -274,7 +275,6 @@ const SchoolFacilitiesSchema = new Schema(
         default: "Good",
       },
       hasSportsFacilities: { type: Boolean, default: false },
-      kitchen: { type: Boolean, default: false },
       sportsFacilitiesDetails: { type: String },
       additionalFacilities: [
         {
