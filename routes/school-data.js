@@ -168,7 +168,7 @@ router.get("/school/code/:code", schoolController.getSchoolByCode);
  *       500:
  *         description: Server error.
  */
-router.put("/school/:id", schoolController.updateSchool);
+router.patch("/school/:id", schoolController.updateSchool);
 
 /**
  * @swagger
@@ -221,8 +221,8 @@ router.get("/schools/criteria", schoolController.getSchoolsByCriteria);
  */
 router.get("/schools/count-by-type", schoolController.countSchoolsByType);
 
-router.post("/:id/enrollment/complete",cachePostMiddleware(600), schoolController.markEnrollmentComplete);
-router.get("/enrollment/completed",cachePostMiddleware(600), schoolController.getSchoolsWithCompletedEnrollment);
+router.post("/:id/enrollment/complete", cachePostMiddleware(600), schoolController.markEnrollmentComplete);
+router.get("/enrollment/completed", cachePostMiddleware(600), schoolController.getSchoolsWithCompletedEnrollment);
 
 //dashboard stats
 router.get("/learner-stats-by-state", schoolController.getLearnerStatsByState);
