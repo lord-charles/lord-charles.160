@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 // Define Classroom Schema
 const ClassroomSchema = new Schema(
   {
-    classroomId: { type: String, required: true },
+    // classroomId: { type: String, required: true },
     classroomType: {
       type: String,
       enum: ["Permanent", "Semi-Permanent", "Outdoor", "Under Tree"],
@@ -48,7 +48,7 @@ const ClassroomSchema = new Schema(
 // Define Latrine Schema
 const LatrineSchema = new Schema(
   {
-    latrineId: { type: String, required: true }, // Unique ID for the latrine
+    // latrineId: { type: String, required: true }, e
     type: {
       type: String,
       enum: ["Pit Latrine", "Flush Latrine", "Composting Latrine", "Other"],
@@ -71,7 +71,7 @@ const LatrineSchema = new Schema(
 
 const learningMaterialsSchema = new Schema(
   {
-    id: { type: String, required: true },
+    // id: { type: String, required: true },
     name: { type: String },
     details: { type: String },
     books: [
@@ -94,7 +94,7 @@ const learningMaterialsSchema = new Schema(
 // Define Library Schema
 const LibrarySchema = new Schema(
   {
-    libraryId: { type: String, required: true },
+    // libraryId: { type: String, required: true },
     hasLibrary: { type: Boolean, default: false },
     libraryName: { type: String },
     numberOfBooks: { type: Number, default: 0 },
@@ -128,7 +128,7 @@ const LibrarySchema = new Schema(
 // Define Kitchen Schema
 const KitchenSchema = new Schema(
   {
-    kitchenId: { type: String, required: true },
+    // kitchenId: { type: String, required: true },
     hasKitchen: { type: Boolean, default: false },
     kitchenType: {
       type: String,
@@ -163,23 +163,10 @@ const KitchenSchema = new Schema(
   { _id: false }
 );
 
-const additionalFacilitiesSchema = new Schema(
-  {
-    id: { type: String, required: true },
-    name: { type: String },
-    details: { type: String },
-    condition: {
-      type: String,
-      enum: ["New", "Good", "Needs Repair", "Poor"],
-      default: "Good",
-    },
-  },
-  { _id: false }
-);
+
 
 const laboratoryEquipmentSchema = new Schema(
   {
-    id: { type: String, required: true },
     name: { type: String },
     details: { type: String },
     quantity: { type: Number, default: 0 },
@@ -209,10 +196,8 @@ const laboratoryEquipmentSchema = new Schema(
 
 const laboratorySchema = new Schema(
   {
-    id: { type: String, required: true },
     name: { type: String },
     details: { type: String },
-
     hasLaboratory: { type: Boolean, default: false },
     laboratoryType: {
       type: String,
@@ -240,7 +225,7 @@ const laboratorySchema = new Schema(
 
 const staffRoomSchema = new Schema(
   {
-    id: { type: String, required: true },
+    // id: { type: String, required: true },
     name: { type: String },
     details: { type: String },
     condition: {
@@ -281,7 +266,9 @@ const SchoolFacilitiesSchema = new Schema(
       hasElectricity: { type: Boolean, default: false },
       hasLibrary: { type: Boolean, default: false },
       hasPlayground: { type: Boolean, default: false },
-
+      learningMaterials: [learningMaterialsSchema],
+      laboratory: [laboratorySchema],
+      staffRoom: [staffRoomSchema],
       playgroundCondition: {
         type: String,
         enum: ["Good", "Fair", "Poor"],
@@ -317,4 +304,4 @@ const SchoolFacilitiesSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("SchoolFacilities", SchoolFacilitiesSchema);
+module.exports = { SchoolFacilitiesSchema };

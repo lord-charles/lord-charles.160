@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { SchoolFacilitiesSchema } = require("./school-facilities");
 const { Schema } = mongoose;
 
 const SchoolDataSchema = new Schema(
@@ -35,16 +36,8 @@ const SchoolDataSchema = new Schema(
       name: { type: String },
       phoneNumber: { type: String },
     },
-    // facilities: [{ type: Schema.Types.ObjectId, ref: "SchoolFacilities" }],
-    facilities: {
-      hasKitchen: { type: Boolean, default: false },
-      hasFoodStorage: { type: Boolean, default: false },
-      hasTextbookStorage: { type: Boolean, default: false },
-      hasCleanWater: { type: Boolean, default: false },
-      hasInternet: { type: Boolean, default: false },
-      hasRecreationalActivities: { type: Boolean, default: false },
-    },
 
+    schoolFacilities: SchoolFacilitiesSchema,
     location: {
       gpsLng: { type: Number },
       gpsLat: { type: Number },
