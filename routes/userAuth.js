@@ -33,7 +33,7 @@ const {
   getTeachersByCode,
   overallMaleFemaleStat,
 } = require("../controller/userCtrl");
-const { cachePostMiddleware } = require("../middlewares/cacheMiddleware");
+const { cachePostMiddleware, cacheMiddleware } = require("../middlewares/cacheMiddleware");
 
 /**
  * @swagger
@@ -314,16 +314,16 @@ const { cachePostMiddleware } = require("../middlewares/cacheMiddleware");
 // User endpoints
 router.post("/register", createUser);
 router.post("/login", logIn);
-router.get("/users/get-all", getUsers);
+router.get("/users/get-all", cacheMiddleware(600), getUsers);
 router.get("/users/get/:id", getUserById);
-router.get("/users/get-email/", getUserByEmail);
-router.get("/getUserByCriteria", getUserByCriteria);
-router.get("/users/school/", getUsersBySchool);
+router.get("/users/get-email/", cacheMiddleware(600), getUserByEmail);
+router.get("/getUserByCriteria", cacheMiddleware(600), getUserByCriteria);
+router.get("/users/school/", cacheMiddleware(600), getUsersBySchool);
 router.post("/verifyToken", verifyToken);
 router.delete("/users/delete-user/:id", deleteUser);
 router.get("/users/get/all/count", getUserCount);
 router.patch("/users/update/:id", updateUser);
-router.post("/download/payams/schools",cachePostMiddleware(600), payamSchoolDownload);
+router.post("/download/payams/schools", cachePostMiddleware(600), payamSchoolDownload);
 router.patch("/update/bulk", updateUsersFieldsBulk);
 
 //for Admin
@@ -336,19 +336,19 @@ router.put("/address", authMiddleware, saveAddress);
 
 //dashboard
 
-router.post("/fetchUsersPerState",cachePostMiddleware(600), fetchUsersPerState);
-router.post("/stateMaleFemaleStat",cachePostMiddleware(600), stateMaleFemaleStat);
+router.post("/fetchUsersPerState", cachePostMiddleware(600), fetchUsersPerState);
+router.post("/stateMaleFemaleStat", cachePostMiddleware(600), stateMaleFemaleStat);
 
 // apis sept 2024
-router.post("/getTeacherCountByLocation",cachePostMiddleware(600), getTeacherCountByLocation);
+router.post("/getTeacherCountByLocation", cachePostMiddleware(600), getTeacherCountByLocation);
 router.post(
   "/getTeachersStatusCountByLocation",
   cachePostMiddleware(600),
   getTeachersStatusCountByLocation
 );
-router.post("/getTeachersPerState",cachePostMiddleware(600), getTeachersPerState);
-router.post("/getActiveTeachersPerState",cachePostMiddleware(600), getActiveTeachersPerState);
-router.post("/getDroppedOutTeachersPerState",cachePostMiddleware(600), getDroppedOutTeachersPerState);
-router.post("/getTeachersByCode",cachePostMiddleware(600), getTeachersByCode);
-router.post("/overallMaleFemaleStat",cachePostMiddleware(600), overallMaleFemaleStat);
+router.post("/getTeachersPerState", cachePostMiddleware(600), getTeachersPerState);
+router.post("/getActiveTeachersPerState", cachePostMiddleware(600), getActiveTeachersPerState);
+router.post("/getDroppedOutTeachersPerState", cachePostMiddleware(600), getDroppedOutTeachersPerState);
+router.post("/getTeachersByCode", cachePostMiddleware(600), getTeachersByCode);
+router.post("/overallMaleFemaleStat", cachePostMiddleware(600), overallMaleFemaleStat);
 module.exports = router;

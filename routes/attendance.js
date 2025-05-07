@@ -9,6 +9,7 @@ const {
   getSchoolsWithAttendance,
   getAllSchools
 } = require("../controller/attendance");
+const { cachePostMiddleware } = require("../middlewares/cacheMiddleware");
 
 /**
  * @swagger
@@ -92,7 +93,7 @@ router.post("/markAttendanceBulk", markAttendanceBulk);
  *       500:
  *         description: Internal server error
  */
-router.post("/getStudentsAttendance", getStudentsAttendance);
+router.post("/getStudentsAttendance", cachePostMiddleware(600), getStudentsAttendance);
 
 /**
  * @swagger
@@ -157,7 +158,7 @@ router.post("/markPresentAttendance", markPresentAttendanceForDay);
  *       500:
  *         description: Internal server error
  */
-router.post("/getLearnersWithAbsenceStatus", getLearnersWithAbsenceStatus);
+router.post("/getLearnersWithAbsenceStatus", cachePostMiddleware(600), getLearnersWithAbsenceStatus);
 
 /**
  * @swagger
@@ -186,10 +187,10 @@ router.post("/getLearnersWithAbsenceStatus", getLearnersWithAbsenceStatus);
  *       500:
  *         description: Internal server error
  */
-router.post("/schoolsWithAttendance", getSchoolsWithAttendance);
+router.post("/schoolsWithAttendance", cachePostMiddleware(600), getSchoolsWithAttendance);
 
-router.post("/statistics", getAttendanceStatCards);
+router.post("/statistics", cachePostMiddleware(600), getAttendanceStatCards);
 
-router.post("/allSchools", getAllSchools);
+router.post("/allSchools", cachePostMiddleware(600), getAllSchools);
 
 module.exports = router;

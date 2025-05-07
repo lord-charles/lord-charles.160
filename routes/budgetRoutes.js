@@ -8,6 +8,7 @@ const {
   getEligibility,
   getBudgetByCode,
 } = require("../controller/budgetController");
+const { cacheMiddleware } = require("../middlewares/cacheMiddleware");
 
 const router = express.Router();
 
@@ -93,7 +94,7 @@ router.post("/", createBudget);
  *       500:
  *         description: Internal server error
  */
-router.get("/", getBudgets);
+router.get("/", cacheMiddleware(600), getBudgets);
 
 /**
  * @swagger
@@ -118,7 +119,7 @@ router.get("/", getBudgets);
  *       500:
  *         description: Internal server error
  */
-router.get("/:id", getBudgetById);
+router.get("/:id", cacheMiddleware(600), getBudgetById);
 
 /**
  * @swagger
@@ -143,7 +144,7 @@ router.get("/:id", getBudgetById);
  *       500:
  *         description: Internal server error
  */
-router.get("/code/:code/:year", getBudgetByCode);
+router.get("/code/:code/:year", cacheMiddleware(600), getBudgetByCode);
 
 /**
  * @swagger
@@ -215,6 +216,6 @@ router.patch("/:id", updateBudget);
  */
 router.delete("/:id", deleteBudget);
 
-router.get("/get/eligibility", getEligibility);
+router.get("/get/eligibility", cacheMiddleware(600), getEligibility);
 
 module.exports = router;

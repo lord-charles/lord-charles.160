@@ -132,5 +132,4 @@ const committeSchema = new mongoose.Schema(
   }
 );
 
-//Export the model
 module.exports = mongoose.model("SchoolCommitte", committeSchema);

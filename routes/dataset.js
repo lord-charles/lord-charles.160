@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { cachePostMiddleware } = require("../middlewares/cacheMiddleware");
+const { cachePostMiddleware, cacheMiddleware } = require("../middlewares/cacheMiddleware");
 
 const {
   dataSet,
@@ -53,18 +53,18 @@ const {
 } = require("../controller/update");
 
 
-router.get("/", dataSet);
-router.get("/get/county", countyPupilTotal);
+router.get("/", cacheMiddleware(600), dataSet);
+router.get("/get/county", cacheMiddleware(600), countyPupilTotal);
 router.post("/get/county/payam", cachePostMiddleware(600), countyPayamPupilTotals);
-router.post("/get/county/payam/schools",cachePostMiddleware(600), payamSchoolPupilTotals);
-router.post("/get/county/payam/schools/students",cachePostMiddleware(600), getStudentsInClass_2023);
+router.post("/get/county/payam/schools", cachePostMiddleware(600), payamSchoolPupilTotals);
+router.post("/get/county/payam/schools/students", cachePostMiddleware(600), getStudentsInClass_2023);
 
 // 2023 dataset
-router.get("/get/2023_data", dataSet_2023);
-router.get("/get/2023_data/state", statePupilTotal_2023);
-router.post("/get/2023_data/county",cachePostMiddleware(600), countyPupilTotal_2023);
-router.post("/get/2023_data/county/payam",cachePostMiddleware(600), countyPayamPupilTotals_2023);
-router.post("/get/2023_data/county/payam/schools",cachePostMiddleware(600), payamSchoolPupilTotals_2023);
+router.get("/get/2023_data", cacheMiddleware(600), dataSet_2023);
+router.get("/get/2023_data/state", cacheMiddleware(600), statePupilTotal_2023);
+router.post("/get/2023_data/county", cachePostMiddleware(600), countyPupilTotal_2023);
+router.post("/get/2023_data/county/payam", cachePostMiddleware(600), countyPayamPupilTotals_2023);
+router.post("/get/2023_data/county/payam/schools", cachePostMiddleware(600), payamSchoolPupilTotals_2023);
 router.post(
   "/get/2023_data/county/payam/school/class/students",
   cachePostMiddleware(600),
@@ -75,8 +75,8 @@ router.post(
   cachePostMiddleware(600),
   getStudentsInSchool_2023
 ); // all students in school
-router.get("/2023_data/students/:id", getSingleStudents_2023);
-router.post("/2023_data/get/learnersv2",cachePostMiddleware(600), getLearnersV2);
+router.get("/2023_data/students/:id", cacheMiddleware(600), getSingleStudents_2023);
+router.post("/2023_data/get/learnersv2", cachePostMiddleware(600), getLearnersV2);
 router.patch("/2023_data/students/:id", updateSchoolDataFields_2023);
 router.patch("/2023_data/update/bulk", updateSchoolDataFieldsBulk);
 router.patch("/2023_data/update/bulkStates", bulkUpdateStateFields);
@@ -158,19 +158,19 @@ router.delete("/student/delete/:id", deleteStudentById);
 router.post("/download/payams/schools", cachePostMiddleware(600), payamSchoolDownload);
 
 //track new students
-router.post("/track/overall",cachePostMiddleware(600), trackOverall);
-router.post("/track/state",cachePostMiddleware(600), trackState);
-router.post("/track/state/county",cachePostMiddleware(600), trackCounty);
-router.post("/track/state/county/payam",cachePostMiddleware(600), trackPayam);
-router.post("/track/state/county/payam/school",cachePostMiddleware(600), trackSchool);
+router.post("/track/overall", cachePostMiddleware(600), trackOverall);
+router.post("/track/state", cachePostMiddleware(600), trackState);
+router.post("/track/state/county", cachePostMiddleware(600), trackCounty);
+router.post("/track/state/county/payam", cachePostMiddleware(600), trackPayam);
+router.post("/track/state/county/payam/school", cachePostMiddleware(600), trackSchool);
 
 // dashboard
-router.post("/state/gender",cachePostMiddleware(600), stateMaleFemaleStat);
-router.post("/findEnrolledSchools",cachePostMiddleware(600), findEnrolledSchools);
-router.post("/findNotEnrolledSchools",cachePostMiddleware(600), findNotEnrolledSchools);
-router.post("/fetchSchoolsPerState",cachePostMiddleware(600), fetchSchoolsPerState); //enrolled students
+router.post("/state/gender", cachePostMiddleware(600), stateMaleFemaleStat);
+router.post("/findEnrolledSchools", cachePostMiddleware(600), findEnrolledSchools);
+router.post("/findNotEnrolledSchools", cachePostMiddleware(600), findNotEnrolledSchools);
+router.post("/fetchSchoolsPerState", cachePostMiddleware(600), fetchSchoolsPerState); //enrolled students
 
-router.post("/totalNewStudentsPerState",cachePostMiddleware(600), totalNewStudentsPerState);
+router.post("/totalNewStudentsPerState", cachePostMiddleware(600), totalNewStudentsPerState);
 router.post(
   "/totalNewStudentsPerStateDroppedOut",
   cachePostMiddleware(600),
@@ -182,11 +182,11 @@ router.post(
   totalNewStudentsPerStateDisabled
 );
 
-router.post("/fetchSchoolsEnrollmentToday",cachePostMiddleware(600), fetchSchoolsEnrollmentToday);
-router.post("/getUniqueSchoolsPerState10",cachePostMiddleware(600), getUniqueSchoolsPerState10);
-router.post("/fetchState10EnrollmentSummary",cachePostMiddleware(600), fetchState10EnrollmentSummary);
-router.post("/getUniqueSchoolsDetailsPayam",cachePostMiddleware(600), getUniqueSchoolsDetailsPayam);
-router.post("/totalStudentsPerStatePromoted",cachePostMiddleware(600), totalStudentsPerStatePromoted);
+router.post("/fetchSchoolsEnrollmentToday", cachePostMiddleware(600), fetchSchoolsEnrollmentToday);
+router.post("/getUniqueSchoolsPerState10", cachePostMiddleware(600), getUniqueSchoolsPerState10);
+router.post("/fetchState10EnrollmentSummary", cachePostMiddleware(600), fetchState10EnrollmentSummary);
+router.post("/getUniqueSchoolsDetailsPayam", cachePostMiddleware(600), getUniqueSchoolsDetailsPayam);
+router.post("/totalStudentsPerStatePromoted", cachePostMiddleware(600), totalStudentsPerStatePromoted);
 
 // update learnerUniquesID AND REFERENCE
 router.patch(
@@ -229,7 +229,7 @@ router.patch(
  *                 femaleCount:
  *                   type: integer
  */
-router.post("/getLearnerCountByLocation",cachePostMiddleware(600), getLearnerCountByLocation);
+router.post("/getLearnerCountByLocation", cachePostMiddleware(600), getLearnerCountByLocation);
 router.post(
   "/getPromotedLearnersCountByLocation",
   cachePostMiddleware(600),
@@ -296,7 +296,7 @@ router.post("/registerLearnerDuringSync", registerLearnerDuringSync);
  *                   type: string
  *                   example: "Internal server error occurred"
  */
-router.post("/overallMaleFemaleStat",cachePostMiddleware(600), overallMaleFemaleStat);
+router.post("/overallMaleFemaleStat", cachePostMiddleware(600), overallMaleFemaleStat);
 
 /**
  * @swagger
@@ -347,7 +347,7 @@ router.post("/overallMaleFemaleStat",cachePostMiddleware(600), overallMaleFemale
  *       500:
  *         description: Server error
  */
-router.post("/fetchSchoolsEnrollmentToday",cachePostMiddleware(600), fetchSchoolsEnrollmentToday);
+router.post("/fetchSchoolsEnrollmentToday", cachePostMiddleware(600), fetchSchoolsEnrollmentToday);
 
 /**
  * @swagger
@@ -409,7 +409,7 @@ router.post("/fetchSchoolsEnrollmentToday",cachePostMiddleware(600), fetchSchool
  *       500:
  *         description: Server error
  */
-router.post("/totalStudentsPerStatePromoted",cachePostMiddleware(600), totalStudentsPerStatePromoted);
+router.post("/totalStudentsPerStatePromoted", cachePostMiddleware(600), totalStudentsPerStatePromoted);
 
 /**
  * @swagger
@@ -460,7 +460,7 @@ router.post("/totalStudentsPerStatePromoted",cachePostMiddleware(600), totalStud
  *                       enrollmentCount:
  *                         type: integer
  */
-router.post("/findEnrolledSchools",cachePostMiddleware(600), findEnrolledSchools);
+router.post("/findEnrolledSchools", cachePostMiddleware(600), findEnrolledSchools);
 
 
 

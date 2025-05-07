@@ -14,7 +14,6 @@ const dataSet = require("./routes/dataset");
 const usersRouter = require("./routes/userAuth");
 const schoolCommitte = require("./routes/committe");
 const sbrt = require("./routes/sbrt");
-const sbpn = require("./routes/sbpn");
 const reportRoutes = require("./routes/report");
 const attendance = require("./routes/attendance");
 const registrationPeriod = require("./routes/registrationPeriods");
@@ -74,15 +73,11 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Apply cache middleware to all routes (10 minutes cache)
-app.use(cacheMiddleware(600));
-
 // API Routes
 app.use("/express/data-set", dataSet);
 app.use("/express/user", usersRouter);
 app.use("/express/school-committe", schoolCommitte);
 app.use("/express/sbrt", sbrt);
-app.use("/express/sb/pn", sbpn);
 app.use("/express/report", reportRoutes);
 app.use("/express/attendance", attendance);
 app.use("/express/registration-period", registrationPeriod);

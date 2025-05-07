@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const schoolController = require("../controller/school-data");
-const { cachePostMiddleware } = require("../middlewares/cacheMiddleware");
+const { cachePostMiddleware, cacheMiddleware } = require("../middlewares/cacheMiddleware");
 
 /**
  * @swagger
@@ -13,7 +13,7 @@ const { cachePostMiddleware } = require("../middlewares/cacheMiddleware");
  *         - payam28
  *         - state10
  *         - county28
- *         - schoolName
+ *         - schoolNamek0
  *         - schoolOwnerShip
  *         - schoolType
  *       properties:
@@ -108,7 +108,7 @@ router.post("/school", schoolController.createSchool);
  *       500:
  *         description: Server error.
  */
-router.get("/schools", schoolController.getAllSchools);
+router.get("/schools", cacheMiddleware(600), schoolController.getAllSchools);
 
 /**
  * @swagger
@@ -219,16 +219,16 @@ router.get("/schools/criteria", schoolController.getSchoolsByCriteria);
  *       500:
  *         description: Server error.
  */
-router.get("/schools/count-by-type", schoolController.countSchoolsByType);
+router.get("/schools/count-by-type", cacheMiddleware(600), schoolController.countSchoolsByType);
 
 router.post("/:id/enrollment/complete", cachePostMiddleware(600), schoolController.markEnrollmentComplete);
-router.get("/enrollment/completed", cachePostMiddleware(600), schoolController.getSchoolsWithCompletedEnrollment);
+router.get("/enrollment/completed", cacheMiddleware(600), schoolController.getSchoolsWithCompletedEnrollment);
 
 //dashboard stats
-router.get("/learner-stats-by-state", schoolController.getLearnerStatsByState);
-router.get("/school-types-by-state", schoolController.getSchoolTypesByState);
+router.get("/learner-stats-by-state", cacheMiddleware(600), schoolController.getLearnerStatsByState);
+router.get("/school-types-by-state", cacheMiddleware(600), schoolController.getSchoolTypesByState);
 
 //school module statcards
-router.get("/overall-learner-stats", schoolController.getOverallLearnerStats);
+router.get("/overall-learner-stats", cacheMiddleware(600), schoolController.getOverallLearnerStats);
 
 module.exports = router;
