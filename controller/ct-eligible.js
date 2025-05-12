@@ -48,6 +48,7 @@ exports.getEligibleLearners = async (req, res) => {
 
         const query = {
             code,
+            isDroppedOut: false,
             $or: orConditions
         };
         const projection = {
@@ -76,7 +77,7 @@ exports.getEligibleLearners = async (req, res) => {
 exports.getEligibleLearnersStats = async (req, res) => {
     try {
         const { state10, payam28, county28, code } = req.query;
-        const params = {}
+        const params = { isDroppedOut: false }
         if (state10) params.state10 = state10;
         if (payam28) params.payam28 = payam28;
         if (county28) params.county28 = county28;
