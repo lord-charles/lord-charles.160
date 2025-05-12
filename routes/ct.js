@@ -15,7 +15,10 @@ router.get("/get/unique-schools", cacheMiddleware(600), cashTransferController.g
 router.get("/get/learners", cacheMiddleware(600), cashTransferController.getLearnerByCode);
 
 // Eligible learners for cash transfer
-router.get("/eligible/learners", ctEligibleController.getEligibleLearners);
-router.get("/eligible/learners/stats", ctEligibleController.getEligibleLearnersStats);
+router.get("/eligible/learners", cacheMiddleware(600), ctEligibleController.getEligibleLearners);
+router.get("/eligible/learners/stats", cacheMiddleware(600), ctEligibleController.getEligibleLearnersStats);
+
+// Eligible schools for cash transfer
+router.get("/eligible/schools", cacheMiddleware(600), ctEligibleController.schoolWithEligibleLearners);
 
 module.exports = router;

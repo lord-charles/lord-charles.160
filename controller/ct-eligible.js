@@ -226,3 +226,69 @@ exports.getEligibleLearnersStats = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch eligible learners stats", details: err.message });
     }
 };
+
+exports.schoolWithEligibleLearners = async (req, res) => {
+    try {
+        const { payam28 } = req.query;
+
+        if (!payam28) {
+            return res
+                .status(400)
+                .json({ success: false, error: "Payam name is required" });
+        }
+
+        const ctCriteria = await CTCriteria.find({ isActive: true });
+        const eligibleMap = {};
+        ctCriteria.forEach(c => {
+            eligibleMap[c.educationType] = c.classes.map(cls => ({
+                className: cls.className,
+                requiresDisability: cls.requiresDisability
+            }));
+        });
+
+        const orConditions = [];
+        Object.entries(eligibleMap).forEach(([educationType, classes]) => {
+            classes.forEach(cls => {
+                // Male
+                orConditions.push({
+                    education: educationType,
+                    class: cls.className,
+                    gender: "M",
+                    ...(cls.requiresDisability.male
+                        ? { isWithDisability: true }
+                        : {})
+                });
+                // Female
+                orConditions.push({
+                    education: educationType,
+                    class: cls.className,
+                    gender: "F",
+                    ...(cls.requiresDisability.female
+                        ? { isWithDisability: true }
+                        : {})
+                });
+            });
+        });
+
+        const matchStage = {
+            payam28,
+            isDroppedOut: false,
+            $or: orConditions
+        };
+
+        const result = await SchoolData.aggregate([
+            { $match: matchStage },
+            {
+                $group: {
+                    _id: "$school",
+                    code: { $first: "$code" }
+                }
+            }
+        ]);
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("Error fetching eligible schools in payam:", error);
+        res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+};
