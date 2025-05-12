@@ -52,18 +52,25 @@ exports.getEligibleLearners = async (req, res) => {
             $or: orConditions
         };
         const projection = {
+            school: 1,
+            code: 1,
+            state10: 1,
+            county28: 1,
+            payam28: 1,
+            education: 1,
             firstName: 1,
             middleName: 1,
             lastName: 1,
+            eieStatus: 1,
+            learnerUniqueID: 1,
+            reference: 1,
             gender: 1,
-            isWithDisability: 1,
-            education: 1,
             class: 1,
-            code: 1,
-            payam28: 1,
-            county28: 1,
-            state10: 1,
-            school: 1
+            dob: 1,
+            isPromoted: 1,
+            isDroppedOut: 1,
+            disabilities: 1,
+            hasDisability: 1,
         };
 
         const learners = await SchoolData.find(query, projection).lean();
