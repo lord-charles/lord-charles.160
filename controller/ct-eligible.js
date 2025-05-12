@@ -140,6 +140,41 @@ exports.getEligibleLearnersStats = async (req, res) => {
                     uniqueSchools: [
                         { $group: { _id: "$code" } },
                         { $count: "uniqueSchoolsCount" }
+                    ],
+                    states: [
+                        {
+                            $group: {
+                                _id: "$state10",
+                                total: { $sum: 1 },
+                                male: {
+                                    $sum: {
+                                        $cond: [{ $eq: ["$gender", "M"] }, 1, 0]
+                                    }
+                                },
+                                female: {
+                                    $sum: {
+                                        $cond: [{ $eq: ["$gender", "F"] }, 1, 0]
+                                    }
+                                },
+                                lwd: {
+                                    $sum: {
+                                        $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0]
+                                    }
+                                },
+                                schools: { $addToSet: "$code" }
+                            }
+                        },
+                        {
+                            $project: {
+                                state: "$_id",
+                                total: 1,
+                                male: 1,
+                                female: 1,
+                                lwd: "$lwd",
+                                schools: { $size: "$schools" },
+                                _id: 0
+                            }
+                        }
                     ]
                 }
             }
@@ -147,6 +182,7 @@ exports.getEligibleLearnersStats = async (req, res) => {
         const aggResult = await SchoolData.aggregate(pipeline);
         const results = aggResult[0]?.stats || [];
         const uniqueSchoolsCount = aggResult[0]?.uniqueSchools[0]?.uniqueSchoolsCount || 0;
+        const states = aggResult[0]?.states || [];
 
         // Format stats by education type
         const stats = {};
@@ -184,7 +220,7 @@ exports.getEligibleLearnersStats = async (req, res) => {
             overall.maleWithDisability += s.maleWithDisability;
             overall.femaleWithDisability += s.femaleWithDisability;
         });
-        res.status(200).json({ overall, byEducation: stats, uniqueSchoolsCount });
+        res.status(200).json({ overall, byEducation: stats, totalSchools: uniqueSchoolsCount, states });
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch eligible learners stats", details: err.message });
     }
