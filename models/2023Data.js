@@ -6,7 +6,7 @@ const schoolDataSchema = new mongoose.Schema(
     state28: String,
     stateName28: String,
     county28: String,
-    payam28: { type: String, index: true },
+    payam28: String,
     state10: String,
     stateName10: String,
     county10: String,

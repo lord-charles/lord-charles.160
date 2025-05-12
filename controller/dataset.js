@@ -5,10 +5,9 @@ const moment = require("moment-timezone");
 const SchoolDataCtCash = require("../models/ctCash");
 const RegistrationPeriod = require("../models/RegistrationPeriod");
 const ReferenceCounter = require("../models/referenceCounter");
-// Controller function to fetch dataset with advanced queries
+
 const dataSet = async (req, res) => {
   try {
-    // Extract query parameters from the request
     const {
       stateCode,
       countyName,
@@ -60,10 +59,8 @@ const dataSet = async (req, res) => {
   }
 };
 
-// Controller function to fetch unique counties with total number of pupils
 const countyPupilTotal = async (req, res) => {
   try {
-    // Aggregate pipeline to group by countyName and calculate total pupils
     const pipeline = [
       {
         $group: {
@@ -79,7 +76,6 @@ const countyPupilTotal = async (req, res) => {
         },
       },
     ];
-    // Execute the aggregation pipeline
     const result = await Dataset.aggregate(pipeline);
 
     res.status(200).json(result);
@@ -91,17 +87,14 @@ const countyPupilTotal = async (req, res) => {
 
 const countyPayamPupilTotals = async (req, res) => {
   try {
-    // Extract countyName from the request parameters
     const { countyName } = req.body;
 
-    // Validate if countyName is provided
     if (!countyName) {
       return res
         .status(400)
         .json({ success: false, error: "County name is required" });
     }
 
-    // Fetch data from the database
     const result = await Dataset.aggregate([
       {
         $match: { countyName: countyName },
@@ -467,7 +460,7 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
 
     // Additional filter for schools with disabled pupils if isDisabled is true
     if (isDisabled) {
-     matchStage.isWithDisability = true;
+      matchStage.isWithDisability = true;
     }
 
     // Normalize payam and school names, then group by unique school code
@@ -1494,19 +1487,19 @@ const registerLearnerDuringSync = async (req, res) => {
     } = req.body;
 
     let isWithDisability = false;
-if (disabilities && Array.isArray(disabilities)) {
-  const firstDisability = disabilities[0];
-  if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
-    const fields = firstDisability.disabilities;
-    if (typeof fields === 'object') {
-      // Sum up all disability values (converting strings to numbers)
-      const disabilitySum = Object.values(fields)
-        .reduce((sum, val) => sum + parseInt(val || '0', 10), 0);
-      isWithDisability = disabilitySum > 6;
+    if (disabilities && Array.isArray(disabilities)) {
+      const firstDisability = disabilities[0];
+      if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
+        const fields = firstDisability.disabilities;
+        if (typeof fields === 'object') {
+          // Sum up all disability values (converting strings to numbers)
+          const disabilitySum = Object.values(fields)
+            .reduce((sum, val) => sum + parseInt(val || '0', 10), 0);
+          isWithDisability = disabilitySum > 6;
+        }
+      }
     }
-  }
-}
-    
+
 
     const generateUniqueCode = () => {
       const currentDate = new Date();
@@ -3097,10 +3090,10 @@ const overallMaleFemaleStat = async (req, res) => {
     // Main pipeline
     const pipeline = [
       {
-        $match: matchStage, 
+        $match: matchStage,
       },
       {
-        $unwind: "$disabilities", 
+        $unwind: "$disabilities",
       },
       {
         $addFields: {
@@ -3119,7 +3112,7 @@ const overallMaleFemaleStat = async (req, res) => {
       {
         $addFields: {
           hasDisability: {
-            $gt: ["$totalDisabilities", 6], 
+            $gt: ["$totalDisabilities", 6],
           },
         },
       },
@@ -3333,5 +3326,5 @@ module.exports = {
   overallMaleFemaleStat,
   getLearnersV2,
 
- 
+
 };
