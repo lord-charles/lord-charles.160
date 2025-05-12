@@ -73,7 +73,12 @@ exports.getEligibleLearners = async (req, res) => {
             hasDisability: 1,
         };
 
-        const learners = await SchoolData.find(query, projection).lean();
+        let learners = await SchoolData.find(query, projection).lean();
+        learners = learners.map(l => ({
+            ...l,
+            hasDisability: l.hasDisability ? 'Yes' : 'No'
+        }));
+
         res.status(200).json(learners);
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch eligible learners", details: err.message });
