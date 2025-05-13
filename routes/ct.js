@@ -3,6 +3,8 @@ const router = express.Router();
 const cashTransferController = require("../controller/ct");
 const ctEligibleController = require("../controller/ct-eligible");
 const { cacheMiddleware } = require("../middlewares/cacheMiddleware");
+const ctCriteriaController = require("../controller/ctcriteria");
+
 
 // CRUD routes
 router.post("/", cashTransferController.createCashTransfer);
@@ -20,5 +22,12 @@ router.get("/eligible/learners/stats", cacheMiddleware(600), ctEligibleControlle
 
 // Eligible schools for cash transfer
 router.get("/eligible/schools", cacheMiddleware(600), ctEligibleController.schoolWithEligibleLearners);
+
+// CTCriteria CRUD routes
+router.post("/criteria", ctCriteriaController.createCTCriteria);
+router.get("/get/criteria", ctCriteriaController.getAllCTCriteria);
+router.get("/get/criteria/:id", ctCriteriaController.getCTCriteriaById);
+router.patch("/criteria/:id", ctCriteriaController.updateCTCriteria);
+router.delete("/criteria/:id", ctCriteriaController.deleteCTCriteria);
 
 module.exports = router;
