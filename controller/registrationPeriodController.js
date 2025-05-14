@@ -3,7 +3,12 @@ const RegistrationPeriod = require("../models/RegistrationPeriod");
 // Create a new registration period
 const createRegistrationPeriod = async (req, res) => {
   try {
-    const { startDate, endDate, createdBy } = req.body;
+    const { startDate, endDate } = req.body;
+    const createdBy = req.query.username || req.body.username;
+
+    if (!createdBy) {
+      return res.status(400).json({ success: false, message: "Username is required." });
+    }
 
     const newPeriod = new RegistrationPeriod({
       startDate,
@@ -22,7 +27,12 @@ const createRegistrationPeriod = async (req, res) => {
 // Update an existing registration period
 const updateRegistrationPeriod = async (req, res) => {
   try {
-    const { startDate, endDate, isOpen, updatedBy } = req.body;
+    const { startDate, endDate, isOpen } = req.body;
+    const updatedBy = req.query.username || req.body.username;
+    console.log(updatedBy)
+    if (!updatedBy) {
+      return res.status(400).json({ success: false, message: "Username is required." });
+    }
     const { id } = req.params;
 
     const updatedPeriod = await RegistrationPeriod.findByIdAndUpdate(
@@ -68,11 +78,15 @@ const getCurrentRegistrationPeriod = async (req, res) => {
 const deleteRegistrationPeriod = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.body.userId; // Assuming the user ID is available in req.user
+    const username = req.query.username || req.body.username;
+
+    if (!username) {
+      return res.status(400).json({ success: false, message: "Username is required." });
+    }
 
     const period = await RegistrationPeriod.findByIdAndUpdate(
       id,
-      { deletedBy: userId, deletedAt: new Date(), isOpen: false },
+      { deletedBy: username, deletedAt: new Date(), isOpen: false },
       { new: true }
     );
 

@@ -24,3 +24,4 @@ router.delete("/period/:id", deleteRegistrationPeriod);
 router.patch("/period/:id/restore", restoreRegistrationPeriod);
 
 module.exports = router;
+
