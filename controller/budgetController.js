@@ -53,7 +53,8 @@ exports.getBudgets = async (req, res) => {
           schoolType: 1,
           ownership: 1,
           school: 1,
-          submittedAmount: 1
+          submittedAmount: 1,
+          preparedBy: "$meta.preparation.preparedBy"
         }
       }
     ];
