@@ -15,23 +15,50 @@ exports.createBudget = async (req, res) => {
 exports.getBudgets = async (req, res) => {
   const { year } = req.query;
   try {
-    const projection = {
-      code: 1,
-      year: 1,
-      state10: 1,
-      county28: 1,
-      payam28: 1,
-      schoolType: 1,
-      ownership: 1,
-      school: 1,
-      "budget.submittedAmount": 1,
-      "budget.meta.preparation.preparedBy": 1,
-      "budget.reviewedBy": 1,
-      "budget.reviewDate": 1,
-    };
+    const matchStage = year ? { $match: { year: Number(year) } } : null;
+    const pipeline = [
+      ...(matchStage ? [matchStage] : []),
+      {
+        $addFields: {
+          submittedAmount: {
+            $sum: {
+              $map: {
+                input: {
+                  $reduce: {
+                    input: {
+                      $reduce: {
+                        input: "$budget.groups",
+                        initialValue: [],
+                        in: { $concatArrays: ["$$value", "$$this.categories"] }
+                      }
+                    },
+                    initialValue: [],
+                    in: { $concatArrays: ["$$value", "$$this.items"] }
+                  }
+                },
+                as: "item",
+                in: "$$item.totalCostSSP"
+              }
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          code: 1,
+          year: 1,
+          state10: 1,
+          county28: 1,
+          payam28: 1,
+          schoolType: 1,
+          ownership: 1,
+          school: 1,
+          submittedAmount: 1
+        }
+      }
+    ];
 
-    const query = year ? { year } : {};
-    const budgets = await Budget.find(query, projection);
+    const budgets = await Budget.aggregate(pipeline);
     res.status(200).json(budgets);
   } catch (error) {
     res.status(500).json({ error: error.message });
