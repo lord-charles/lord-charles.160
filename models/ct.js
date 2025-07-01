@@ -37,7 +37,7 @@ const CashTransferSchema = new mongoose.Schema(
         enum: ["M", "F"],
         required: true,
       },
-      attendance: { type: Number, min: 0, required: true },
+      attendance: { type: String },
       disabilities: [
         {
           disabilities: {
