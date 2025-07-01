@@ -41,24 +41,27 @@ const schoolDataSchema = new mongoose.Schema(
         date: { type: Date, default: Date.now },
       },
     ],
-    isValidated: {
-      type: Boolean,
-      default: null,
-    },
+    isCTValidated: [
+      {
+        year: { type: Number },
+        validated: { type: Boolean, default: false },
+        invalidationReason: { type: String },
+        dateInvalidated: { type: String },
+        validatedBy: { type: String },
+        CTEFSerialNumber: { type: String },
+      },
+    ],
     isWithDisability: { type: Boolean, default: false },
     isValidatedWithDisability: [
-      { year: { type: Number }, validated: { type: Boolean, default: false } },
-    ],
-    invalidationReason: { type: String },
-    isDisbursed: {
-      type: Boolean,
-      default: false,
-    },
-
-    CTEFSerialNumber: [
       {
-        Number: { type: String },
-        DateIssued: { type: String },
+        year: { type: Number },
+        validated: { type: Boolean, default: false },
+      },
+    ],
+    isDisbursed: [
+      {
+        year: { type: Number },
+        disbursed: { type: Boolean, default: false },
       },
     ],
     dateCTEFPaid: { type: String },
@@ -283,7 +286,6 @@ schoolDataSchema.index({
   "isEnrollmentComplete.year": 1,
   "isEnrollmentComplete.percentageComplete": 1,
 });
-
 
 const SchoolData = mongoose.model("schooldata2023", schoolDataSchema);
 

@@ -16,4 +16,7 @@ router.get(
   accountabilityController.getAllApprovalEntries
 );
 
+// Route for fetching school-specific disbursement details
+router.get("/disbursements/by-school", accountabilityController.getSchoolDisbursements);
+
 module.exports = router;

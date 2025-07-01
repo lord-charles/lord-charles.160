@@ -1,7 +1,5 @@
-// controllers/accountabilityController.js
 const Accountability = require("../models/accountability");
 
-// Controller to handle CRUD operations
 
 // Get all accountability entries
 const getAllAccountabilityEntries = async (req, res) => {
@@ -146,13 +144,10 @@ const getAllApprovalEntries = async (req, res) => {
   const { year } = req.query;
   try {
     const entries = await Accountability.aggregate([
-      // Match documents with the specified academic year
       { $match: { academicYear: parseInt(year) } },
 
-      // Unwind the tranches array to get individual tranche documents
       { $unwind: "$tranches" },
 
-      // Project the required fields
       {
         $project: {
           code: 1,
@@ -172,10 +167,89 @@ const getAllApprovalEntries = async (req, res) => {
       },
     ]);
 
-    // Respond with the aggregated data
     res.status(200).json(entries);
   } catch (error) {
     res.status(500).json({ message: "Error fetching approval entries", error });
+  }
+};
+
+
+
+const getSchoolDisbursements = async (req, res) => {
+  try {
+    const { academicYear, state10, county28, payam28, schoolCode } = req.query;
+
+    if (!academicYear) {
+      return res.status(400).json({ message: "Academic year is required" });
+    }
+    if (isNaN(parseInt(academicYear))) {
+      return res.status(400).json({ message: "Invalid academic year format" });
+    }
+
+    const matchConditions = { academicYear: parseInt(academicYear) };
+    if (state10) matchConditions.state10 = state10;
+    if (county28) matchConditions.county28 = county28;
+    if (payam28) matchConditions.payam28 = payam28;
+    if (schoolCode) matchConditions.code = schoolCode;
+
+    const disbursements = await Accountability.aggregate([
+      { $match: matchConditions },
+      { $unwind: "$tranches" },
+      {
+        $project: {
+          _id: 0,
+          schoolCode: "$code",
+          schoolName: "$schoolName",
+          academicYear: "$academicYear",
+          state10: "$state10",
+          county28: "$county28",
+          payam28: "$payam28",
+          trancheName: "$tranches.name",
+          amountDisbursed: "$tranches.amountDisbursed",
+          amountApproved: "$tranches.amountApproved",
+          paidBy: "$tranches.paidBy",
+        },
+      },
+      {
+        $group: {
+          _id: "$schoolCode",
+          schoolName: { $first: "$schoolName" },
+          academicYear: { $first: "$academicYear" },
+          state10: { $first: "$state10" },
+          county28: { $first: "$county28" },
+          payam28: { $first: "$payam28" },
+          disbursements: {
+            $push: {
+              name: "$trancheName",
+              amountDisbursed: "$amountDisbursed",
+              amountApproved: "$amountApproved",
+              paidBy: "$paidBy",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          schoolCode: "$_id",
+          schoolName: 1,
+          academicYear: 1,
+          state10: 1,
+          county28: 1,
+          payam28: 1,
+          disbursements: 1,
+        }
+      },
+      { $sort: { schoolName: 1 } },
+    ]);
+
+    if (!disbursements || disbursements.length === 0) {
+      return res.status(404).json({ message: "No disbursements found for the criteria" });
+    }
+
+    res.status(200).json(disbursements);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching school disbursements", error: error.message });
   }
 };
 
@@ -187,4 +261,5 @@ module.exports = {
   deleteAccountabilityEntry,
   //APPROVALS
   getAllApprovalEntries,
+  getSchoolDisbursements,
 };

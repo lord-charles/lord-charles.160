@@ -30,4 +30,7 @@ router.get("/get/criteria/:id", ctCriteriaController.getCTCriteriaById);
 router.patch("/criteria/:id", ctCriteriaController.updateCTCriteria);
 router.delete("/criteria/:id", ctCriteriaController.deleteCTCriteria);
 
+// Disbursement route by year
+router.get("/disbursements/by-year", cacheMiddleware(600), cashTransferController.getDisbursementByYear);
+
 module.exports = router;

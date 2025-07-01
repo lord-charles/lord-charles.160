@@ -26,8 +26,8 @@ const CashTransferSchema = new mongoose.Schema(
         middleName: { type: String },
         lastName: { type: String, required: true },
       },
-      learnerUniqueID: { type: Number, required: true, unique: true },
-      reference: { type: String, required: true, unique: true },
+      learnerUniqueID: { type: Number, required: true },
+      reference: { type: String, required: true },
       classInfo: {
         class: { type: String, required: true },
         classStream: { type: String, required: true },
@@ -53,18 +53,20 @@ const CashTransferSchema = new mongoose.Schema(
       collectedBy: { type: String },
     },
     validation: {
+      isValidated: { type: Boolean, default: false },
+      invalidationReason: { type: String },
       dateFormsReviewedSigned: { type: Date },
       formsSignedBy: { type: String },
       dateCtefSerialEnteredBySA: { type: Date },
       dateCorrected: { type: Date },
       finalSerialCtefNumber: { type: Number },
       dateValidatedAtSchool: { type: Date },
-      validationWitnessedBy: [
-        {
-          name: { type: String },
-          role: { type: String },
-        },
-      ],
+      // validationWitnessedBy: [
+      //   {
+      //     name: { type: String },
+      //     role: { type: String },
+      //   },
+      // ],
       validatedBy: { type: String },
     },
     amounts: {
@@ -82,7 +84,6 @@ const CashTransferSchema = new mongoose.Schema(
       paymentMethod: {
         type: String,
         enum: ["Bank", "Pay Agent", "Mobile Money"],
-        required: true,
       },
       paymentThroughDetails: {
         bankName: { type: String },

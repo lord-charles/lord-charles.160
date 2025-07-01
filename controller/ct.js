@@ -1,9 +1,109 @@
 const CashTransfer = require("../models/ct");
+const SchoolData = require("../models/2023Data");
+const CTCriteria = require("../models/CTCriteria");
+const School = require("../models/school-data");
 
 // Create a new cash transfer
 exports.createCashTransfer = async (req, res) => {
   try {
-    const cashTransfer = await CashTransfer.create(req.body);
+    const {
+      learnerId,
+      isValidated,
+      CTEFSerialNumber,
+      ctAttendance,
+      invalidationReason,
+      tranche,
+    } = req.body;
+
+    const learner = await SchoolData.findById(learnerId);
+    if (!learner) {
+      return res.status(404).json({ error: "Learner not found" });
+    }
+
+    const criteria = await CTCriteria.findOne({
+      tranche: tranche,
+      educationType: learner.education,
+      isActive: true,
+    });
+
+    if (!criteria) {
+      return res.status(400).json({
+        error: "CT Criteria not found for this tranche and education type",
+      });
+    }
+
+    const classCriterion = criteria.classes.find(
+      (c) => c.className === learner.class
+    );
+
+    if (!classCriterion) {
+      return res
+        .status(400)
+        .json({ error: "CT Criteria not found for this learner's class" });
+    }
+
+    // Get school ownership dynamically
+    const schoolInfo = await School.findOne({ code: learner.code }).select(
+      "schoolOwnerShip"
+    );
+    const schoolOwnership = schoolInfo?.schoolOwnerShip || "Public";
+
+    const cashTransferData = {
+      tranche: tranche,
+      year: new Date().getFullYear(),
+      location: {
+        state10: learner.state10,
+        county10: learner.county10,
+        payam10: learner.payam10,
+      },
+      school: {
+        name: learner.school,
+        code: learner.code,
+        type: learner.education,
+        ownership: schoolOwnership,
+      },
+      learner: {
+        dob: learner.dob,
+        name: {
+          firstName: learner.firstName,
+          middleName: learner.middleName,
+          lastName: learner.lastName,
+        },
+        learnerUniqueID: learner.learnerUniqueID,
+        reference: learner.reference,
+        classInfo: {
+          class: learner.class,
+          classStream: learner.formstream,
+        },
+        gender: learner.gender,
+        attendance: ctAttendance,
+        disabilities: learner.disabilities,
+      },
+      validation: {
+        isValidated: isValidated,
+        invalidationReason: invalidationReason || "",
+        finalSerialCtefNumber: CTEFSerialNumber[0].Number,
+        dateValidatedAtSchool: CTEFSerialNumber[0].DateIssued,
+      },
+      amounts: {
+        approved: {
+          amount: classCriterion.amount,
+          currency: criteria.currency,
+        },
+      },
+    };
+
+    const cashTransfer = await CashTransfer.create(cashTransferData);
+
+    // Update learner's isCTValidated status
+    learner.isCTValidated.push({
+      year: new Date().getFullYear(),
+      validated: isValidated,
+      invalidationReason: invalidationReason || "",
+      CTEFSerialNumber: CTEFSerialNumber[0].Number,
+    });
+    await learner.save();
+
     res.status(201).json(cashTransfer);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -598,6 +698,80 @@ exports.getLearnerByCode = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch learners",
+      error: error.message,
+    });
+  }
+};
+
+// Fetches disbursement data grouped by school for a specific year
+exports.getDisbursementByYear = async (req, res) => {
+  try {
+    const { year } = req.query;
+
+    if (!year) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Year is required" });
+    }
+
+    const parsedYear = parseInt(year);
+    if (isNaN(parsedYear)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid year format" });
+    }
+
+    const pipeline = [
+      {
+        $match: { year: parsedYear },
+      },
+      {
+        $group: {
+          _id: "$school.code",
+          schoolDetails: { $first: "$school" },
+          disbursements: {
+            $push: {
+              tranche: "$tranche",
+              learnerReference: "$learner.reference",
+              amounts: "$amounts",
+              heldBy: "$heldBy",
+              paymentWitnesses: "$paymentWitnesses",
+              approval: "$approval",
+              accountability: "$accountability",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          schoolCode: "$_id",
+          schoolDetails: 1,
+          disbursements: 1,
+        },
+      },
+      { $sort: { "schoolDetails.name": 1 } },
+    ];
+
+    const results = await CashTransfer.aggregate(pipeline);
+
+    if (!results || results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No disbursement data found for the specified year",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: results.length,
+      data: results,
+    });
+  } catch (error) {
+    console.error("Error fetching disbursement data by year:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch disbursement data",
       error: error.message,
     });
   }
