@@ -101,6 +101,8 @@ exports.createCashTransfer = async (req, res) => {
       validated: isValidated,
       invalidationReason: invalidationReason || "",
       CTEFSerialNumber: CTEFSerialNumber[0].Number,
+      dateInvalidated: new Date(),
+      validatedBy: CTEFSerialNumber[0].validatedBy,
     });
     await learner.save();
 
