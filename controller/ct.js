@@ -676,6 +676,7 @@ exports.getLearnerByCode = async (req, res) => {
           accountability: 1,
           approval: 1,
           year: 1,
+          validation,
         },
       },
       { $sort: { "learner.name.firstName": 1 } },
