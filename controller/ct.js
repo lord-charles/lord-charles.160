@@ -93,7 +93,35 @@ exports.createCashTransfer = async (req, res) => {
       },
     };
 
-    const cashTransfer = await CashTransfer.create(cashTransferData);
+    // Check if a cash transfer for this learner and year already exists (by learnerUniqueID or reference)
+    const yearQuery = { year: cashTransferData.year };
+    const orConditions = [];
+    if (learner.learnerUniqueID) {
+      orConditions.push({ 'learner.learnerUniqueID': learner.learnerUniqueID });
+    }
+    if (learner.reference) {
+      orConditions.push({ 'learner.reference': learner.reference });
+    }
+    const existingCashTransfer = await CashTransfer.findOne({
+      ...yearQuery,
+      $or: orConditions.length > 0 ? orConditions : [{}]
+    });
+
+    let cashTransfer;
+    if (existingCashTransfer) {
+      // Update the existing record
+      cashTransfer = await CashTransfer.findOneAndUpdate(
+        {
+          year: cashTransferData.year,
+          $or: orConditions.length > 0 ? orConditions : [{}]
+        },
+        cashTransferData,
+        { new: true }
+      );
+    } else {
+      // Create a new record
+      cashTransfer = await CashTransfer.create(cashTransferData);
+    }
 
     // Ensure only one isCTValidated entry per year
     const currentYear = new Date().getFullYear();
