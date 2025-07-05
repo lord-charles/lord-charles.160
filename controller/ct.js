@@ -95,9 +95,13 @@ exports.createCashTransfer = async (req, res) => {
 
     const cashTransfer = await CashTransfer.create(cashTransferData);
 
-    // Update learner's isCTValidated status
+    // Ensure only one isCTValidated entry per year
+    const currentYear = new Date().getFullYear();
+    learner.isCTValidated = learner.isCTValidated.filter(
+      (entry) => entry.year !== currentYear
+    );
     learner.isCTValidated.push({
-      year: new Date().getFullYear(),
+      year: currentYear,
       validated: isValidated,
       invalidationReason: invalidationReason || "",
       CTEFSerialNumber: CTEFSerialNumber[0].Number,
