@@ -15,7 +15,6 @@ const CashTransferSchema = new mongoose.Schema(
       type: { type: String, required: true },
       ownership: {
         type: String,
-        enum: ["Public", "Private", "Faith-based", "Community"],
         required: true,
       },
     },
