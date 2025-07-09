@@ -838,8 +838,16 @@ exports.disburseCash = async (req, res) => {
 
     if (disbursementIndex > -1) {
       learner.isDisbursed[disbursementIndex].disbursed = true;
+      if (paymentWitnesses) {
+        learner.isDisbursed[disbursementIndex].paymentWitnesses =
+          paymentWitnesses;
+      }
     } else {
-      learner.isDisbursed.push({ year: currentYear, disbursed: true });
+      learner.isDisbursed.push({
+        year: currentYear,
+        disbursed: true,
+        paymentWitnesses: paymentWitnesses || "",
+      });
     }
 
     await learner.save();
@@ -862,7 +870,7 @@ exports.disburseCash = async (req, res) => {
     cashTransfer.amounts.approved.isDisbursed = true;
 
     // update payment witnesses
-    if (paymentWitnesses && Array.isArray(paymentWitnesses)) {
+    if (paymentWitnesses) {
       cashTransfer.paymentWitnesses = paymentWitnesses;
     }
 

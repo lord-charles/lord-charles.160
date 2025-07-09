@@ -29,7 +29,7 @@ const CashTransferSchema = new mongoose.Schema(
       reference: { type: String, required: true },
       classInfo: {
         class: { type: String, required: true },
-        classStream: { type: String, required: true },
+        classStream: { type: String },
       },
       gender: {
         type: String,

@@ -48,6 +48,19 @@ const SchoolDataSchema = new Schema(
       distanceToCamp: { type: Number },
     },
 
+    isDisbursed: [
+      {
+        year: {type: Number},
+        disbursed: {type: Boolean, default: false},
+        paymentWitnesses: [
+          {
+            name: {type: String},
+            role: {type: String},
+          },
+        ],
+      },
+    ],
+
     subjects: [String],
 
     mentoringProgramme: [
