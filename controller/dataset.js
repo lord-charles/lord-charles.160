@@ -457,7 +457,6 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
       },
     };
 
-
     // Additional filter for schools with disabled pupils if isDisabled is true
     if (isDisabled) {
       matchStage.isWithDisability = true;
@@ -482,13 +481,13 @@ const payamSchoolPupilTotals_2023 = async (req, res) => {
           code: "$_id",
           school: 1,
         },
-      }
+      },
     ];
 
     // Execute the aggregation pipeline
     const result = await SchoolData.aggregate([
       { $match: matchStage },
-      ...pipeline
+      ...pipeline,
     ]);
 
     res.status(200).json(result);
@@ -807,7 +806,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       modifiedBy,
       academicHistory,
       eieStatus,
-      isValidatedWithDisability
+      isValidatedWithDisability,
     } = req.body;
 
     const updateData = {
@@ -863,7 +862,7 @@ const updateSchoolDataFields_2023 = async (req, res) => {
       modifiedBy,
       academicHistory,
       eieStatus,
-      isValidatedWithDisability
+      isValidatedWithDisability,
     };
 
     const schoolData = await SchoolData.findByIdAndUpdate(id, updateData, {
@@ -1345,12 +1344,18 @@ const registerStudent2024 = async (req, res) => {
     let isWithDisability = false;
     if (disabilities && Array.isArray(disabilities)) {
       const firstDisability = disabilities[0];
-      if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
+      if (
+        firstDisability &&
+        typeof firstDisability === "object" &&
+        firstDisability.disabilities
+      ) {
         const fields = firstDisability.disabilities;
-        if (typeof fields === 'object') {
+        if (typeof fields === "object") {
           // Sum up all disability values (converting strings to numbers)
-          const disabilitySum = Object.values(fields)
-            .reduce((sum, val) => sum + parseInt(val || '0', 10), 0);
+          const disabilitySum = Object.values(fields).reduce(
+            (sum, val) => sum + parseInt(val || "0", 10),
+            0
+          );
           isWithDisability = disabilitySum > 6;
         }
       }
@@ -1442,7 +1447,6 @@ const registerStudent2024 = async (req, res) => {
   }
 };
 
-
 // Controller function to register a new learner
 const registerLearnerDuringSync = async (req, res) => {
   try {
@@ -1489,17 +1493,22 @@ const registerLearnerDuringSync = async (req, res) => {
     let isWithDisability = false;
     if (disabilities && Array.isArray(disabilities)) {
       const firstDisability = disabilities[0];
-      if (firstDisability && typeof firstDisability === 'object' && firstDisability.disabilities) {
+      if (
+        firstDisability &&
+        typeof firstDisability === "object" &&
+        firstDisability.disabilities
+      ) {
         const fields = firstDisability.disabilities;
-        if (typeof fields === 'object') {
+        if (typeof fields === "object") {
           // Sum up all disability values (converting strings to numbers)
-          const disabilitySum = Object.values(fields)
-            .reduce((sum, val) => sum + parseInt(val || '0', 10), 0);
+          const disabilitySum = Object.values(fields).reduce(
+            (sum, val) => sum + parseInt(val || "0", 10),
+            0
+          );
           isWithDisability = disabilitySum > 6;
         }
       }
     }
-
 
     const generateUniqueCode = () => {
       const currentDate = new Date();
@@ -1685,6 +1694,7 @@ const payamSchoolDownload = async (req, res) => {
       CTEFSerialNumber: 1,
       isWithDisability: 1,
       eieStatus: 1,
+      isCTValidated: 1,
     };
 
     // Calculate skip value based on pagination
@@ -2927,7 +2937,6 @@ const getLearnerCountByLocation = async (req, res) => {
   }
 };
 
-
 const getPromotedLearnersCountByLocation = async (req, res) => {
   try {
     const { state10, county28, payam28, code, enrollmentYear } = req.body;
@@ -2971,10 +2980,7 @@ const getPromotedLearnersCountByLocation = async (req, res) => {
                     cond: {
                       $and: [
                         {
-                          $eq: [
-                            "$$history.year",
-                            parseInt(enrollmentYear, 10),
-                          ],
+                          $eq: ["$$history.year", parseInt(enrollmentYear, 10)],
                         },
                         { $eq: ["$$history.status.promoted", true] },
                       ],
@@ -3060,7 +3066,6 @@ const getDisabledLearnersCountByLocation = async (req, res) => {
 const overallMaleFemaleStat = async (req, res) => {
   try {
     const { county28, payam28, state10, code, enrollmentYear } = req.body;
-
 
     const matchStage = { isDroppedOut: false };
     const matchStage2 = {};
@@ -3275,9 +3280,6 @@ const overallMaleFemaleStat = async (req, res) => {
   }
 };
 
-
-
-
 module.exports = {
   dataSet,
   countyPupilTotal,
@@ -3325,6 +3327,4 @@ module.exports = {
   registerLearnerDuringSync,
   overallMaleFemaleStat,
   getLearnersV2,
-
-
 };

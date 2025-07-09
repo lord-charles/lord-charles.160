@@ -10,18 +10,20 @@ const SchoolDataSchema = new Schema(
     county28: { type: String, required: true },
     schoolName: { type: String, required: true },
     schoolOwnerShip: {
-      type: String
+      type: String,
     },
-    isEnrollmentComplete: [{
-      year: { type: Number },
-      isComplete: { type: Boolean, default: false },
-      completedBy: { type: String },
-      comments: { type: String },
-      percentageComplete: { type: Number },
-      learnerEnrollmentComplete: { type: Boolean, default: false },
-    }],
+    isEnrollmentComplete: [
+      {
+        year: { type: Number },
+        isComplete: { type: Boolean, default: false },
+        completedBy: { type: String },
+        comments: { type: String },
+        percentageComplete: { type: Number },
+        learnerEnrollmentComplete: { type: Boolean, default: false },
+      },
+    ],
     schoolType: {
-      type: String
+      type: String,
     },
     headTeacher: {
       name: { type: String },
