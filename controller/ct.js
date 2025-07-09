@@ -53,8 +53,8 @@ exports.createCashTransfer = async (req, res) => {
       year: new Date().getFullYear(),
       location: {
         state10: learner.state10,
-        county10: learner.county10,
-        payam10: learner.payam10,
+        county28: learner.county28,
+        payam28: learner.payam28,
       },
       school: {
         name: learner.school,

@@ -6,27 +6,26 @@ const CashTransferSchema = new mongoose.Schema(
     year: { type: Number, required: true },
     location: {
       state10: { type: String, required: true },
-      county10: { type: String, required: true },
-      payam10: { type: String, required: true },
+      county28: { type: String, required: true },
+      payam28: { type: String, required: true },
     },
     school: {
-      name: { type: String, required: true },
-      code: { type: String, required: true },
-      type: { type: String, required: true },
+      name: { type: String },
+      code: { type: String },
+      type: { type: String },
       ownership: {
         type: String,
-        required: true,
       },
     },
     learner: {
-      dob: { type: Date, required: true },
+      dob: { type: Date },
       name: {
-        firstName: { type: String, required: true },
+        firstName: { type: String },
         middleName: { type: String },
-        lastName: { type: String, required: true },
+        lastName: { type: String },
       },
-      learnerUniqueID: { type: Number, required: true },
-      reference: { type: String, required: true },
+      learnerUniqueID: { type: Number },
+      reference: { type: String },
       classInfo: {
         class: { type: String, required: true },
         classStream: { type: String },
@@ -40,12 +39,12 @@ const CashTransferSchema = new mongoose.Schema(
       disabilities: [
         {
           disabilities: {
-            difficultyHearing: { type: Number, required: false },
-            difficultyRecalling: { type: Number, required: false },
-            difficultySeeing: { type: Number, required: false },
-            difficultySelfCare: { type: Number, required: false },
-            difficultyTalking: { type: Number, required: false },
-            difficultyWalking: { type: Number, required: false },
+            difficultyHearing: { type: Number },
+            difficultyRecalling: { type: Number },
+            difficultySeeing: { type: Number },
+            difficultySelfCare: { type: Number },
+            difficultyTalking: { type: Number },
+            difficultyWalking: { type: Number },
           },
         },
       ],
