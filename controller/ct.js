@@ -97,14 +97,14 @@ exports.createCashTransfer = async (req, res) => {
     const yearQuery = { year: cashTransferData.year };
     const orConditions = [];
     if (learner.learnerUniqueID) {
-      orConditions.push({ 'learner.learnerUniqueID': learner.learnerUniqueID });
+      orConditions.push({ "learner.learnerUniqueID": learner.learnerUniqueID });
     }
     if (learner.reference) {
-      orConditions.push({ 'learner.reference': learner.reference });
+      orConditions.push({ "learner.reference": learner.reference });
     }
     const existingCashTransfer = await CashTransfer.findOne({
       ...yearQuery,
-      $or: orConditions.length > 0 ? orConditions : [{}]
+      $or: orConditions.length > 0 ? orConditions : [{}],
     });
 
     let cashTransfer;
@@ -113,7 +113,7 @@ exports.createCashTransfer = async (req, res) => {
       cashTransfer = await CashTransfer.findOneAndUpdate(
         {
           year: cashTransferData.year,
-          $or: orConditions.length > 0 ? orConditions : [{}]
+          $or: orConditions.length > 0 ? orConditions : [{}],
         },
         cashTransferData,
         { new: true }
@@ -809,5 +809,67 @@ exports.getDisbursementByYear = async (req, res) => {
       message: "Failed to fetch disbursement data",
       error: error.message,
     });
+  }
+};
+
+exports.disburseCash = async (req, res) => {
+  try {
+    const { learnerId } = req.params;
+    const { paymentWitnesses } = req.body;
+
+    // Find the active tranche from CTCriteria
+    const activeCriteria = await CTCriteria.findOne({ isActive: true });
+    if (!activeCriteria) {
+      return res.status(404).json({ error: "No active tranche found" });
+    }
+    const tranche = activeCriteria.tranche;
+
+    const learner = await SchoolData.findById(learnerId);
+    if (!learner) {
+      return res.status(404).json({ error: "Learner not found" });
+    }
+
+    const currentYear = new Date().getFullYear();
+
+    // Update isDisbursed
+    const disbursementIndex = learner.isDisbursed.findIndex(
+      (d) => d.year === currentYear
+    );
+
+    if (disbursementIndex > -1) {
+      learner.isDisbursed[disbursementIndex].disbursed = true;
+    } else {
+      learner.isDisbursed.push({ year: currentYear, disbursed: true });
+    }
+
+    await learner.save();
+
+    // Find the relevant cash transfer record
+    const cashTransfer = await CashTransfer.findOne({
+      "learner.learnerUniqueID": learner.learnerUniqueID,
+      year: currentYear,
+      tranche: tranche,
+    });
+
+    if (!cashTransfer) {
+      return res.status(404).json({
+        error:
+          "Cash Transfer record not found for the current year and active tranche",
+      });
+    }
+
+    // Update disbursement status in CashTransfer collection
+    cashTransfer.amounts.approved.isDisbursed = true;
+
+    // update payment witnesses
+    if (paymentWitnesses && Array.isArray(paymentWitnesses)) {
+      cashTransfer.paymentWitnesses = paymentWitnesses;
+    }
+
+    await cashTransfer.save();
+
+    res.status(200).json("Disbursement successful");
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };

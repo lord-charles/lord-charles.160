@@ -72,10 +72,7 @@ const CashTransferSchema = new mongoose.Schema(
       approved: {
         amount: { type: Number, min: 0 },
         currency: { type: String, default: "SSP" },
-      },
-      paid: {
-        amount: { type: Number, min: 0 },
-        currency: { type: String, default: "SSP" },
+        isDisbursed: { type: Boolean, default: false },
       },
     },
     approval: {
