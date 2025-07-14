@@ -18,7 +18,7 @@ const CashTransferSchema = new mongoose.Schema(
       },
     },
     learner: {
-      dob: { type: Date },
+      dob: { type: String },
       name: {
         firstName: { type: String },
         middleName: { type: String },
