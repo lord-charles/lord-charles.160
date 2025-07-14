@@ -481,10 +481,10 @@ exports.getUniqueCtSchools = async (req, res) => {
       matchConditions["location.state10"] = state;
     }
     if (county) {
-      matchConditions["location.county10"] = county;
+      matchConditions["location.county28"] = county;
     }
     if (payam) {
-      matchConditions["location.payam10"] = payam;
+      matchConditions["location.payam28"] = payam;
     }
     if (tranche) {
       matchConditions.tranche = parseInt(tranche, 10);
