@@ -63,7 +63,13 @@ exports.createCashTransfer = async (req, res) => {
         ownership: schoolOwnership,
       },
       learner: {
-        dob: learner.dob,
+        dob:
+          learner.dob &&
+          typeof learner.dob === "string" &&
+          learner.dob.trim() !== "" &&
+          !isNaN(new Date(learner.dob).getTime())
+            ? new Date(learner.dob)
+            : null,
         name: {
           firstName: learner.firstName,
           middleName: learner.middleName,
