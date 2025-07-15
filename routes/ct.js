@@ -7,11 +7,7 @@ const ctCriteriaController = require("../controller/ctcriteria");
 
 // CRUD routes
 router.post("/", cashTransferController.createCashTransfer);
-router.get(
-  "/",
-  cacheMiddleware(600),
-  cashTransferController.getAllCashTransfers
-);
+router.get("/", cacheMiddleware(600));
 router.get("/:id", cashTransferController.getCashTransferById);
 router.put("/:id", cashTransferController.updateCashTransfer);
 router.delete("/:id", cashTransferController.deleteCashTransfer);

@@ -53,12 +53,12 @@ const CashTransferSchema = new mongoose.Schema(
     validation: {
       isValidated: { type: Boolean, default: false },
       invalidationReason: { type: String },
-      dateFormsReviewedSigned: { type: Date },
+      dateFormsReviewedSigned: { type: String },
       formsSignedBy: { type: String },
-      dateCtefSerialEnteredBySA: { type: Date },
-      dateCorrected: { type: Date },
+      dateCtefSerialEnteredBySA: { type: String },
+      dateCorrected: { type: String },
       finalSerialCtefNumber: { type: Number },
-      dateValidatedAtSchool: { type: Date },
+      dateValidatedAtSchool: { type: String },
       // validationWitnessedBy: [
       //   {
       //     name: { type: String },
@@ -75,7 +75,7 @@ const CashTransferSchema = new mongoose.Schema(
       },
     },
     approval: {
-      dateApprovedByETMC: { type: Date },
+      dateApprovedByETMC: { type: String },
       paymentMethod: {
         type: String,
         enum: ["Bank", "Pay Agent", "Mobile Money"],
@@ -90,7 +90,7 @@ const CashTransferSchema = new mongoose.Schema(
     heldBy: {
       fundsHeldBy: { type: String },
       fundsHeldAmount: { type: Number, min: 0 },
-      dateReturnedHeldFunds: { type: Date },
+      dateReturnedHeldFunds: { type: String },
       commentsReturnedHeldFunds: { type: String },
     },
     paymentWitnesses: [
@@ -100,11 +100,11 @@ const CashTransferSchema = new mongoose.Schema(
       },
     ],
     accountability: {
-      dateReceivedBySA: { type: Date },
+      dateReceivedBySA: { type: String },
       signedCtef: { type: Boolean, default: false },
       serialCtefEntered: { type: Number },
       amountAccounted: { type: Number, min: 0 },
-      dateAccounted: { type: Date },
+      dateAccounted: { type: String },
     },
   },
   { timestamps: true }
