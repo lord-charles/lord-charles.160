@@ -5,6 +5,7 @@ const moment = require("moment-timezone");
 const SchoolDataCtCash = require("../models/ctCash");
 const RegistrationPeriod = require("../models/RegistrationPeriod");
 const ReferenceCounter = require("../models/referenceCounter");
+const CTCriteria = require("../models/CTCriteria");
 
 const dataSet = async (req, res) => {
   try {
@@ -1657,9 +1658,8 @@ const deleteStudentById = async (req, res) => {
 
 const payamSchoolDownload = async (req, res) => {
   try {
-    const { payam28, county28, page } = req.body;
+    const { payam28, county28, page, ct } = req.body;
 
-    // Input validation
     if (!payam28) {
       return res
         .status(400)
@@ -1700,9 +1700,27 @@ const payamSchoolDownload = async (req, res) => {
     // Calculate skip value based on pagination
     const skip = (page - 1) * PAGE_SIZE;
 
-    // Aggregation pipeline to match, project, skip, and limit documents
+    // Build aggregation pipeline
+    const matchStage = { payam28: payam28, isDroppedOut: false };
+
+    // If ct is true, filter by classes from active CTCriteria
+    let ctClassNames = [];
+    if (ct) {
+      const ctDocs = await CTCriteria.find({ isActive: true });
+      ctDocs.forEach((doc) => {
+        if (Array.isArray(doc.classes)) {
+          doc.classes.forEach((cls) => {
+            if (cls.className) ctClassNames.push(cls.className);
+          });
+        }
+      });
+      if (ctClassNames.length > 0) {
+        matchStage.class = { $in: ctClassNames };
+      }
+    }
+
     const pipeline = [
-      { $match: { payam28: payam28, isDroppedOut: false } },
+      { $match: matchStage },
       { $project: PROJECTION_FIELDS },
       { $skip: skip },
       { $limit: PAGE_SIZE },
@@ -1712,10 +1730,11 @@ const payamSchoolDownload = async (req, res) => {
     const schoolData = await SchoolData.aggregate(pipeline);
 
     // Count the total number of documents matching the query
-    const totalCount = await SchoolData.countDocuments({
-      payam28,
-      isDroppedOut: false,
-    });
+    const countQuery = { payam28, isDroppedOut: false };
+    if (ctClassNames.length > 0) {
+      countQuery.class = { $in: ctClassNames };
+    }
+    const totalCount = await SchoolData.countDocuments(countQuery);
 
     // Calculate the total number of pages
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
