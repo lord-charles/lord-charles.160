@@ -674,77 +674,63 @@ const getAttendanceStatCards = async (req, res) => {
         totalStudents: uniqueStudentsCount[0]?.uniqueCount || 0,
         dateRange: {
           start: yearToDateStats[0]?.minDate,
-          end: yearToDateStats[0]?.maxDate,
-        },
+          end: yearToDateStats[0]?.maxDate
+        }
       },
       todaySnapshot: {
         recordsLogged: todayStats[0]?.totalRecords || 0,
         absent: todayStats[0]?.totalAbsent || 0,
-        present:
-          (todayStats[0]?.totalRecords || 0) -
-          (todayStats[0]?.totalAbsent || 0),
+        present: (todayStats[0]?.totalRecords || 0) - (todayStats[0]?.totalAbsent || 0),
         absenteeRate: todayStats[0]?.totalRecords
-          ? (
-              (todayStats[0].totalAbsent / todayStats[0].totalRecords) *
-              100
-            ).toFixed(1)
-          : 0,
+          ? (todayStats[0].totalAbsent / todayStats[0].totalRecords) * 100
+          : 0
       },
       averageAttendance: {
-        overallRate: averageDailyStats[0]?.avgAttendanceRate?.toFixed(1) || 0,
-        peakDay: { date: peakDayData.date, rate: peakDayData.rate.toFixed(1) },
+        overallRate: averageDailyStats[0]?.avgAttendanceRate || 0,
+        peakDay: {
+          date: peakDayData.date,
+          rate: peakDayData.rate
+        },
         lowestDay: {
           date: lowestDayData.date,
-          rate: lowestDayData.rate.toFixed(1),
-        },
+          rate: lowestDayData.rate
+        }
       },
       demographics: {
         male: {
           percentage: demographicStats[0]?.totalAbsent
-            ? (
-                (demographicStats[0].maleAbsent /
-                  demographicStats[0].totalAbsent) *
-                100
-              ).toFixed(1)
+            ? (demographicStats[0].maleAbsent / demographicStats[0].totalAbsent) * 100
             : 0,
-          count: demographicStats[0]?.maleAbsent || 0,
+          count: demographicStats[0]?.maleAbsent || 0
         },
         female: {
           percentage: demographicStats[0]?.totalAbsent
-            ? (
-                (demographicStats[0].femaleAbsent /
-                  demographicStats[0].totalAbsent) *
-                100
-              ).toFixed(1)
+            ? (demographicStats[0].femaleAbsent / demographicStats[0].totalAbsent) * 100
             : 0,
-          count: demographicStats[0]?.femaleAbsent || 0,
+          count: demographicStats[0]?.femaleAbsent || 0
         },
         disability: {
           percentage: demographicStats[0]?.totalAbsent
-            ? (
-                (demographicStats[0].disabilityAbsent /
-                  demographicStats[0].totalAbsent) *
-                100
-              ).toFixed(1)
+            ? (demographicStats[0].disabilityAbsent / demographicStats[0].totalAbsent) * 100
             : 0,
-          count: demographicStats[0]?.disabilityAbsent || 0,
-        },
+          count: demographicStats[0]?.disabilityAbsent || 0
+        }
       },
       regionalDistribution: {
-        topCounties: regionalData.topCounties.map((county) => ({
+        topCounties: regionalData.topCounties.map(county => ({
           name: county.name,
           percentage: regionalData.totalAbsent
-            ? ((county.count / regionalData.totalAbsent) * 100).toFixed(1)
+            ? (county.count / regionalData.totalAbsent) * 100
             : 0,
-          count: county.count,
+          count: county.count
         })),
-        topStates: regionalData.topStates.map((state) => ({
+        topStates: regionalData.topStates.map(state => ({
           name: state.name,
           percentage: regionalData.totalAbsent
-            ? ((state.count / regionalData.totalAbsent) * 100).toFixed(1)
+            ? (state.count / regionalData.totalAbsent) * 100
             : 0,
-          count: state.count,
-        })),
+          count: state.count
+        }))
       },
       engagement: {
         schoolsReporting: engagementStats[0]?.schoolsReporting || 0,
@@ -753,8 +739,8 @@ const getAttendanceStatCards = async (req, res) => {
               engagementStats[0].totalStudents /
                 engagementStats[0].schoolsReporting
             )
-          : 0,
-      },
+          : 0
+      }
     };
 
     res.status(200).json(response);

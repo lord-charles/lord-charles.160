@@ -519,6 +519,16 @@ exports.getUniqueCtSchools = async (req, res) => {
           schoolCode: { $first: "$school.code" },
           amounts: { $first: "$amounts" },
           learnerCount: { $sum: 1 },
+          validatedCount: {
+            $sum: {
+              $cond: [{ $eq: ["$validation.isValidated", true] }, 1, 0],
+            },
+          },
+          notValidatedCount: {
+            $sum: {
+              $cond: [{ $ne: ["$validation.isValidated", true] }, 1, 0],
+            },
+          },
           totalAmountAccounted: {
             $sum: {
               $ifNull: ["$accountability.amountAccounted", 0],
@@ -548,6 +558,8 @@ exports.getUniqueCtSchools = async (req, res) => {
           },
           amounts: 1,
           learnerCount: 1,
+          validatedCount: 1,
+          notValidatedCount: 1,
           accountability: {
             amountAccounted: "$totalAmountAccounted",
             dateAccounted: "$firstDateAccounted",
@@ -559,7 +571,6 @@ exports.getUniqueCtSchools = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      count: schools.length,
       data: schools,
     });
   } catch (error) {
