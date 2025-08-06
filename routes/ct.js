@@ -9,7 +9,7 @@ const ctCriteriaController = require("../controller/ctcriteria");
 router.post("/", cashTransferController.createCashTransfer);
 router.get("/", cacheMiddleware(600));
 router.get("/:id", cashTransferController.getCashTransferById);
-router.put("/:id", cashTransferController.updateCashTransfer);
+router.patch("/:id", cashTransferController.updateCashTransfer);
 router.delete("/:id", cashTransferController.deleteCashTransfer);
 router.get(
   "/stat-card/data",
