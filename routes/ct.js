@@ -23,7 +23,7 @@ router.get(
 );
 router.get(
   "/get/learners",
-  cacheMiddleware(600),
+  // cacheMiddleware(600),
   cashTransferController.getLearnerByCode
 );
 
