@@ -707,8 +707,8 @@ const CensusSchema = new Schema(
     
     // Enumerator Information
     enumerator: {
-      name: { type: String, required: true },
-      phoneNumber: { type: String, required: true },
+      name: { type: String },
+      phoneNumber: { type: String },
       email: { type: String },
     },
     

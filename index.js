@@ -42,7 +42,7 @@ const swaggerOptions = {
       contact: {
         name: "SAMS Development Team",
         email: "mgichure@strathmore.edu",
-        url: "https://github.com/your-repo/SAMS",
+        url: "https://github.com/repo/SAMS",
       },
       license: {
         name: "MIT",
