@@ -1,4 +1,5 @@
 const CashTransfer = require("../models/ct");
+const mongoose = require("mongoose");
 const SchoolData = require("../models/2023Data");
 const CTCriteria = require("../models/CTCriteria");
 const School = require("../models/school-data");
@@ -890,5 +891,95 @@ exports.disburseCash = async (req, res) => {
     res.status(200).json("Disbursement successful");
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// Download CT data in batches filtered by state10 and year
+// Accepts body: { state10: string, year: number, lastId?: string, page?: number, limit?: number }
+// Returns up to 5000 records per call with minimal projection
+exports.downloadCTBatch = async (req, res) => {
+  try {
+    const { state10, year, lastId } = req.body || {};
+    let { page = 1, limit = 5000 } = req.body || {};
+
+    if (!state10 || !year) {
+      return res.status(400).json({
+        success: false,
+        message: "state10 and year are required in the request body",
+      });
+    }
+
+    limit = Math.min(parseInt(limit, 10) || 5000, 5000);
+    page = parseInt(page, 10) || 1;
+
+    const match = {
+      "location.state10": state10,
+      year: parseInt(year, 10),
+    };
+
+    const projection = {
+      _id: 1, // kept for pagination; will not expose in data payload
+      year: 1,
+      "location.state10": 1,
+      "school.name": 1,
+      "school.code": 1,
+      "learner.dob": 1,
+      "learner.name.firstName": 1,
+      "learner.name.middleName": 1,
+      "learner.name.lastName": 1,
+      "learner.learnerUniqueID": 1,
+      "learner.reference": 1,
+      "validation.isValidated": 1,
+      "validation.invalidationReason": 1,
+      "validation.finalSerialCtefNumber": 1,
+    };
+
+    const sort = { _id: 1 };
+    let query = CashTransfer.find(match).select(projection).sort(sort).limit(limit);
+
+    // Prefer keyset pagination when lastId is provided
+    if (lastId) {
+      if (!mongoose.Types.ObjectId.isValid(lastId)) {
+        return res.status(400).json({ success: false, message: "Invalid lastId" });
+      }
+      query = CashTransfer.find({ ...match, _id: { $gt: new mongoose.Types.ObjectId(lastId) } })
+        .select(projection)
+        .sort(sort)
+        .limit(limit);
+    } else if (page && page > 1) {
+      const skip = (page - 1) * limit;
+      query = CashTransfer.find(match).select(projection).sort(sort).skip(skip).limit(limit);
+    }
+
+    const docs = await query.lean();
+
+    const countFetched = docs.length;
+    const nextLastId = countFetched > 0 ? String(docs[countFetched - 1]._id) : null;
+
+    // Strip _id from the data payload as per requested fields
+    const data = docs.map(({ _id, ...rest }) => rest);
+
+    // Determine if there may be more records
+    let hasMore = false;
+    if (countFetched === limit) {
+      // Check existence of at least one more document
+      const moreFilter = lastId
+        ? { ...match, _id: { $gt: new mongoose.Types.ObjectId(nextLastId) } }
+        : { ...match, _id: { $gt: docs[countFetched - 1]._id } };
+      hasMore = !!(await CashTransfer.exists(moreFilter));
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: countFetched,
+      limit,
+      page: lastId ? undefined : page,
+      nextLastId,
+      hasMore,
+      data,
+    });
+  } catch (error) {
+    console.error("Error downloading CT batch:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

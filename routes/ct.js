@@ -27,6 +27,12 @@ router.get(
   cashTransferController.getLearnerByCode
 );
 
+// Download CT data in batches by state10 and year
+router.post(
+  "/download/batch",
+  cashTransferController.downloadCTBatch
+);
+
 // Eligible learners for cash transfer
 router.get(
   "/eligible/learners",
