@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const mongoose = require("mongoose");
 const Census = require("../models/censusModel");
 const { validateObjectId } = require("../utils/validators");
 
@@ -150,6 +151,8 @@ const getAllCensus = asyncHandler(async (req, res) => {
           as: 'schoolInfo'
         }
       },
+      // Flatten school info for easy projection
+      { $unwind: { path: '$schoolInfo', preserveNullAndEmptyArrays: true } },
       {
         $addFields: {
           totalEnrollment: {
@@ -171,6 +174,30 @@ const getAllCensus = asyncHandler(async (req, res) => {
               }
             }
           }
+        }
+      },
+      // Project only key fields for the frontend data table (lean response)
+      {
+        $project: {
+          _id: 1,
+          year: 1,
+          schoolCode: 1,
+          schoolName: '$schoolInfo.schoolName',
+          state10: '$schoolInfo.state10',
+          county28: '$schoolInfo.county28',
+          payam28: '$schoolInfo.payam28',
+          ownership: 1,
+          operational: 1,
+          schoolType: 1,
+          genderAttendance: 1,
+          totalEnrollment: 1,
+          totalTeachers: 1,
+          completionStatus: 1,
+          isSubmitted: 1,
+          isValidated: 1,
+          dataCollectionDate: 1,
+          updatedAt: 1,
+          createdAt: 1
         }
       },
       { $sort: sort }
@@ -225,12 +252,44 @@ const getCensusById = asyncHandler(async (req, res) => {
   }
   
   try {
-    const census = await Census.findById(id)
-      .populate({
-        path: 'schoolCode',
-        select: 'schoolName state10 county28 payam28'
-      });
-    
+    // Use aggregation + $lookup since schoolCode is a string, not ObjectId
+    const results = await Census.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+      {
+        $lookup: {
+          from: 'schooldata',
+          localField: 'schoolCode',
+          foreignField: 'code',
+          as: 'schoolInfo'
+        }
+      },
+      { $unwind: { path: '$schoolInfo', preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          totalEnrollment: {
+            $add: ['$enrollment.summary.male', '$enrollment.summary.female']
+          },
+          totalTeachers: {
+            $add: ['$teachers.summary.male', '$teachers.summary.female']
+          },
+          completionStatus: {
+            $cond: {
+              if: '$isValidated',
+              then: 'Validated',
+              else: {
+                $cond: {
+                  if: '$isSubmitted',
+                  then: 'Submitted',
+                  else: 'Draft'
+                }
+              }
+            }
+          }
+        }
+      }
+    ]);
+
+    const census = results[0];
     if (!census) {
       return res.status(404).json({
         success: false,
@@ -254,14 +313,49 @@ const getCensusBySchoolAndYear = asyncHandler(async (req, res) => {
   const { schoolCode, year } = req.params;
   
   try {
-    const census = await Census.findOne({
-      schoolCode: schoolCode.toUpperCase(),
-      year: parseInt(year)
-    }).populate({
-      path: 'schoolCode',
-      select: 'schoolName state10 county28 payam28'
-    });
-    
+    const results = await Census.aggregate([
+      {
+        $match: {
+          schoolCode: schoolCode.toUpperCase(),
+          year: parseInt(year)
+        }
+      },
+      {
+        $lookup: {
+          from: 'schooldata',
+          localField: 'schoolCode',
+          foreignField: 'code',
+          as: 'schoolInfo'
+        }
+      },
+      { $unwind: { path: '$schoolInfo', preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          totalEnrollment: {
+            $add: ['$enrollment.summary.male', '$enrollment.summary.female']
+          },
+          totalTeachers: {
+            $add: ['$teachers.summary.male', '$teachers.summary.female']
+          },
+          completionStatus: {
+            $cond: {
+              if: '$isValidated',
+              then: 'Validated',
+              else: {
+                $cond: {
+                  if: '$isSubmitted',
+                  then: 'Submitted',
+                  else: 'Draft'
+                }
+              }
+            }
+          }
+        }
+      }
+      // No $project to return full details
+    ]);
+
+    const census = results[0];
     if (!census) {
       return res.status(404).json({
         success: false,
@@ -514,53 +608,118 @@ const getCensusStatistics = asyncHandler(async (req, res) => {
   
   try {
     const pipeline = [
-      { 
-        $match: { 
-          year: parseInt(year), 
-          isSubmitted: true,
+      {
+        $match: {
+          year: parseInt(year),
           ...filters
-        } 
+        }
       },
       {
         $group: {
           _id: null,
           totalSchools: { $sum: 1 },
-          totalEnrollment: {
-            $sum: { $add: ['$enrollment.summary.male', '$enrollment.summary.female'] }
+          submittedSchools: { $sum: { $cond: ['$isSubmitted', 1, 0] } },
+          validatedSchools: { $sum: { $cond: ['$isValidated', 1, 0] } },
+          enrollmentMale: { $sum: '$enrollment.summary.male' },
+          enrollmentFemale: { $sum: '$enrollment.summary.female' },
+          teachersMale: { $sum: '$teachers.summary.male' },
+          teachersFemale: { $sum: '$teachers.summary.female' },
+          operationalSchools: { $sum: { $cond: [{ $eq: ['$operational', 'Operational'] }, 1, 0] } }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          totalSchools: 1,
+          submittedSchools: 1,
+          validatedSchools: 1,
+          operationalSchools: 1,
+          enrollmentMale: 1,
+          enrollmentFemale: 1,
+          totalEnrollment: { $add: ['$enrollmentMale', '$enrollmentFemale'] },
+          teachersMale: 1,
+          teachersFemale: 1,
+          totalTeachers: { $add: ['$teachersMale', '$teachersFemale'] },
+          studentTeacherRatio: {
+            $cond: [
+              { $gt: [{ $add: ['$teachersMale', '$teachersFemale'] }, 0] },
+              { $divide: [{ $add: ['$enrollmentMale', '$enrollmentFemale'] }, { $add: ['$teachersMale', '$teachersFemale'] }] },
+              null
+            ]
           },
-          totalTeachers: {
-            $sum: { $add: ['$teachers.summary.male', '$teachers.summary.female'] }
+          avgEnrollmentPerSchool: {
+            $cond: [
+              { $gt: ['$totalSchools', 0] },
+              { $divide: [{ $add: ['$enrollmentMale', '$enrollmentFemale'] }, '$totalSchools'] },
+              0
+            ]
           },
-          operationalSchools: {
-            $sum: { $cond: [{ $eq: ['$operational', 'Operational'] }, 1, 0] }
+          avgTeachersPerSchool: {
+            $cond: [
+              { $gt: ['$totalSchools', 0] },
+              { $divide: [{ $add: ['$teachersMale', '$teachersFemale'] }, '$totalSchools'] },
+              0
+            ]
           },
-          validatedSchools: {
-            $sum: { $cond: ['$isValidated', 1, 0] }
+          submissionRate: {
+            $cond: [
+              { $gt: ['$totalSchools', 0] },
+              { $divide: ['$submittedSchools', '$totalSchools'] },
+              0
+            ]
           },
-          governmentSchools: {
-            $sum: { $cond: [{ $eq: ['$ownership', 'Government'] }, 1, 0] }
+          validationRate: {
+            $cond: [
+              { $gt: ['$totalSchools', 0] },
+              { $divide: ['$validatedSchools', '$totalSchools'] },
+              0
+            ]
           },
-          privateSchools: {
-            $sum: { $cond: [{ $eq: ['$ownership', 'Private'] }, 1, 0] }
+          genderSplit: {
+            male: '$enrollmentMale',
+            female: '$enrollmentFemale',
+            malePct: {
+              $cond: [
+                { $gt: [{ $add: ['$enrollmentMale', '$enrollmentFemale'] }, 0] },
+                { $divide: ['$enrollmentMale', { $add: ['$enrollmentMale', '$enrollmentFemale'] }] },
+                null
+              ]
+            },
+            femalePct: {
+              $cond: [
+                { $gt: [{ $add: ['$enrollmentMale', '$enrollmentFemale'] }, 0] },
+                { $divide: ['$enrollmentFemale', { $add: ['$enrollmentMale', '$enrollmentFemale'] }] },
+                null
+              ]
+            }
           }
         }
       }
     ];
-    
-    const statistics = await Census.aggregate(pipeline);
-    
+
+    const [totals] = await Census.aggregate(pipeline);
+
     res.status(200).json({
       success: true,
       message: `Census statistics for year ${year} retrieved successfully`,
-      data: statistics[0] || {
+      data: { totals: totals || {
         totalSchools: 0,
+        submittedSchools: 0,
+        validatedSchools: 0,
+        enrollmentMale: 0,
+        enrollmentFemale: 0,
+        teachersMale: 0,
+        teachersFemale: 0,
+        operationalSchools: 0,
         totalEnrollment: 0,
         totalTeachers: 0,
-        operationalSchools: 0,
-        validatedSchools: 0,
-        governmentSchools: 0,
-        privateSchools: 0
-      }
+        studentTeacherRatio: null,
+        avgEnrollmentPerSchool: 0,
+        avgTeachersPerSchool: 0,
+        submissionRate: 0,
+        validationRate: 0,
+        genderSplit: { male: 0, female: 0, malePct: null, femalePct: null }
+      } }
     });
     
   } catch (error) {

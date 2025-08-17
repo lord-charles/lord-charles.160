@@ -18,26 +18,22 @@ router.post("/", createCensus);
 
 router.get("/", getAllCensus);
 
-router.get("/:id", getCensusById);
-
 router.get("/school/:schoolCode/year/:year", getCensusBySchoolAndYear);
+
+router.get("/:id", getCensusById);
 
 router.put("/:id", updateCensus);
 
 router.delete("/:id", deleteCensus);
 
-// ================================
 // WORKFLOW ROUTES
-// ================================
 
 
 router.post("/:id/submit", submitCensus);
 
 router.post("/:id/validate", validateCensus);
 
-// ================================
 // ANALYTICS & REPORTING ROUTES
-// ================================
 
 router.get("/statistics/:year", getCensusStatistics);
 
