@@ -4,6 +4,30 @@ const SchoolData = require("../models/2023Data");
 const CTCriteria = require("../models/CTCriteria");
 const School = require("../models/school-data");
 
+// Helper function to intelligently parse numbers from strings
+const parseNumberFromString = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  
+  // Convert to string first
+  const stringValue = String(value);
+  
+  // Remove all non-digit characters except decimal point and minus sign
+  const cleanedValue = stringValue.replace(/[^\d.-]/g, '');
+  
+  // If empty after cleaning, return null
+  if (!cleanedValue) {
+    return null;
+  }
+  
+  // Parse as number
+  const parsedNumber = parseFloat(cleanedValue);
+  
+  // Return null if not a valid number
+  return isNaN(parsedNumber) ? null : Math.floor(Math.abs(parsedNumber));
+};
+
 // Create a new cash transfer
 exports.createCashTransfer = async (req, res) => {
   try {
@@ -83,7 +107,7 @@ exports.createCashTransfer = async (req, res) => {
       validation: {
         isValidated: isValidated,
         invalidationReason: invalidationReason || "",
-        finalSerialCtefNumber: CTEFSerialNumber[0].Number,
+        finalSerialCtefNumber: parseNumberFromString(CTEFSerialNumber[0].Number),
         dateValidatedAtSchool: CTEFSerialNumber[0].DateIssued,
       },
       amounts: {
@@ -133,7 +157,7 @@ exports.createCashTransfer = async (req, res) => {
       year: currentYear,
       validated: isValidated,
       invalidationReason: invalidationReason || "",
-      CTEFSerialNumber: CTEFSerialNumber[0].Number,
+      CTEFSerialNumber: parseNumberFromString(CTEFSerialNumber[0].Number),
       dateInvalidated: new Date(),
       validatedBy: CTEFSerialNumber[0].validatedBy,
     });
