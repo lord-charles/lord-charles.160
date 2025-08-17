@@ -918,7 +918,7 @@ exports.downloadCTBatch = async (req, res) => {
     };
 
     const projection = {
-      _id: 1, // kept for pagination; will not expose in data payload
+      _id: 1, 
       year: 1,
       "location.state10": 1,
       "school.name": 1,
