@@ -1,0 +1,134 @@
+const CapitationSettings = require("../models/capitationSettings");
+
+// Utility: ensure tranche percentages are reasonable (optional business rule)
+function validateTranchePercentages(settings) {
+  const collect = (rules = []) =>
+    rules.every((r) => {
+      if (!r.trancheDistribution) return true;
+      const { tranche1Pct = 0, tranche2Pct = 0, tranche3Pct = 0 } = r.trancheDistribution;
+      const sum = Number(tranche1Pct) + Number(tranche2Pct) + Number(tranche3Pct);
+      return sum === 100;
+    });
+
+  const capexOk = collect(settings.capitalSpend?.rules);
+  const opexOk = collect(settings.capitationGrants?.rules);
+  return capexOk && opexOk;
+}
+
+// GET /capitation-settings
+const getAllSettings = async (req, res) => {
+  try {
+    const { year } = req.query;
+    const query = {};
+    if (year) query.academicYear = parseInt(year);
+    const docs = await CapitationSettings.find(query).sort({ academicYear: -1 });
+    return res.status(200).json(docs);
+  } catch (err) {
+    return res.status(500).json({ message: "Error fetching settings", error: err.message });
+  }
+};
+
+// GET /capitation-settings/:id
+const getSettingsById = async (req, res) => {
+  try {
+    const doc = await CapitationSettings.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Settings not found" });
+    return res.status(200).json(doc);
+  } catch (err) {
+    return res.status(500).json({ message: "Error fetching settings", error: err.message });
+  }
+};
+
+// GET /capitation-settings/by-year/:year
+const getSettingsByYear = async (req, res) => {
+  try {
+    const year = parseInt(req.params.year);
+    if (Number.isNaN(year)) return res.status(400).json({ message: "Invalid year" });
+    const doc = await CapitationSettings.findOne({ academicYear: year });
+    if (!doc) return res.status(404).json({ message: "Settings not found for year" });
+    return res.status(200).json(doc);
+  } catch (err) {
+    return res.status(500).json({ message: "Error fetching settings", error: err.message });
+  }
+};
+
+// POST /capitation-settings
+const createSettings = async (req, res) => {
+  try {
+    const payload = req.body || {};
+    if (!payload.academicYear) {
+      return res.status(400).json({ message: "academicYear is required" });
+    }
+    // Optional tranche validation
+    if (!validateTranchePercentages(payload)) {
+      return res.status(400).json({ message: "Each rule's tranches must sum to 100%" });
+    }
+    const created = await CapitationSettings.create(payload);
+    return res.status(201).json(created);
+  } catch (err) {
+    // Handle unique index violation for academicYear
+    if (err.code === 11000) {
+      return res.status(409).json({ message: "Settings for academicYear already exist" });
+    }
+    return res.status(500).json({ message: "Error creating settings", error: err.message });
+  }
+};
+
+// PUT /capitation-settings/:id
+const updateSettingsById = async (req, res) => {
+  try {
+    const payload = req.body || {};
+    if (!validateTranchePercentages(payload)) {
+      return res.status(400).json({ message: "Each rule's tranches must sum to 100%" });
+    }
+    const updated = await CapitationSettings.findByIdAndUpdate(req.params.id, payload, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updated) return res.status(404).json({ message: "Settings not found" });
+    return res.status(200).json(updated);
+  } catch (err) {
+    return res.status(500).json({ message: "Error updating settings", error: err.message });
+  }
+};
+
+// DELETE /capitation-settings/:id
+const deleteSettingsById = async (req, res) => {
+  try {
+    const deleted = await CapitationSettings.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Settings not found" });
+    return res.status(200).json({ message: "Settings deleted" });
+  } catch (err) {
+    return res.status(500).json({ message: "Error deleting settings", error: err.message });
+  }
+};
+
+// PUT /capitation-settings/upsert-by-year/:year
+const upsertByYear = async (req, res) => {
+  try {
+    const year = parseInt(req.params.year);
+    if (Number.isNaN(year)) return res.status(400).json({ message: "Invalid year" });
+    const payload = { ...(req.body || {}), academicYear: year };
+    if (!validateTranchePercentages(payload)) {
+      return res.status(400).json({ message: "Each rule's tranches must sum to 100%" });
+    }
+    const updated = await CapitationSettings.findOneAndUpdate(
+      { academicYear: year },
+      { $set: payload },
+      { new: true, upsert: true, runValidators: true }
+    );
+    return res.status(200).json(updated);
+  } catch (err) {
+    return res.status(500).json({ message: "Error upserting settings", error: err.message });
+  }
+};
+
+module.exports = {
+  getAllSettings,
+  getSettingsById,
+  getSettingsByYear,
+  createSettings,
+  updateSettingsById,
+  deleteSettingsById,
+  upsertByYear,
+};

@@ -16,6 +16,12 @@ router.get(
   accountabilityController.getAllApprovalEntries
 );
 
+// Approve a specific tranche on an accountability entry
+router.put(
+  "/approvals/:id/approve",
+  accountabilityController.approveTranche
+);
+
 // Route for fetching school-specific disbursement details
 router.get("/disbursements/by-school", accountabilityController.getSchoolDisbursements);
 

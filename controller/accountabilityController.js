@@ -158,7 +158,7 @@ const getAllApprovalEntries = async (req, res) => {
           schoolName: 1,
           schoolType: 1,
           ownership: 1,
-          amountDisbursed: "$tranches.amountDisbursed",
+          // amountDisbursed: "$tranches.amountDisbursed",
           currency: "$tranches.currency",
           approval: "$tranches.approval",
           amountApproved: "$tranches.amountApproved",
@@ -253,6 +253,67 @@ const getSchoolDisbursements = async (req, res) => {
   }
 };
 
+// Approve a tranche for a given accountability entry
+const approveTranche = async (req, res) => {
+  try {
+    const { id } = req.params; // Accountability document ID
+    const {
+      trancheName,
+      approvedBy,
+      approverName,
+      approvalDate,
+      status,
+      remarks,
+      amountApproved,
+    } = req.body;
+
+    if (!trancheName) {
+      return res.status(400).json({ message: "trancheName is required" });
+    }
+
+    const update = {
+      "tranches.$[t].approval.approvedBy": approvedBy ?? null,
+      "tranches.$[t].approval.approverName": approverName ?? null,
+      "tranches.$[t].approval.approvalDate": approvalDate
+        ? new Date(approvalDate)
+        : new Date(),
+      "tranches.$[t].approval.status": status || "Approved",
+      "tranches.$[t].approval.remarks": remarks ?? null,
+    };
+
+    if (amountApproved !== undefined) {
+      update["tranches.$[t].amountApproved"] = amountApproved;
+    }
+
+    const updated = await Accountability.findOneAndUpdate(
+      { _id: id },
+      { $set: update },
+      {
+        new: true,
+        arrayFilters: [{ "t.name": trancheName }],
+        runValidators: true,
+      }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Entry or tranche not found" });
+    }
+
+    // Return the updated tranche only for convenience
+    const updatedTranche = (updated.tranches || []).find(
+      (tr) => tr.name === trancheName
+    );
+
+    return res.status(200).json({
+      message: "Tranche approved successfully",
+      tranche: updatedTranche || null,
+      entryId: updated._id,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error approving tranche", error: error.message });
+  }
+};
+
 module.exports = {
   getAllAccountabilityEntries,
   getAccountabilityById,
@@ -262,4 +323,5 @@ module.exports = {
   //APPROVALS
   getAllApprovalEntries,
   getSchoolDisbursements,
+  approveTranche,
 };
