@@ -35,6 +35,9 @@ const TrancheDistributionSchema = new mongoose.Schema(
     tranche1Pct: { type: Number, default: 70 },
     tranche2Pct: { type: Number, default: 20 },
     tranche3Pct: { type: Number, default: 10 },
+    tranche1InflationCorrectionPct: { type: Number, default: 0 },
+    tranche2InflationCorrectionPct: { type: Number, default: 0 },
+    tranche3InflationCorrectionPct: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -48,7 +51,6 @@ const GrantRuleSchema = new mongoose.Schema(
     amountPerSchool: { type: Number, default: 0 },
     exchangeRateToSSP: { type: Number, default: 1 },
     trancheDistribution: { type: TrancheDistributionSchema, default: () => ({}) },
-    approvedInflationCorrectionPct: { type: Number, default: 0 }, // e.g., 15 means 15%
   },
   { _id: false }
 );
@@ -111,8 +113,7 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 200,
             amountPerSchool: 2000,
             exchangeRateToSSP: 1,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10 },
-            approvedInflationCorrectionPct: 0,
+            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
           },
           {
             schoolType: "SEC",
@@ -120,8 +121,7 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 300,
             amountPerSchool: 3000,
             exchangeRateToSSP: 1,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10 },
-            approvedInflationCorrectionPct: 15,
+            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 15, tranche2InflationCorrectionPct: 15, tranche3InflationCorrectionPct: 15 },
           },
           {
             schoolType: "ALP",
@@ -129,8 +129,7 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 200,
             amountPerSchool: 2000,
             exchangeRateToSSP: 1,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10 },
-            approvedInflationCorrectionPct: 0,
+            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
           },
         ],
       },
@@ -147,7 +146,7 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 20,
             amountPerSchool: 200,
             exchangeRateToSSP: 100,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10 },
+            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
           },
           {
             schoolType: "SEC",
@@ -155,7 +154,7 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 30,
             amountPerSchool: 300,
             exchangeRateToSSP: 100,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10 },
+            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
           },
           {
             schoolType: "ALP",
@@ -163,7 +162,7 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 20,
             amountPerSchool: 200,
             exchangeRateToSSP: 100,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10 },
+            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
           },
         ],
       },

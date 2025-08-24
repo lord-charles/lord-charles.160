@@ -31,7 +31,7 @@ const BudgetGroupSchema = new mongoose.Schema({
   group: { type: String, enum: ["OPEX", "CAPEX"] },
   categories: [CategorySchema],
 });
-
+ 
 // BudgetSchema
 const BudgetSchema = new mongoose.Schema({
   submittedAmount: { type: Number },

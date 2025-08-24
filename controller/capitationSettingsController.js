@@ -15,6 +15,62 @@ function validateTranchePercentages(settings) {
   return capexOk && opexOk;
 }
 
+// Normalize payload: ensure tranche-specific inflation fields exist per rule,
+// and migrate legacy fields if present.
+function normalizeInflationFields(settings) {
+  if (!settings || typeof settings !== "object") return settings;
+
+  const normalizeRules = (rules = []) =>
+    (Array.isArray(rules) ? rules : []).map((rule) => {
+      const r = { ...rule };
+      r.trancheDistribution = { ...(r.trancheDistribution || {}) };
+
+      // Legacy: rule-level approvedInflationCorrectionPct
+      const legacyRuleInfl = r.approvedInflationCorrectionPct;
+      // Legacy: trancheDistribution.approvedInflationCorrectionPct
+      const legacyTrancheInfl = r.trancheDistribution.approvedInflationCorrectionPct;
+
+      const inferred =
+        legacyRuleInfl !== undefined ? Number(legacyRuleInfl) :
+        legacyTrancheInfl !== undefined ? Number(legacyTrancheInfl) : undefined;
+
+      // If any legacy single inflation value exists, apply to all tranches
+      if (!Number.isNaN(inferred) && inferred !== undefined) {
+        r.trancheDistribution.tranche1InflationCorrectionPct = inferred;
+        r.trancheDistribution.tranche2InflationCorrectionPct = inferred;
+        r.trancheDistribution.tranche3InflationCorrectionPct = inferred;
+      }
+
+      // Ensure fields exist with numeric defaults
+      const td = r.trancheDistribution;
+      td.tranche1InflationCorrectionPct = Number(td.tranche1InflationCorrectionPct || 0);
+      td.tranche2InflationCorrectionPct = Number(td.tranche2InflationCorrectionPct || 0);
+      td.tranche3InflationCorrectionPct = Number(td.tranche3InflationCorrectionPct || 0);
+
+      // Cleanup legacy properties
+      delete r.approvedInflationCorrectionPct;
+      delete r.trancheDistribution.approvedInflationCorrectionPct;
+
+      return r;
+    });
+
+  const normalized = { ...settings };
+  if (normalized.capitationGrants?.rules) {
+    normalized.capitationGrants = {
+      ...normalized.capitationGrants,
+      rules: normalizeRules(normalized.capitationGrants.rules),
+    };
+  }
+  if (normalized.capitalSpend?.rules) {
+    normalized.capitalSpend = {
+      ...normalized.capitalSpend,
+      rules: normalizeRules(normalized.capitalSpend.rules),
+    };
+  }
+
+  return normalized;
+}
+
 // GET /capitation-settings
 const getAllSettings = async (req, res) => {
   try {
@@ -55,7 +111,7 @@ const getSettingsByYear = async (req, res) => {
 // POST /capitation-settings
 const createSettings = async (req, res) => {
   try {
-    const payload = req.body || {};
+    const payload = normalizeInflationFields(req.body || {});
     if (!payload.academicYear) {
       return res.status(400).json({ message: "academicYear is required" });
     }
@@ -77,7 +133,7 @@ const createSettings = async (req, res) => {
 // PUT /capitation-settings/:id
 const updateSettingsById = async (req, res) => {
   try {
-    const payload = req.body || {};
+    const payload = normalizeInflationFields(req.body || {});
     if (!validateTranchePercentages(payload)) {
       return res.status(400).json({ message: "Each rule's tranches must sum to 100%" });
     }
@@ -108,7 +164,7 @@ const upsertByYear = async (req, res) => {
   try {
     const year = parseInt(req.params.year);
     if (Number.isNaN(year)) return res.status(400).json({ message: "Invalid year" });
-    const payload = { ...(req.body || {}), academicYear: year };
+    const payload = normalizeInflationFields({ ...(req.body || {}), academicYear: year });
     if (!validateTranchePercentages(payload)) {
       return res.status(400).json({ message: "Each rule's tranches must sum to 100%" });
     }
