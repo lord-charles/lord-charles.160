@@ -13,6 +13,8 @@ exports.createBudget = async (req, res) => {
   }
 };
 
+
+
 // Get all budgets
 exports.getBudgets = async (req, res) => {
   const { year } = req.query;
@@ -211,6 +213,34 @@ exports.reviewBudget = async (req, res) => {
   }
 };
 
+// Unreview a budget: delete linked Accountability and clear review fields
+exports.unreviewBudget = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const budgetDoc = await Budget.findById(id);
+    if (!budgetDoc) return res.status(404).json({ error: "Budget not found" });
+
+    const accountabilityId = budgetDoc.accountability;
+    if (!accountabilityId) {
+      // Nothing to unreview
+      return res.status(200).json({ message: "Budget is not reviewed" });
+    }
+
+    // Delete the Accountability record
+    await Accountability.findByIdAndDelete(accountabilityId);
+
+    // Clear review fields and unlink
+    budgetDoc.accountability = undefined;
+    budgetDoc.budget = budgetDoc.budget || {};
+    budgetDoc.budget.reviewedBy = undefined;
+    budgetDoc.budget.reviewDate = undefined;
+    await budgetDoc.save();
+
+    return res.status(200).json({ message: "Budget unreviewed and Accountability deleted" });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
 // Update a budget
 exports.updateBudget = async (req, res) => {
   try {
