@@ -96,6 +96,7 @@ const MainSchema = new mongoose.Schema({
   meta: { type: MetaSchema },
   budget: { type: BudgetSchema },
   revenues: [RevenueSchema],
+  accountability: { type: mongoose.Schema.Types.ObjectId, ref: "Accountability" },
 });
 
 MainSchema.index({ code: 1 });

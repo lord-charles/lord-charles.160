@@ -256,7 +256,7 @@ const getSchoolDisbursements = async (req, res) => {
 // Approve a tranche for a given accountability entry
 const approveTranche = async (req, res) => {
   try {
-    const { id } = req.params; // Accountability document ID
+    const { id } = req.params; 
     const {
       trancheName,
       approvedBy,
@@ -264,7 +264,6 @@ const approveTranche = async (req, res) => {
       approvalDate,
       status,
       remarks,
-      amountApproved,
     } = req.body;
 
     if (!trancheName) {
@@ -280,10 +279,6 @@ const approveTranche = async (req, res) => {
       "tranches.$[t].approval.status": status || "Approved",
       "tranches.$[t].approval.remarks": remarks ?? null,
     };
-
-    if (amountApproved !== undefined) {
-      update["tranches.$[t].amountApproved"] = amountApproved;
-    }
 
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },

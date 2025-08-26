@@ -17,7 +17,7 @@ router.get(
 );
 
 // Approve a specific tranche on an accountability entry
-router.put(
+router.patch(
   "/approvals/:id/approve",
   accountabilityController.approveTranche
 );

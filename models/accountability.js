@@ -34,7 +34,7 @@ const revenueSchema = new Schema({
   group: { type: String, default: "OPEX" },
   description: { type: String, default: "No description" },
   amount: { type: Number, default: 0 },
-  currency: { type: String, default: "USD" },
+  currency: { type: String, default: "SSP" },
   dateReceived: { type: Date },
   accountability: {
     status: { type: String, default: "Not specified" },
@@ -52,7 +52,7 @@ const expenditureSchema = new Schema({
   group: { type: String, default: "OPEX" },
   description: { type: String, default: "No description" },
   amount: { type: Number, default: 0 },
-  currency: { type: String, default: "USD" },
+  currency: { type: String, default: "SSP" },
   budgetCode: { type: String },
   dateSpent: { type: Date },
   attachments: { type: [String], default: [] },
@@ -62,7 +62,7 @@ const expenditureSchema = new Schema({
 const trancheSchema = new Schema({
   name: { type: String },
   amountDisbursed: { type: Number, default: 0 },
-  currency: { type: String, default: "USD" },
+  currency: { type: String, default: "SSP" },
   dateDisbursed: { type: Date },
   inflationCorrection: { type: Number, default: 0 },
   previousTrancheLedgerAccountedFor: { type: Boolean },
@@ -89,7 +89,7 @@ const financialSummarySchema = new Schema({
   closingBalance: { type: Number, default: 0 },
   unaccountedBalance: { type: Number, default: 0 },
   previousYearLedgerAccountedFor: { type: Boolean, default: true },
-  percentageAccountedPreviousYear: { type: Number, default: 90 },
+  percentageAccountedPreviousYear: { type: Number, default: 0 },
 });
 
 // Main Schema
