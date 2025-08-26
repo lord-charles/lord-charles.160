@@ -96,7 +96,7 @@ exports.getBudgetByCode = async (req, res) => {
       return res.status(400).json({ error: "Invalid year format" });
     }
 
-    const budgets = await Budget.findOne({ code, year: parsedYear });
+    const budgets = await Budget.findOne({ code, year: parsedYear }).populate("accountability");
     if (!budgets || budgets.length === 0) {
       return res.status(404).json({ error: "No budgets found" });
     }
@@ -111,7 +111,6 @@ exports.getBudgetByCode = async (req, res) => {
 exports.reviewBudget = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(req.body);
     const { reviewedByName, reviewedByDesignation, notes } = req.body || {};
 
     const budgetDoc = await Budget.findById(id);

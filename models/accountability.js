@@ -71,7 +71,7 @@ const trancheSchema = new Schema({
     approvedBy: { type: String },
     approverName: { type: String },
     approvalDate: { type: Date },
-    status: { type: String, default: "Not Approved" },
+    status: { type: String, default: "Pending" },
     remarks: { type: String },
   },
   amountApproved: { type: Number, default: 0 },
