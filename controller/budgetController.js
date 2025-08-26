@@ -109,6 +109,7 @@ exports.getBudgetByCode = async (req, res) => {
 exports.reviewBudget = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(req.body);
     const { reviewedByName, reviewedByDesignation, notes } = req.body || {};
 
     const budgetDoc = await Budget.findById(id);
@@ -195,7 +196,7 @@ exports.reviewBudget = async (req, res) => {
 
     // Update Budget with reviewer info (only fields that exist in BudgetSchema)
     budgetDoc.budget = budgetDoc.budget || {};
-    budgetDoc.budget.reviewedBy = reviewedByName || "System";
+    budgetDoc.budget.reviewedBy = `${reviewedByName} (${reviewedByDesignation})`;
     budgetDoc.budget.reviewDate = new Date();
     budgetDoc.accountability = accountabilityDoc._id;
     await budgetDoc.save();
