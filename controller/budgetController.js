@@ -111,7 +111,14 @@ exports.getBudgetByCode = async (req, res) => {
 exports.reviewBudget = async (req, res) => {
   try {
     const { id } = req.params;
-    const { reviewedByName, reviewedByDesignation, notes } = req.body || {};
+    const {
+      reviewedByName,
+      reviewedByDesignation,
+      notes,
+      reviewStatus,
+      corrections,
+      reviewNotes,
+    } = req.body || {};
 
     const budgetDoc = await Budget.findById(id);
     if (!budgetDoc) return res.status(404).json({ error: "Budget not found" });
@@ -192,13 +199,42 @@ exports.reviewBudget = async (req, res) => {
       tranches,
       notes: notes || undefined,
     };
+    // Determine review outcome before creating accountability
+    const normalizedStatus = ["Reviewed", "Corrections Required"].includes(reviewStatus)
+      ? reviewStatus
+      : "Reviewed";
 
-    const accountabilityDoc = await Accountability.create(accountabilityPayload);
-
-    // Update Budget with reviewer info (only fields that exist in BudgetSchema)
+    // Common review metadata
     budgetDoc.budget = budgetDoc.budget || {};
     budgetDoc.budget.reviewedBy = `${reviewedByName} (${reviewedByDesignation})`;
     budgetDoc.budget.reviewDate = new Date();
+    budgetDoc.budget.reviewStatus = normalizedStatus;
+    if (typeof reviewNotes === "string") {
+      budgetDoc.budget.reviewNotes = reviewNotes;
+    } else if (typeof notes === "string") {
+      budgetDoc.budget.reviewNotes = notes;
+    }
+    if (Array.isArray(corrections)) {
+      budgetDoc.budget.corrections = corrections
+        .filter((c) => c && typeof c.note === "string" && c.note.trim().length > 0)
+        .map((c) => ({
+          note: c.note,
+          addedBy: c.addedBy || `${reviewedByName} (${reviewedByDesignation})`,
+          addedAt: c.addedAt ? new Date(c.addedAt) : new Date(),
+        }));
+    }
+
+    // If corrections are required, do NOT create Accountability yet
+    if (normalizedStatus === "Corrections Required") {
+      await budgetDoc.save();
+      return res.status(200).json({
+        message: "Corrections requested; Accountability not created",
+        budgetId: budgetDoc._id,
+      });
+    }
+
+    // Otherwise create Accountability and link it
+    const accountabilityDoc = await Accountability.create(accountabilityPayload);
     budgetDoc.accountability = accountabilityDoc._id;
     await budgetDoc.save();
 
@@ -233,6 +269,9 @@ exports.unreviewBudget = async (req, res) => {
     budgetDoc.budget = budgetDoc.budget || {};
     budgetDoc.budget.reviewedBy = undefined;
     budgetDoc.budget.reviewDate = undefined;
+    budgetDoc.budget.reviewStatus = "Unreviewed";
+    budgetDoc.budget.reviewNotes = undefined;
+    budgetDoc.budget.corrections = [];
     await budgetDoc.save();
 
     return res.status(200).json({ message: "Budget unreviewed and Accountability deleted" });

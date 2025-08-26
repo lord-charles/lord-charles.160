@@ -37,6 +37,22 @@ const BudgetSchema = new mongoose.Schema({
   submittedAmount: { type: Number },
   reviewedBy: { type: String },
   reviewDate: { type: Date },
+  reviewStatus: {
+    type: String,
+    enum: ["Unreviewed", "Reviewed", "Corrections Required"],
+    default: "Unreviewed",
+  },
+  reviewNotes: { type: String },
+  corrections: [
+    new mongoose.Schema(
+      {
+        note: { type: String },
+        addedBy: { type: String },
+        addedAt: { type: Date, default: Date.now },
+      },
+      { _id: false }
+    ),
+  ],
   previousYearLedgerAccountedFor: { type: Boolean, default: false },
   groups: [BudgetGroupSchema],
 });
