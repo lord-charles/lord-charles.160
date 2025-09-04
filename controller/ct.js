@@ -919,33 +919,38 @@ exports.disburseCash = async (req, res) => {
   }
 };
 
-// Download CT data in batches filtered by state10 and year
-// Accepts body: { state10: string, year: number, lastId?: string, page?: number, limit?: number }
+// Download CT data in batches filtered by state10 and current year
+// Accepts body: { state10: string, lastId?: string, page?: number, limit?: number }
 // Returns up to 5000 records per call with minimal projection
 exports.downloadCTBatch = async (req, res) => {
   try {
-    const { state10, year, lastId } = req.body || {};
+    const { state10, lastId } = req.body || {};
     let { page = 1, limit = 5000 } = req.body || {};
 
-    if (!state10 || !year) {
+    if (!state10) {
       return res.status(400).json({
         success: false,
-        message: "state10 and year are required in the request body",
+        message: "state10 is required in the request body",
       });
     }
 
     limit = Math.min(parseInt(limit, 10) || 5000, 5000);
     page = parseInt(page, 10) || 1;
 
+    // Always use current year
+    const currentYear = new Date().getFullYear();
+
     const match = {
       "location.state10": state10,
-      year: parseInt(year, 10),
+      year: currentYear,
     };
 
     const projection = {
       _id: 1, 
       year: 1,
       "location.state10": 1,
+      "location.county28": 1,
+      "location.payam28": 1,
       "school.name": 1,
       "school.code": 1,
       "learner.dob": 1,
@@ -994,6 +999,12 @@ exports.downloadCTBatch = async (req, res) => {
       hasMore = !!(await CashTransfer.exists(moreFilter));
     }
 
+    // Additional safety: if we're using page-based pagination and got fewer records than limit,
+    // we can be confident there are no more records
+    if (!lastId && countFetched < limit) {
+      hasMore = false;
+    }
+
     return res.status(200).json({
       success: true,
       count: countFetched,
@@ -1001,6 +1012,8 @@ exports.downloadCTBatch = async (req, res) => {
       page: lastId ? undefined : page,
       nextLastId,
       hasMore,
+      // Include current year for reference
+      year: currentYear,
       data,
     });
   } catch (error) {
