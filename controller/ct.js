@@ -952,7 +952,7 @@ exports.downloadCTBatch = async (req, res) => {
       "location.county28": 1,
       "location.payam28": 1,
       "school.name": 1,
-      "classInfo.class": 1,
+      "learner.classInfo.class": 1,
       "school.code": 1,
       "school.type": 1,
       "learner.dob": 1,
