@@ -1,19 +1,115 @@
 const schoolData = require("../models/school-data");
 const SchoolData2023 = require('../models/2023Data');
 
+// Generate a unique school code based on school name
+const generateSchoolCode = async (schoolName) => {
+  // Clean the school name and extract meaningful words
+  const cleanName = schoolName.toUpperCase().replace(/[^A-Z\s]/g, '');
+  const words = cleanName.split(/\s+/).filter(word => word.length > 0);
+  
+  // Helper function to check if code exists
+  const codeExists = async (code) => {
+    const existing = await schoolData.findOne({ code });
+    return !!existing;
+  };
+
+  // Strategy 1: First letters of first 3 words
+  if (words.length >= 3) {
+    const code = words[0][0] + words[1][0] + words[2][0];
+    if (!(await codeExists(code))) {
+      return code;
+    }
+  }
+
+  // Strategy 2: First 2 letters of first word + first letter of second word
+  if (words.length >= 2 && words[0].length >= 2) {
+    const code = words[0].substring(0, 2) + words[1][0];
+    if (!(await codeExists(code))) {
+      return code;
+    }
+  }
+
+  // Strategy 3: First 3 letters of first word
+  if (words[0] && words[0].length >= 3) {
+    const code = words[0].substring(0, 3);
+    if (!(await codeExists(code))) {
+      return code;
+    }
+  }
+
+  // Strategy 4: First letter + variations with common letters
+  const firstLetter = words[0] ? words[0][0] : 'A';
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  
+  for (let i = 0; i < alphabet.length; i++) {
+    for (let j = 0; j < alphabet.length; j++) {
+      const code = firstLetter + alphabet[i] + alphabet[j];
+      if (!(await codeExists(code))) {
+        return code;
+      }
+    }
+  }
+
+  // Strategy 5: Random 3-letter code (fallback)
+  for (let attempt = 0; attempt < 100; attempt++) {
+    let code = '';
+    for (let i = 0; i < 3; i++) {
+      code += alphabet[Math.floor(Math.random() * alphabet.length)];
+    }
+    if (!(await codeExists(code))) {
+      return code;
+    }
+  }
+
+  throw new Error('Unable to generate unique school code');
+};
+
 // Create a new school entry
 exports.createSchool = async (req, res) => {
   try {
-    // Check if a school with the same code or emisId exists
-    const existingSchool = await schoolData.findOne({
-      $or: [{ code: req.body.code }, { emisId: req.body.emisId }]
-    });
+    const { codeType, code: providedCode, schoolName, emisId, ...otherData } = req.body;
 
-    if (existingSchool) {
-      return res.status(400).json({ message: "School with the same code or emisId already exists." });
+    let finalCode;
+
+    // Handle code generation based on type
+    if (codeType === 'new') {
+      if (!schoolName) {
+        return res.status(400).json({ message: "School name is required for generating new code." });
+      }
+      finalCode = await generateSchoolCode(schoolName);
+    } else if (codeType === 'existing') {
+      if (!providedCode) {
+        return res.status(400).json({ message: "School code is required when using existing code." });
+      }
+      
+      // Check if the provided code already exists
+      const existingSchool = await schoolData.findOne({ code: providedCode });
+      if (existingSchool) {
+        return res.status(400).json({ message: "School with this code already exists." });
+      }
+      
+      finalCode = providedCode.toUpperCase();
+    } else {
+      return res.status(400).json({ message: "Invalid code type. Must be 'new' or 'existing'." });
     }
 
-    const newSchool = new schoolData(req.body);
+    // Check if emisId exists (if provided)
+    if (emisId) {
+      const existingEmisSchool = await schoolData.findOne({ emisId });
+      if (existingEmisSchool) {
+        return res.status(400).json({ message: "School with this EMIS ID already exists." });
+      }
+    }
+
+    // Create the school with the final code
+    const schoolDataToSave = {
+      ...otherData,
+      code: finalCode,
+      schoolName,
+      emisId
+    };
+
+    const newSchool = new schoolData(schoolDataToSave);
     const savedSchool = await newSchool.save();
 
     const testLearner = new SchoolData2023({
@@ -36,7 +132,6 @@ exports.createSchool = async (req, res) => {
       firstName: "Test",
       middleName: "Student",
       lastName: "Learner",
-
     });
 
     await testLearner.save();
@@ -45,7 +140,8 @@ exports.createSchool = async (req, res) => {
       message: "School and test learner created successfully",
       data: {
         school: savedSchool,
-        testLearner: testLearner
+        testLearner: testLearner,
+        generatedCode: codeType === 'new' ? finalCode : null
       }
     });
   } catch (error) {
@@ -751,5 +847,48 @@ exports.getSchoolTypesByState = async (req, res) => {
     res.json(schoolTypeStats);
   } catch (error) {
     res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+// Preview school code generation
+exports.previewSchoolCode = async (req, res) => {
+  try {
+    const { schoolName } = req.body;
+    
+    if (!schoolName) {
+      return res.status(400).json({ message: "School name is required." });
+    }
+
+    const suggestedCode = await generateSchoolCode(schoolName);
+    
+    res.status(200).json({
+      message: "School code generated successfully",
+      data: {
+        schoolName,
+        suggestedCode
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error generating school code", error: error.message });
+  }
+};
+
+// Check if school code is available
+exports.checkCodeAvailability = async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!code) {
+      return res.status(400).json({ message: "School code is required." });
+    }
+
+    const existingSchool = await schoolData.findOne({ code: code.toUpperCase() });
+    
+    res.status(200).json({
+      available: !existingSchool,
+      code: code.toUpperCase()
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error checking code availability", error: error.message });
   }
 };
