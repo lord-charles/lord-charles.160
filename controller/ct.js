@@ -9,21 +9,21 @@ const parseNumberFromString = (value) => {
   if (value === null || value === undefined || value === "") {
     return null;
   }
-  
+
   // Convert to string first
   const stringValue = String(value);
-  
+
   // Remove all non-digit characters except decimal point and minus sign
-  const cleanedValue = stringValue.replace(/[^\d.-]/g, '');
-  
+  const cleanedValue = stringValue.replace(/[^\d.-]/g, "");
+
   // If empty after cleaning, return null
   if (!cleanedValue) {
     return null;
   }
-  
+
   // Parse as number
   const parsedNumber = parseFloat(cleanedValue);
-  
+
   // Return null if not a valid number
   return isNaN(parsedNumber) ? null : Math.floor(Math.abs(parsedNumber));
 };
@@ -107,7 +107,9 @@ exports.createCashTransfer = async (req, res) => {
       validation: {
         isValidated: isValidated,
         invalidationReason: invalidationReason || "",
-        finalSerialCtefNumber: parseNumberFromString(CTEFSerialNumber[0].Number),
+        finalSerialCtefNumber: parseNumberFromString(
+          CTEFSerialNumber[0].Number
+        ),
         dateValidatedAtSchool: CTEFSerialNumber[0].DateIssued,
       },
       amounts: {
@@ -228,6 +230,7 @@ exports.getStatCardData = async (req, res) => {
   try {
     const { tranche, state, county, payam, year } = req.query;
 
+    // Build match conditions
     const matchConditions = {};
 
     if (state) {
@@ -246,176 +249,196 @@ exports.getStatCardData = async (req, res) => {
       matchConditions.tranche = parseInt(tranche);
     }
 
+    console.log("Match conditions:", matchConditions);
+
+    // Simplified and more robust aggregation pipeline
     const pipeline = [
       {
         $match: matchConditions,
       },
+      // Add fields for disability checking with proper null handling
       {
         $addFields: {
-          disabilityInfo: { $arrayElemAt: ["$learner.disabilities", 0] },
-        },
-      },
-      {
-        $addFields: {
-          totalDisabilities: {
-            $sum: [
-              { $ifNull: ["$disabilityInfo.disabilities.difficultySeeing", 1] },
-              {
-                $ifNull: ["$disabilityInfo.disabilities.difficultyHearing", 1],
-              },
-              {
-                $ifNull: ["$disabilityInfo.disabilities.difficultyTalking", 1],
-              },
-              {
-                $ifNull: ["$disabilityInfo.disabilities.difficultySelfCare", 1],
-              },
-              {
-                $ifNull: ["$disabilityInfo.disabilities.difficultyWalking", 1],
-              },
-              {
-                $ifNull: [
-                  "$disabilityInfo.disabilities.difficultyRecalling",
-                  1,
-                ],
-              },
-            ],
+          disabilityInfo: {
+            $ifNull: [{ $arrayElemAt: ["$learner.disabilities", 0] }, {}],
           },
         },
       },
       {
         $addFields: {
           hasDisability: {
-            $or: [
-              { $gt: ["$disabilityInfo.disabilities.difficultySeeing", 1] },
-              { $gt: ["$disabilityInfo.disabilities.difficultyHearing", 1] },
-              { $gt: ["$disabilityInfo.disabilities.difficultyTalking", 1] },
-              { $gt: ["$disabilityInfo.disabilities.difficultySelfCare", 1] },
-              { $gt: ["$disabilityInfo.disabilities.difficultyWalking", 1] },
-              { $gt: ["$disabilityInfo.disabilities.difficultyRecalling", 1] },
-            ],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: "$school.code",
-          tranche: { $first: "$tranche" },
-          createdAt: { $first: "$createdAt" },
-          isPublicSchool: {
-            $first: { $eq: ["$school.ownership", "Public"] },
-          },
-          learners: {
-            $push: {
-              gender: "$learner.gender",
-              hasDisability: "$hasDisability",
-              attendance: "$learner.attendance",
+            $cond: {
+              if: { $ifNull: ["$disabilityInfo.disabilities", false] },
+              then: {
+                $or: [
+                  {
+                    $gt: [
+                      {
+                        $ifNull: [
+                          "$disabilityInfo.disabilities.difficultySeeing",
+                          1,
+                        ],
+                      },
+                      1,
+                    ],
+                  },
+                  {
+                    $gt: [
+                      {
+                        $ifNull: [
+                          "$disabilityInfo.disabilities.difficultyHearing",
+                          1,
+                        ],
+                      },
+                      1,
+                    ],
+                  },
+                  {
+                    $gt: [
+                      {
+                        $ifNull: [
+                          "$disabilityInfo.disabilities.difficultyTalking",
+                          1,
+                        ],
+                      },
+                      1,
+                    ],
+                  },
+                  {
+                    $gt: [
+                      {
+                        $ifNull: [
+                          "$disabilityInfo.disabilities.difficultySelfCare",
+                          1,
+                        ],
+                      },
+                      1,
+                    ],
+                  },
+                  {
+                    $gt: [
+                      {
+                        $ifNull: [
+                          "$disabilityInfo.disabilities.difficultyWalking",
+                          1,
+                        ],
+                      },
+                      1,
+                    ],
+                  },
+                  {
+                    $gt: [
+                      {
+                        $ifNull: [
+                          "$disabilityInfo.disabilities.difficultyRecalling",
+                          1,
+                        ],
+                      },
+                      1,
+                    ],
+                  },
+                ],
+              },
+              else: false,
             },
           },
-          totalAmountDisbursed: { $sum: "$amounts.paid.amount" },
-          accountedAmount: { $sum: "$accountability.amountAccounted" },
+          learnerGender: { $ifNull: ["$learner.gender", "U"] },
+          learnerAttendance: { $ifNull: ["$learner.attendance", 0] },
+          schoolOwnership: { $ifNull: ["$school.ownership", "Unknown"] },
+          paidAmount: { $ifNull: ["$amounts.paid.amount", 0] },
+          accountedAmount: { $ifNull: ["$accountability.amountAccounted", 0] },
         },
       },
+      // Group by school first
       {
         $group: {
-          _id: "$tranche",
+          _id: {
+            schoolCode: "$school.code",
+            tranche: "$tranche",
+          },
+          createdAt: { $first: "$createdAt" },
+          isPublicSchool: {
+            $first: { $eq: ["$schoolOwnership", "Public"] },
+          },
+          totalLearners: { $sum: 1 },
+          maleLearners: {
+            $sum: { $cond: [{ $eq: ["$learnerGender", "M"] }, 1, 0] },
+          },
+          femaleLearners: {
+            $sum: { $cond: [{ $eq: ["$learnerGender", "F"] }, 1, 0] },
+          },
+          disabledMaleLearners: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [{ $eq: ["$learnerGender", "M"] }, "$hasDisability"],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          disabledFemaleLearners: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [{ $eq: ["$learnerGender", "F"] }, "$hasDisability"],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          totalAttendance: { $sum: "$learnerAttendance" },
+          totalAmountDisbursed: { $sum: "$paidAmount" },
+          accountedAmount: { $sum: "$accountedAmount" },
+        },
+      },
+      // Group by tranche
+      {
+        $group: {
+          _id: "$_id.tranche",
           createdAt: { $first: "$createdAt" },
           totalSchools: { $sum: 1 },
           publicSchools: {
             $sum: { $cond: ["$isPublicSchool", 1, 0] },
           },
-          learners: { $push: "$learners" },
+          totalLearners: { $sum: "$totalLearners" },
+          maleLearners: { $sum: "$maleLearners" },
+          femaleLearners: { $sum: "$femaleLearners" },
+          disabledMaleLearners: { $sum: "$disabledMaleLearners" },
+          disabledFemaleLearners: { $sum: "$disabledFemaleLearners" },
+          totalAttendance: { $sum: "$totalAttendance" },
           totalAmountDisbursed: { $sum: "$totalAmountDisbursed" },
           accountedAmount: { $sum: "$accountedAmount" },
         },
       },
+      // Calculate averages and percentages
       {
-        $project: {
-          _id: 1,
-          createdAt: 1,
-          totalSchools: 1,
-          publicSchools: 1,
-          totalAmountDisbursed: 1,
-          accountedAmount: 1,
-          learnerStats: {
-            $reduce: {
-              input: {
-                $reduce: {
-                  input: "$learners",
-                  initialValue: [],
-                  in: { $concatArrays: ["$$value", "$$this"] },
-                },
-              },
-              initialValue: {
-                total: 0,
-                male: 0,
-                female: 0,
-                disabledMale: 0,
-                disabledFemale: 0,
-                attendance: [],
-              },
-              in: {
-                total: { $add: ["$$value.total", 1] },
-                male: {
-                  $add: [
-                    "$$value.male",
-                    { $cond: [{ $eq: ["$$this.gender", "M"] }, 1, 0] },
-                  ],
-                },
-                female: {
-                  $add: [
-                    "$$value.female",
-                    { $cond: [{ $eq: ["$$this.gender", "F"] }, 1, 0] },
-                  ],
-                },
-                disabledMale: {
-                  $add: [
-                    "$$value.disabledMale",
-                    {
-                      $cond: [
-                        {
-                          $and: [
-                            { $eq: ["$$this.gender", "M"] },
-                            "$$this.hasDisability",
-                          ],
-                        },
-                        1,
-                        0,
-                      ],
-                    },
-                  ],
-                },
-                disabledFemale: {
-                  $add: [
-                    "$$value.disabledFemale",
-                    {
-                      $cond: [
-                        {
-                          $and: [
-                            { $eq: ["$$this.gender", "F"] },
-                            "$$this.hasDisability",
-                          ],
-                        },
-                        1,
-                        0,
-                      ],
-                    },
-                  ],
-                },
-                attendance: {
-                  $concatArrays: ["$$value.attendance", ["$$this.attendance"]],
-                },
-              },
+        $addFields: {
+          averageAttendance: {
+            $cond: {
+              if: { $gt: ["$totalLearners", 0] },
+              then: { $divide: ["$totalAttendance", "$totalLearners"] },
+              else: 0,
             },
+          },
+          totalDisabled: {
+            $add: ["$disabledMaleLearners", "$disabledFemaleLearners"],
           },
         },
       },
       { $sort: { _id: -1 } },
     ];
 
+    console.log("Executing aggregation pipeline...");
     const stats = await CashTransfer.aggregate(pipeline);
+    console.log("Aggregation result:", JSON.stringify(stats, null, 2));
 
     if (!stats || stats.length === 0) {
-      return res.status(404).json({ message: "No data found" });
+      return res
+        .status(404)
+        .json({ message: "No data found for the specified criteria" });
     }
 
     const currentTranche = tranche
@@ -426,64 +449,53 @@ exports.getStatCardData = async (req, res) => {
       return res.status(404).json({ message: "Tranche not found" });
     }
 
-    const totalDisabled =
-      (currentTranche.learnerStats?.disabledMale || 0) +
-      (currentTranche.learnerStats?.disabledFemale || 0);
-    const totalLearners = currentTranche.learnerStats?.total || 0;
-    const averageAttendance =
-      currentTranche.learnerStats?.attendance?.length > 0
-        ? currentTranche.learnerStats.attendance.reduce(
-            (sum, val) => sum + (val || 0),
-            0
-          ) / currentTranche.learnerStats.attendance.length
-        : 0;
+    // Build response with safe calculations
+    const totalDisabled = currentTranche.totalDisabled || 0;
+    const totalLearners = currentTranche.totalLearners || 0;
+    const totalSchools = currentTranche.totalSchools || 0;
+    const publicSchools = currentTranche.publicSchools || 0;
+    const totalAmountDisbursed = currentTranche.totalAmountDisbursed || 0;
+    const accountedAmount = currentTranche.accountedAmount || 0;
 
     const response = {
       totalSchools: {
-        value: currentTranche.totalSchools || 0,
+        value: totalSchools,
       },
       totalLearners: {
         value: totalLearners,
-        male: currentTranche.learnerStats?.male || 0,
-        female: currentTranche.learnerStats?.female || 0,
+        male: currentTranche.maleLearners || 0,
+        female: currentTranche.femaleLearners || 0,
       },
       totalAmountDisbursed: {
-        value: currentTranche.totalAmountDisbursed || 0,
+        value: totalAmountDisbursed,
         currency: "SSP",
       },
       accountabilityRate: {
-        value: currentTranche.totalAmountDisbursed
-          ? Number(
-              (
-                ((currentTranche.accountedAmount || 0) /
-                  currentTranche.totalAmountDisbursed) *
-                100
-              ).toFixed(1)
-            )
-          : 0,
+        value:
+          totalAmountDisbursed > 0
+            ? Number(
+                ((accountedAmount / totalAmountDisbursed) * 100).toFixed(1)
+              )
+            : 0,
       },
       learnersWithDisabilities: {
         value: totalDisabled,
-        percentageOfTotalLearners: totalLearners
-          ? Number(((totalDisabled / totalLearners) * 100).toFixed(1))
-          : 0,
-        male: currentTranche.learnerStats?.disabledMale || 0,
-        female: currentTranche.learnerStats?.disabledFemale || 0,
+        percentageOfTotalLearners:
+          totalLearners > 0
+            ? Number(((totalDisabled / totalLearners) * 100).toFixed(1))
+            : 0,
+        male: currentTranche.disabledMaleLearners || 0,
+        female: currentTranche.disabledFemaleLearners || 0,
       },
       averageAttendance: {
-        value: Number(averageAttendance.toFixed(1)),
+        value: Number((currentTranche.averageAttendance || 0).toFixed(1)),
       },
       publicSchools: {
-        value: currentTranche.publicSchools || 0,
-        percentageOfTotalSchools: currentTranche.totalSchools
-          ? Number(
-              (
-                ((currentTranche.publicSchools || 0) /
-                  currentTranche.totalSchools) *
-                100
-              ).toFixed(1)
-            )
-          : 0,
+        value: publicSchools,
+        percentageOfTotalSchools:
+          totalSchools > 0
+            ? Number(((publicSchools / totalSchools) * 100).toFixed(1))
+            : 0,
       },
       latestTranche: {
         trancheNumber: currentTranche._id,
@@ -491,10 +503,16 @@ exports.getStatCardData = async (req, res) => {
       },
     };
 
+    console.log("Response:", JSON.stringify(response, null, 2));
     res.status(200).json(response);
   } catch (error) {
     console.error("Error fetching stats:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error stack:", error.stack);
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message,
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
   }
 };
 
@@ -946,7 +964,7 @@ exports.downloadCTBatch = async (req, res) => {
     };
 
     const projection = {
-      _id: 1, 
+      _id: 1,
       year: 1,
       "location.state10": 1,
       "location.county28": 1,
@@ -967,26 +985,39 @@ exports.downloadCTBatch = async (req, res) => {
     };
 
     const sort = { _id: 1 };
-    let query = CashTransfer.find(match).select(projection).sort(sort).limit(limit);
+    let query = CashTransfer.find(match)
+      .select(projection)
+      .sort(sort)
+      .limit(limit);
 
     // Prefer keyset pagination when lastId is provided
     if (lastId) {
       if (!mongoose.Types.ObjectId.isValid(lastId)) {
-        return res.status(400).json({ success: false, message: "Invalid lastId" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid lastId" });
       }
-      query = CashTransfer.find({ ...match, _id: { $gt: new mongoose.Types.ObjectId(lastId) } })
+      query = CashTransfer.find({
+        ...match,
+        _id: { $gt: new mongoose.Types.ObjectId(lastId) },
+      })
         .select(projection)
         .sort(sort)
         .limit(limit);
     } else if (page && page > 1) {
       const skip = (page - 1) * limit;
-      query = CashTransfer.find(match).select(projection).sort(sort).skip(skip).limit(limit);
+      query = CashTransfer.find(match)
+        .select(projection)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit);
     }
 
     const docs = await query.lean();
 
     const countFetched = docs.length;
-    const nextLastId = countFetched > 0 ? String(docs[countFetched - 1]._id) : null;
+    const nextLastId =
+      countFetched > 0 ? String(docs[countFetched - 1]._id) : null;
 
     // Strip _id from the data payload as per requested fields
     const data = docs.map(({ _id, ...rest }) => rest);
@@ -1020,6 +1051,8 @@ exports.downloadCTBatch = async (req, res) => {
     });
   } catch (error) {
     console.error("Error downloading CT batch:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
