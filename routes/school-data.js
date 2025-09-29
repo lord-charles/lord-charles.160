@@ -92,6 +92,53 @@ router.post("/school", schoolController.createSchool);
 
 /**
  * @swagger
+ * /preview-code:
+ *   post:
+ *     summary: Preview generated school code
+ *     tags: [School]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               schoolName:
+ *                 type: string
+ *                 description: Name of the school
+ *             required:
+ *               - schoolName
+ *     responses:
+ *       200:
+ *         description: School code generated successfully
+ *       400:
+ *         description: Bad request
+ */
+router.post("/preview-code", schoolController.previewSchoolCode);
+
+/**
+ * @swagger
+ * /check-code/{code}:
+ *   get:
+ *     summary: Check if school code is available
+ *     tags: [School]
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         required: true
+ *         description: The school code to check
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Code availability status
+ *       400:
+ *         description: Bad request
+ */
+router.get("/check-code/:code", schoolController.checkCodeAvailability);
+
+/**
+ * @swagger
  * /schools:
  *   get:
  *     summary: Get all schools
