@@ -740,6 +740,90 @@ exports.getLearnerByCode = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "ctcriterias",
+          let: {
+            learnerTranche: "$tranche",
+            learnerClass: "$learner.classInfo.class",
+            learnerGender: "$learner.gender",
+            learnerHasDisability: "$hasDisability",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$tranche", "$$learnerTranche"] },
+                    { $eq: ["$isActive", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $unwind: "$classes",
+            },
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$classes.className", "$$learnerClass"],
+                },
+              },
+            },
+            {
+              $addFields: {
+                requiresDisabilityForGender: {
+                  $cond: [
+                    { $eq: ["$$learnerGender", "M"] },
+                    "$classes.requiresDisability.male",
+                    "$classes.requiresDisability.female",
+                  ],
+                },
+              },
+            },
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ["$requiresDisabilityForGender", false] },
+                    {
+                      $and: [
+                        { $eq: ["$requiresDisabilityForGender", true] },
+                        { $eq: ["$$learnerHasDisability", true] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                amount: "$classes.amount",
+                currency: 1,
+              },
+            },
+          ],
+          as: "criteriaMatch",
+        },
+      },
+      {
+        $addFields: {
+          calculatedAmount: {
+            $cond: [
+              { $gt: [{ $size: "$criteriaMatch" }, 0] },
+              { $arrayElemAt: ["$criteriaMatch.amount", 0] },
+              0,
+            ],
+          },
+          calculatedCurrency: {
+            $cond: [
+              { $gt: [{ $size: "$criteriaMatch" }, 0] },
+              { $arrayElemAt: ["$criteriaMatch.currency", 0] },
+              "SSP",
+            ],
+          },
+        },
+      },
+      {
         $project: {
           _id: 1,
           tranche: 1,
@@ -759,7 +843,15 @@ exports.getLearnerByCode = async (req, res) => {
           hasDisability: {
             $cond: [{ $eq: ["$hasDisability", true] }, "Yes", "No"],
           },
-          amounts: 1,
+          amounts: {
+            approved: {
+              amount: "$calculatedAmount",
+              currency: "$calculatedCurrency",
+              isDisbursed: {
+                $ifNull: ["$amounts.approved.isDisbursed", false],
+              },
+            },
+          },
           accountability: 1,
           approval: 1,
           year: 1,

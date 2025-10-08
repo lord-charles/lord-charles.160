@@ -97,7 +97,7 @@ const createUser = asyncHandler(async (req, res) => {
     modifiedBy,
     disabilities,
     yearJoined: new Date().getFullYear(),
-    role
+    role,
   });
 
   await user.save();
@@ -215,11 +215,10 @@ const getUsers = async (req, res) => {
       "ClassTeacher",
       "VolunteerTeacher",
       "DeputyHeadTeacher",
-      "SeniorTeacher"
+      "SeniorTeacher",
     ];
 
     const response = await User.find({ userType: { $nin: excludedUserTypes } });
-
 
     res.status(200).json(response);
   } catch (error) {
@@ -268,10 +267,13 @@ const getUserByCriteria = async (req, res) => {
     if (county28) query.county28 = county28;
     if (payam28) query.payam28 = payam28;
     if (state10) query.state10 = state10;
-    if (school) query.school = school
-      .split(" ")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
+    if (school)
+      query.school = school
+        .split(" ")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join(" ");
     if (code) query.code = code;
     if (year) query.year = year;
     if (position) query.position = position;
@@ -333,9 +335,11 @@ const getUsersBySchool = async (req, res) => {
     // Create a query object to find users by school
     const query = {
       school: school
-      .split(" ")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" "),
+        .split(" ")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join(" "),
     };
     // Specify the fields to include in the projection
     const projection = {
@@ -437,9 +441,12 @@ const updateUser = asyncHandler(async (req, res) => {
     modifiedBy,
     disabilities,
     isDroppedOut,
-    role
+    role,
+    password,
   } = req.body;
+
   validateMongodbId(id);
+
   const updatedFields = {
     firstname,
     lastname,
@@ -480,9 +487,15 @@ const updateUser = asyncHandler(async (req, res) => {
     modifiedBy,
     disabilities,
     isDroppedOut,
-    role
-    // passwordHash: password ? await bcrypt.hash(password, 10) : undefined,
+    role,
   };
+
+  // Handle password update securely
+  if (password && password.trim() !== "") {
+    // Hash the new password
+    const saltRounds = 12;
+    updatedFields.passwordHash = await bcrypt.hash(password, saltRounds);
+  }
 
   const user = await User.findByIdAndUpdate(id, updatedFields, { new: true });
 
@@ -490,7 +503,11 @@ const updateUser = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "User not found." });
   }
 
-  res.status(200).json(user);
+  // Remove sensitive data from response
+  const userResponse = user.toObject();
+  delete userResponse.passwordHash;
+
+  res.status(200).json(userResponse);
 });
 
 const updateUsersFieldsBulk = async (req, res) => {
@@ -780,7 +797,10 @@ const payamSchoolDownload = async (req, res) => {
     const schoolData = await User.aggregate(pipeline);
 
     // Count the total number of documents matching the query
-    const totalCount = await User.countDocuments({ payam28, isDroppedOut: false });
+    const totalCount = await User.countDocuments({
+      payam28,
+      isDroppedOut: false,
+    });
 
     // Calculate the total number of pages
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -1133,11 +1153,11 @@ const getTeachersStatusCountByLocation = async (req, res) => {
         result.length > 0
           ? result[0]
           : {
-            activeCount: 0,
-            inactiveCount: 0,
-            droppedOutCount: 0,
-            notDroppedOutCount: 0,
-          },
+              activeCount: 0,
+              inactiveCount: 0,
+              droppedOutCount: 0,
+              notDroppedOutCount: 0,
+            },
     });
   } catch (error) {
     console.error("Error fetching teacher status counts:", error);
