@@ -1075,6 +1075,9 @@ exports.downloadCTBatch = async (req, res) => {
       "validation.isValidated": 1,
       "validation.invalidationReason": 1,
       "validation.finalSerialCtefNumber": 1,
+      "amounts.approved.amount": 1,
+      "amounts.approved.currency": 1,
+      "amounts.approved.isDisbursed": 1,
     };
 
     const sort = { _id: 1 };
