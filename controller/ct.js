@@ -1066,6 +1066,7 @@ exports.downloadCTBatch = async (req, res) => {
       "school.code": 1,
       "school.type": 1,
       "learner.dob": 1,
+      "learner.gender": 1,
       "learner.name.firstName": 1,
       "learner.name.middleName": 1,
       "learner.name.lastName": 1,
