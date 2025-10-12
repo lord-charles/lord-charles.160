@@ -321,6 +321,26 @@ exports.getStatCardData = async (req, res) => {
           as: "criteria",
         },
       },
+      // Lookup CTCriteria to get the correct amounts
+      {
+        $lookup: {
+          from: "ctcriterias",
+          let: { tranche: "$tranche" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$tranche", "$$tranche"] },
+                    { $eq: ["$isActive", true] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "criteria",
+        },
+      },
       // Add fields for disability checking with proper null handling
       {
         $addFields: {
@@ -412,6 +432,58 @@ exports.getStatCardData = async (req, res) => {
           schoolOwnership: { $ifNull: ["$school.ownership", "Unknown"] },
           learnerClass: { $ifNull: ["$learner.classInfo.class", ""] },
           criteriaAmount: {
+            $reduce: {
+              input: "$criteria",
+              initialValue: 0,
+              in: {
+                $let: {
+                  vars: {
+                    matchingClass: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$$this.classes",
+                            cond: {
+                              $eq: [
+                                "$$this.className",
+                                "$learner.classInfo.class",
+                              ],
+                            },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: {
+                    $cond: {
+                      if: { $ne: ["$$matchingClass", null] },
+                      then: {
+                        $cond: {
+                          if: {
+                            $or: [
+                              // Female learners always qualify (requiresDisability.female = false)
+                              { $eq: ["$learner.gender", "F"] },
+                              // Male learners qualify if they have disability (requiresDisability.male = true)
+                              {
+                                $and: [
+                                  { $eq: ["$learner.gender", "M"] },
+                                  { $eq: ["$hasDisability", true] },
+                                ],
+                              },
+                            ],
+                          },
+                          then: "$$matchingClass.amount",
+                          else: "$$value",
+                        },
+                      },
+                      else: "$$value",
+                    },
+                  },
+                },
+              },
+            },
+          },
             $let: {
               vars: {
                 criteria: { $arrayElemAt: ["$criteria", 0] },
