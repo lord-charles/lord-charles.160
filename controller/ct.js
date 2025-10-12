@@ -2,7 +2,6 @@ const CashTransfer = require("../models/ct");
 const CTCriteria = require("../models/CTCriteria");
 const mongoose = require("mongoose");
 const SchoolData = require("../models/2023Data");
-const CTCriteria = require("../models/CTCriteria");
 const School = require("../models/school-data");
 
 // Helper function to intelligently parse numbers from strings
