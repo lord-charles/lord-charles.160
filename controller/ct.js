@@ -484,66 +484,66 @@ exports.getStatCardData = async (req, res) => {
               },
             },
           },
-            $let: {
-              vars: {
-                criteria: { $arrayElemAt: ["$criteria", 0] },
-                learnerClass: { $ifNull: ["$learner.classInfo.class", ""] },
-                learnerGender: { $ifNull: ["$learner.gender", "U"] },
-                hasDisability: "$hasDisability",
-              },
-              in: {
-                $let: {
-                  vars: {
-                    classInfo: {
-                      $arrayElemAt: [
-                        {
-                          $filter: {
-                            input: "$$criteria.classes",
-                            cond: {
-                              $eq: ["$$this.className", "$$learnerClass"],
-                            },
+          $let: {
+            vars: {
+              criteria: { $arrayElemAt: ["$criteria", 0] },
+              learnerClass: { $ifNull: ["$learner.classInfo.class", ""] },
+              learnerGender: { $ifNull: ["$learner.gender", "U"] },
+              hasDisability: "$hasDisability",
+            },
+            in: {
+              $let: {
+                vars: {
+                  classInfo: {
+                    $arrayElemAt: [
+                      {
+                        $filter: {
+                          input: "$$criteria.classes",
+                          cond: {
+                            $eq: ["$$this.className", "$$learnerClass"],
                           },
                         },
-                        0,
+                      },
+                      0,
+                    ],
+                  },
+                },
+                in: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $ne: ["$$classInfo", null] },
+                        {
+                          $or: [
+                            { $not: "$$hasDisability" },
+                            {
+                              $cond: {
+                                if: { $eq: ["$$learnerGender", "M"] },
+                                then: "$$classInfo.requiresDisability.male",
+                                else: "$$classInfo.requiresDisability.female",
+                              },
+                            },
+                          ],
+                        },
                       ],
                     },
-                  },
-                  in: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          { $ne: ["$$classInfo", null] },
-                          {
-                            $or: [
-                              { $not: "$$hasDisability" },
-                              {
-                                $cond: {
-                                  if: { $eq: ["$$learnerGender", "M"] },
-                                  then: "$$classInfo.requiresDisability.male",
-                                  else: "$$classInfo.requiresDisability.female",
-                                },
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                      then: "$$classInfo.amount",
-                      else: 0,
-                    },
+                    then: "$$classInfo.amount",
+                    else: 0,
                   },
                 },
               },
             },
           },
-          disbursedAmount: {
-            $cond: {
-              if: { $eq: ["$amounts.approved.isDisbursed", true] },
-              then: "$criteriaAmount",
-              else: 0,
-            },
-          },
-          accountedAmount: { $ifNull: ["$accountability.amountAccounted", 0] },
         },
+        disbursedAmount: {
+          $cond: {
+            if: { $eq: ["$amounts.approved.isDisbursed", true] },
+            then: "$criteriaAmount",
+            else: 0,
+          },
+        },
+        accountedAmount: { $ifNull: ["$accountability.amountAccounted", 0] },
+      },
       // Debug stage - let's see what we have
       {
         $addFields: {
@@ -640,7 +640,8 @@ exports.getStatCardData = async (req, res) => {
           },
         },
       },
-      { $sort: { _id: -1 } }]
+      { $sort: { _id: -1 } },
+    ];
 
     console.log("Executing aggregation pipeline...");
     const stats = await CashTransfer.aggregate(pipeline);
@@ -725,7 +726,7 @@ exports.getStatCardData = async (req, res) => {
       details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
-
+};
 
 exports.getUniqueCtSchools = async (req, res) => {
   try {
