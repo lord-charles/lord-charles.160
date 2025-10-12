@@ -229,7 +229,7 @@ exports.deleteCashTransfer = async (req, res) => {
 exports.getStatCardData = async (req, res) => {
   try {
     const { tranche, state, county, payam, year } = req.query;
-
+    console.log("Query parameters:", req.query);
     // Build match conditions
     const matchConditions = {};
 
@@ -282,6 +282,19 @@ exports.getStatCardData = async (req, res) => {
       "amounts.approved.amount": { $gt: 0 },
     });
     console.log("Records with amount > 0:", recordsWithAmount);
+
+    // Check CTCriteria data for this tranche
+    const criteriaData = await CTCriteria.find({
+      tranche: parseInt(tranche || 1),
+      isActive: true,
+    });
+    console.log("CTCriteria data:", JSON.stringify(criteriaData, null, 2));
+
+    // Check sample learner class data
+    const sampleLearner = await CashTransfer.findOne(matchConditions).select(
+      "learner.classInfo learner.gender learner.disabilities"
+    );
+    console.log("Sample learner data:", JSON.stringify(sampleLearner, null, 2));
 
     // Simplified and more robust aggregation pipeline
     const pipeline = [
