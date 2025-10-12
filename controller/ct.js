@@ -264,6 +264,25 @@ exports.getStatCardData = async (req, res) => {
     });
     console.log("Records with isDisbursed=true:", disbursedCount);
 
+    // Check the actual disbursed records and their amounts
+    const disbursedRecords = await CashTransfer.find({
+      ...matchConditions,
+      "amounts.approved.isDisbursed": true,
+    })
+      .select("amounts learner.name school.name")
+      .limit(5);
+    console.log(
+      "Sample disbursed records:",
+      JSON.stringify(disbursedRecords, null, 2)
+    );
+
+    // Check if there are any records with amount > 0
+    const recordsWithAmount = await CashTransfer.countDocuments({
+      ...matchConditions,
+      "amounts.approved.amount": { $gt: 0 },
+    });
+    console.log("Records with amount > 0:", recordsWithAmount);
+
     // Simplified and more robust aggregation pipeline
     const pipeline = [
       {
