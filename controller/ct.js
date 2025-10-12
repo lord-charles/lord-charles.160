@@ -251,6 +251,19 @@ exports.getStatCardData = async (req, res) => {
 
     console.log("Match conditions:", matchConditions);
 
+    // First, let's check a sample of the data to understand the amounts structure
+    const sampleData = await CashTransfer.findOne(matchConditions).select(
+      "amounts"
+    );
+    console.log("Sample amounts data:", JSON.stringify(sampleData, null, 2));
+
+    // Check how many records have isDisbursed = true
+    const disbursedCount = await CashTransfer.countDocuments({
+      ...matchConditions,
+      "amounts.approved.isDisbursed": true,
+    });
+    console.log("Records with isDisbursed=true:", disbursedCount);
+
     // Simplified and more robust aggregation pipeline
     const pipeline = [
       {
@@ -355,6 +368,16 @@ exports.getStatCardData = async (req, res) => {
           accountedAmount: { $ifNull: ["$accountability.amountAccounted", 0] },
         },
       },
+      // Debug stage - let's see what we have
+      {
+        $addFields: {
+          debugInfo: {
+            originalApprovedAmount: "$amounts.approved.amount",
+            originalIsDisbursed: "$amounts.approved.isDisbursed",
+            calculatedDisbursedAmount: "$disbursedAmount",
+          },
+        },
+      },
       // Group by school first
       {
         $group: {
@@ -398,6 +421,11 @@ exports.getStatCardData = async (req, res) => {
           totalAttendance: { $sum: "$learnerAttendance" },
           totalAmountDisbursed: { $sum: "$disbursedAmount" },
           accountedAmount: { $sum: "$accountedAmount" },
+          // Debug info
+          sampleDebugInfo: { $first: "$debugInfo" },
+          recordsWithDisbursedAmount: {
+            $sum: { $cond: [{ $gt: ["$disbursedAmount", 0] }, 1, 0] },
+          },
         },
       },
       // Group by tranche
