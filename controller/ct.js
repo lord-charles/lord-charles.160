@@ -232,31 +232,17 @@ exports.getStatCardData = async (req, res) => {
 
     // Build match conditions
     const matchConditions = {};
+    if (state) matchConditions["location.state10"] = state;
+    if (county) matchConditions["location.county10"] = county;
+    if (payam) matchConditions["location.payam10"] = payam;
+    if (year) matchConditions.year = parseInt(year);
+    if (tranche) matchConditions.tranche = parseInt(tranche);
 
-    if (state) {
-      matchConditions["location.state10"] = state;
-    }
-    if (county) {
-      matchConditions["location.county10"] = county;
-    }
-    if (payam) {
-      matchConditions["location.payam10"] = payam;
-    }
-    if (year) {
-      matchConditions.year = parseInt(year);
-    }
-    if (tranche) {
-      matchConditions.tranche = parseInt(tranche);
-    }
-
-    console.log("Match conditions:", matchConditions);
-
-    // Fetch criteria data for amount calculation
+    // Get criteria data for amount calculation
     const criteriaData = await CTCriteria.find({
       tranche: parseInt(tranche || 1),
       isActive: true,
     });
-    console.log("Criteria data:", JSON.stringify(criteriaData, null, 2));
 
     // Create amount lookup map
     const amountMap = {};
@@ -268,43 +254,42 @@ exports.getStatCardData = async (req, res) => {
         };
       });
     });
-    console.log("Amount map:", amountMap);
 
-    // Build dynamic branches for the switch statement
-    const branches = [];
-    Object.keys(amountMap).forEach((className) => {
-      const classData = amountMap[className];
-      if (classData.amount > 0) {
-        // Only include classes with amounts > 0
-        branches.push({
-          case: {
-            $and: [
-              { $eq: ["$learnerClass", className] },
-              {
-                $or: [
-                  { $eq: ["$learnerGender", "F"] }, // Females always qualify if requiresDisability.female = false
-                  {
-                    $and: [
-                      { $eq: ["$learnerGender", "M"] },
-                      { $eq: ["$hasDisability", true] }, // Males need disability if requiresDisability.male = true
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-          then: classData.amount,
-        });
+    // Calculate total disbursed amount separately
+    const disbursedRecords = await CashTransfer.find({
+      ...matchConditions,
+      "amounts.approved.isDisbursed": true,
+    }).select("learner.classInfo.class learner.gender learner.disabilities");
+
+    let totalAmountDisbursed = 0;
+    disbursedRecords.forEach((record) => {
+      const learnerClass = record.learner?.classInfo?.class;
+      const gender = record.learner?.gender;
+      const disabilities = record.learner?.disabilities?.[0]?.disabilities;
+
+      if (learnerClass && amountMap[learnerClass]) {
+        const classData = amountMap[learnerClass];
+
+        // Check if learner qualifies for payment
+        let qualifies = false;
+        if (gender === "F" && !classData.requiresDisability.female) {
+          qualifies = true;
+        } else if (gender === "M" && classData.requiresDisability.male) {
+          // Check if male has disability
+          const hasDisability =
+            disabilities && Object.values(disabilities).some((val) => val > 1);
+          if (hasDisability) qualifies = true;
+        }
+
+        if (qualifies) {
+          totalAmountDisbursed += classData.amount;
+        }
       }
     });
-    console.log("Dynamic branches:", JSON.stringify(branches, null, 2));
 
-    // Simple aggregation pipeline
+    // Simple aggregation pipeline for other stats
     const pipeline = [
-      {
-        $match: matchConditions,
-      },
-      // Add fields for disability checking
+      { $match: matchConditions },
       {
         $addFields: {
           disabilityInfo: {
@@ -393,39 +378,13 @@ exports.getStatCardData = async (req, res) => {
           learnerGender: { $ifNull: ["$learner.gender", "U"] },
           learnerAttendance: { $ifNull: ["$learner.attendance", 0] },
           schoolOwnership: { $ifNull: ["$school.ownership", "Unknown"] },
-          learnerClass: { $ifNull: ["$learner.classInfo.class", ""] },
         },
       },
-      // Calculate disbursed amount based on criteria
-      {
-        $addFields: {
-          criteriaAmount: {
-            $switch: {
-              branches: branches,
-              default: 0,
-            },
-          },
-          disbursedAmount: {
-            $cond: {
-              if: { $eq: ["$amounts.approved.isDisbursed", true] },
-              then: "$criteriaAmount",
-              else: 0,
-            },
-          },
-          accountedAmount: { $ifNull: ["$accountability.amountAccounted", 0] },
-        },
-      },
-      // Group by school first
       {
         $group: {
-          _id: {
-            schoolCode: "$school.code",
-            tranche: "$tranche",
-          },
+          _id: { schoolCode: "$school.code", tranche: "$tranche" },
           createdAt: { $first: "$createdAt" },
-          isPublicSchool: {
-            $first: { $eq: ["$schoolOwnership", "Public"] },
-          },
+          isPublicSchool: { $first: { $eq: ["$schoolOwnership", "Public"] } },
           totalLearners: { $sum: 1 },
           maleLearners: {
             $sum: { $cond: [{ $eq: ["$learnerGender", "M"] }, 1, 0] },
@@ -436,9 +395,7 @@ exports.getStatCardData = async (req, res) => {
           disabledMaleLearners: {
             $sum: {
               $cond: [
-                {
-                  $and: [{ $eq: ["$learnerGender", "M"] }, "$hasDisability"],
-                },
+                { $and: [{ $eq: ["$learnerGender", "M"] }, "$hasDisability"] },
                 1,
                 0,
               ],
@@ -447,39 +404,33 @@ exports.getStatCardData = async (req, res) => {
           disabledFemaleLearners: {
             $sum: {
               $cond: [
-                {
-                  $and: [{ $eq: ["$learnerGender", "F"] }, "$hasDisability"],
-                },
+                { $and: [{ $eq: ["$learnerGender", "F"] }, "$hasDisability"] },
                 1,
                 0,
               ],
             },
           },
           totalAttendance: { $sum: "$learnerAttendance" },
-          totalAmountDisbursed: { $sum: "$disbursedAmount" },
-          accountedAmount: { $sum: "$accountedAmount" },
+          accountedAmount: {
+            $sum: { $ifNull: ["$accountability.amountAccounted", 0] },
+          },
         },
       },
-      // Group by tranche
       {
         $group: {
           _id: "$_id.tranche",
           createdAt: { $first: "$createdAt" },
           totalSchools: { $sum: 1 },
-          publicSchools: {
-            $sum: { $cond: ["$isPublicSchool", 1, 0] },
-          },
+          publicSchools: { $sum: { $cond: ["$isPublicSchool", 1, 0] } },
           totalLearners: { $sum: "$totalLearners" },
           maleLearners: { $sum: "$maleLearners" },
           femaleLearners: { $sum: "$femaleLearners" },
           disabledMaleLearners: { $sum: "$disabledMaleLearners" },
           disabledFemaleLearners: { $sum: "$disabledFemaleLearners" },
           totalAttendance: { $sum: "$totalAttendance" },
-          totalAmountDisbursed: { $sum: "$totalAmountDisbursed" },
           accountedAmount: { $sum: "$accountedAmount" },
         },
       },
-      // Calculate averages and percentages
       {
         $addFields: {
           averageAttendance: {
@@ -497,9 +448,7 @@ exports.getStatCardData = async (req, res) => {
       { $sort: { _id: -1 } },
     ];
 
-    console.log("Executing aggregation pipeline...");
     const stats = await CashTransfer.aggregate(pipeline);
-    console.log("Aggregation result:", JSON.stringify(stats, null, 2));
 
     if (!stats || stats.length === 0) {
       return res
@@ -515,20 +464,10 @@ exports.getStatCardData = async (req, res) => {
       return res.status(404).json({ message: "Tranche not found" });
     }
 
-    // Build response with safe calculations
-    const totalDisabled = currentTranche.totalDisabled || 0;
-    const totalLearners = currentTranche.totalLearners || 0;
-    const totalSchools = currentTranche.totalSchools || 0;
-    const publicSchools = currentTranche.publicSchools || 0;
-    const totalAmountDisbursed = currentTranche.totalAmountDisbursed || 0;
-    const accountedAmount = currentTranche.accountedAmount || 0;
-
     const response = {
-      totalSchools: {
-        value: totalSchools,
-      },
+      totalSchools: { value: currentTranche.totalSchools || 0 },
       totalLearners: {
-        value: totalLearners,
+        value: currentTranche.totalLearners || 0,
         male: currentTranche.maleLearners || 0,
         female: currentTranche.femaleLearners || 0,
       },
@@ -540,15 +479,24 @@ exports.getStatCardData = async (req, res) => {
         value:
           totalAmountDisbursed > 0
             ? Number(
-                ((accountedAmount / totalAmountDisbursed) * 100).toFixed(1)
+                (
+                  (currentTranche.accountedAmount / totalAmountDisbursed) *
+                  100
+                ).toFixed(1)
               )
             : 0,
       },
       learnersWithDisabilities: {
-        value: totalDisabled,
+        value: currentTranche.totalDisabled || 0,
         percentageOfTotalLearners:
-          totalLearners > 0
-            ? Number(((totalDisabled / totalLearners) * 100).toFixed(1))
+          currentTranche.totalLearners > 0
+            ? Number(
+                (
+                  (currentTranche.totalDisabled /
+                    currentTranche.totalLearners) *
+                  100
+                ).toFixed(1)
+              )
             : 0,
         male: currentTranche.disabledMaleLearners || 0,
         female: currentTranche.disabledFemaleLearners || 0,
@@ -557,10 +505,15 @@ exports.getStatCardData = async (req, res) => {
         value: Number((currentTranche.averageAttendance || 0).toFixed(1)),
       },
       publicSchools: {
-        value: publicSchools,
+        value: currentTranche.publicSchools || 0,
         percentageOfTotalSchools:
-          totalSchools > 0
-            ? Number(((publicSchools / totalSchools) * 100).toFixed(1))
+          currentTranche.totalSchools > 0
+            ? Number(
+                (
+                  (currentTranche.publicSchools / currentTranche.totalSchools) *
+                  100
+                ).toFixed(1)
+              )
             : 0,
       },
       latestTranche: {
@@ -569,11 +522,9 @@ exports.getStatCardData = async (req, res) => {
       },
     };
 
-    console.log("Response:", JSON.stringify(response, null, 2));
     res.status(200).json(response);
   } catch (error) {
     console.error("Error fetching stats:", error);
-    console.error("Error stack:", error.stack);
     res.status(500).json({
       error: "Internal server error",
       message: error.message,
@@ -582,10 +533,468 @@ exports.getStatCardData = async (req, res) => {
   }
 };
 
-exports.getStatCardDataOLD = async (req, res) => {
+try {
+  const { tranche, state, county, payam, year } = req.query;
+
+  // Build match conditions
+  const matchConditions = {};
+
+  if (state) {
+    matchConditions["location.state10"] = state;
+  }
+  if (county) {
+    matchConditions["location.county10"] = county;
+  }
+  if (payam) {
+    matchConditions["location.payam10"] = payam;
+  }
+  if (year) {
+    matchConditions.year = parseInt(year);
+  }
+  if (tranche) {
+    matchConditions.tranche = parseInt(tranche);
+  }
+
+  console.log("Match conditions:", matchConditions);
+
+  // Fetch criteria data for amount calculation
+  const criteriaData = await CTCriteria.find({
+    tranche: parseInt(tranche || 1),
+    isActive: true,
+  });
+  console.log("Criteria data:", JSON.stringify(criteriaData, null, 2));
+
+  // Create amount lookup map
+  const amountMap = {};
+  criteriaData.forEach((criteria) => {
+    criteria.classes.forEach((classInfo) => {
+      amountMap[classInfo.className] = {
+        amount: classInfo.amount,
+        requiresDisability: classInfo.requiresDisability,
+      };
+    });
+  });
+  console.log("Amount map:", amountMap);
+
+  // Build dynamic branches for the switch statement
+  const branches = [];
+  Object.keys(amountMap).forEach((className) => {
+    const classData = amountMap[className];
+    if (classData.amount > 0) {
+      // Only include classes with amounts > 0
+      branches.push({
+        case: {
+          $and: [
+            { $eq: ["$learnerClass", className] },
+            {
+              $or: [
+                { $eq: ["$learnerGender", "F"] }, // Females always qualify if requiresDisability.female = false
+                {
+                  $and: [
+                    { $eq: ["$learnerGender", "M"] },
+                    { $eq: ["$hasDisability", true] }, // Males need disability if requiresDisability.male = true
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        then: classData.amount,
+      });
+    }
+  });
+  console.log("Dynamic branches:", JSON.stringify(branches, null, 2));
+
+  // Add debugging stage to see what's happening with individual records
+  const debugPipeline = [
+    { $match: matchConditions },
+    { $limit: 5 },
+    {
+      $addFields: {
+        disabilityInfo: {
+          $ifNull: [{ $arrayElemAt: ["$learner.disabilities", 0] }, {}],
+        },
+      },
+    },
+    {
+      $addFields: {
+        hasDisability: {
+          $cond: {
+            if: { $ifNull: ["$disabilityInfo.disabilities", false] },
+            then: {
+              $or: [
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultySeeing",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultyHearing",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultyTalking",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultySelfCare",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultyWalking",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultyRecalling",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+              ],
+            },
+            else: false,
+          },
+        },
+        learnerClass: { $ifNull: ["$learner.classInfo.class", ""] },
+        learnerGender: { $ifNull: ["$learner.gender", "U"] },
+      },
+    },
+    {
+      $project: {
+        learnerClass: 1,
+        learnerGender: 1,
+        hasDisability: 1,
+        isDisbursed: "$amounts.approved.isDisbursed",
+        storedAmount: "$amounts.approved.amount",
+      },
+    },
+  ];
+
+  const debugResults = await CashTransfer.aggregate(debugPipeline);
+  console.log("Debug sample records:", JSON.stringify(debugResults, null, 2));
+
+  // Simple aggregation pipeline
+  const pipeline = [
+    {
+      $match: matchConditions,
+    },
+    // Add fields for disability checking
+    {
+      $addFields: {
+        disabilityInfo: {
+          $ifNull: [{ $arrayElemAt: ["$learner.disabilities", 0] }, {}],
+        },
+      },
+    },
+    {
+      $addFields: {
+        hasDisability: {
+          $cond: {
+            if: { $ifNull: ["$disabilityInfo.disabilities", false] },
+            then: {
+              $or: [
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultySeeing",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultyHearing",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultyTalking",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultySelfCare",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultyWalking",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $ifNull: [
+                        "$disabilityInfo.disabilities.difficultyRecalling",
+                        1,
+                      ],
+                    },
+                    1,
+                  ],
+                },
+              ],
+            },
+            else: false,
+          },
+        },
+        learnerGender: { $ifNull: ["$learner.gender", "U"] },
+        learnerAttendance: { $ifNull: ["$learner.attendance", 0] },
+        schoolOwnership: { $ifNull: ["$school.ownership", "Unknown"] },
+        learnerClass: { $ifNull: ["$learner.classInfo.class", ""] },
+      },
+    },
+    // Calculate disbursed amount based on criteria
+    {
+      $addFields: {
+        criteriaAmount: {
+          $switch: {
+            branches: branches,
+            default: 0,
+          },
+        },
+        disbursedAmount: {
+          $cond: {
+            if: { $eq: ["$amounts.approved.isDisbursed", true] },
+            then: "$criteriaAmount",
+            else: 0,
+          },
+        },
+        accountedAmount: { $ifNull: ["$accountability.amountAccounted", 0] },
+      },
+    },
+    // Group by school first
+    {
+      $group: {
+        _id: {
+          schoolCode: "$school.code",
+          tranche: "$tranche",
+        },
+        createdAt: { $first: "$createdAt" },
+        isPublicSchool: {
+          $first: { $eq: ["$schoolOwnership", "Public"] },
+        },
+        totalLearners: { $sum: 1 },
+        maleLearners: {
+          $sum: { $cond: [{ $eq: ["$learnerGender", "M"] }, 1, 0] },
+        },
+        femaleLearners: {
+          $sum: { $cond: [{ $eq: ["$learnerGender", "F"] }, 1, 0] },
+        },
+        disabledMaleLearners: {
+          $sum: {
+            $cond: [
+              {
+                $and: [{ $eq: ["$learnerGender", "M"] }, "$hasDisability"],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        disabledFemaleLearners: {
+          $sum: {
+            $cond: [
+              {
+                $and: [{ $eq: ["$learnerGender", "F"] }, "$hasDisability"],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        totalAttendance: { $sum: "$learnerAttendance" },
+        totalAmountDisbursed: { $sum: "$disbursedAmount" },
+        accountedAmount: { $sum: "$accountedAmount" },
+      },
+    },
+    // Group by tranche
+    {
+      $group: {
+        _id: "$_id.tranche",
+        createdAt: { $first: "$createdAt" },
+        totalSchools: { $sum: 1 },
+        publicSchools: {
+          $sum: { $cond: ["$isPublicSchool", 1, 0] },
+        },
+        totalLearners: { $sum: "$totalLearners" },
+        maleLearners: { $sum: "$maleLearners" },
+        femaleLearners: { $sum: "$femaleLearners" },
+        disabledMaleLearners: { $sum: "$disabledMaleLearners" },
+        disabledFemaleLearners: { $sum: "$disabledFemaleLearners" },
+        totalAttendance: { $sum: "$totalAttendance" },
+        totalAmountDisbursed: { $sum: "$totalAmountDisbursed" },
+        accountedAmount: { $sum: "$accountedAmount" },
+      },
+    },
+    // Calculate averages and percentages
+    {
+      $addFields: {
+        averageAttendance: {
+          $cond: {
+            if: { $gt: ["$totalLearners", 0] },
+            then: { $divide: ["$totalAttendance", "$totalLearners"] },
+            else: 0,
+          },
+        },
+        totalDisabled: {
+          $add: ["$disabledMaleLearners", "$disabledFemaleLearners"],
+        },
+      },
+    },
+    { $sort: { _id: -1 } },
+  ];
+
+  console.log("Executing aggregation pipeline...");
+  const stats = await CashTransfer.aggregate(pipeline);
+  console.log("Aggregation result:", JSON.stringify(stats, null, 2));
+
+  if (!stats || stats.length === 0) {
+    return res
+      .status(404)
+      .json({ message: "No data found for the specified criteria" });
+  }
+
+  const currentTranche = tranche
+    ? stats.find((stat) => stat._id === parseInt(tranche))
+    : stats[0];
+
+  if (!currentTranche) {
+    return res.status(404).json({ message: "Tranche not found" });
+  }
+
+  // Build response with safe calculations
+  const totalDisabled = currentTranche.totalDisabled || 0;
+  const totalLearners = currentTranche.totalLearners || 0;
+  const totalSchools = currentTranche.totalSchools || 0;
+  const publicSchools = currentTranche.publicSchools || 0;
+  const totalAmountDisbursed = currentTranche.totalAmountDisbursed || 0;
+  const accountedAmount = currentTranche.accountedAmount || 0;
+
+  const response = {
+    totalSchools: {
+      value: totalSchools,
+    },
+    totalLearners: {
+      value: totalLearners,
+      male: currentTranche.maleLearners || 0,
+      female: currentTranche.femaleLearners || 0,
+    },
+    totalAmountDisbursed: {
+      value: totalAmountDisbursed,
+      currency: "SSP",
+    },
+    accountabilityRate: {
+      value:
+        totalAmountDisbursed > 0
+          ? Number(((accountedAmount / totalAmountDisbursed) * 100).toFixed(1))
+          : 0,
+    },
+    learnersWithDisabilities: {
+      value: totalDisabled,
+      percentageOfTotalLearners:
+        totalLearners > 0
+          ? Number(((totalDisabled / totalLearners) * 100).toFixed(1))
+          : 0,
+      male: currentTranche.disabledMaleLearners || 0,
+      female: currentTranche.disabledFemaleLearners || 0,
+    },
+    averageAttendance: {
+      value: Number((currentTranche.averageAttendance || 0).toFixed(1)),
+    },
+    publicSchools: {
+      value: publicSchools,
+      percentageOfTotalSchools:
+        totalSchools > 0
+          ? Number(((publicSchools / totalSchools) * 100).toFixed(1))
+          : 0,
+    },
+    latestTranche: {
+      trancheNumber: currentTranche._id,
+      startDate: currentTranche.createdAt,
+    },
+  };
+
+  console.log("Response:", JSON.stringify(response, null, 2));
+  res.status(200).json(response);
+} catch (error) {
+  console.error("Error fetching stats:", error);
+  console.error("Error stack:", error.stack);
+  res.status(500).json({
+    error: "Internal server error",
+    message: error.message,
+    details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+  });
+}
+
+exports.getUniqueCtSchools = async (req, res) => {
   try {
     const { tranche, state, county, payam, year } = req.query;
-    console.log("Query parameters:", req.query);
     // Build match conditions
     const matchConditions = {};
 
