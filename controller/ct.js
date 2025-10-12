@@ -1,4 +1,5 @@
 const CashTransfer = require("../models/ct");
+const CTCriteria = require("../models/CTCriteria");
 const mongoose = require("mongoose");
 const SchoolData = require("../models/2023Data");
 const CTCriteria = require("../models/CTCriteria");
@@ -288,6 +289,26 @@ exports.getStatCardData = async (req, res) => {
       {
         $match: matchConditions,
       },
+      // Lookup CTCriteria to get the correct amounts
+      {
+        $lookup: {
+          from: "ctcriterias",
+          let: { tranche: "$tranche" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$tranche", "$$tranche"] },
+                    { $eq: ["$isActive", true] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "criteria",
+        },
+      },
       // Add fields for disability checking with proper null handling
       {
         $addFields: {
@@ -377,10 +398,63 @@ exports.getStatCardData = async (req, res) => {
           learnerGender: { $ifNull: ["$learner.gender", "U"] },
           learnerAttendance: { $ifNull: ["$learner.attendance", 0] },
           schoolOwnership: { $ifNull: ["$school.ownership", "Unknown"] },
+          learnerClass: { $ifNull: ["$learner.classInfo.class", ""] },
+          criteriaAmount: {
+            $let: {
+              vars: {
+                criteria: { $arrayElemAt: ["$criteria", 0] },
+                learnerClass: { $ifNull: ["$learner.classInfo.class", ""] },
+                learnerGender: { $ifNull: ["$learner.gender", "U"] },
+                hasDisability: "$hasDisability",
+              },
+              in: {
+                $let: {
+                  vars: {
+                    classInfo: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$$criteria.classes",
+                            cond: {
+                              $eq: ["$$this.className", "$$learnerClass"],
+                            },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: {
+                    $cond: {
+                      if: {
+                        $and: [
+                          { $ne: ["$$classInfo", null] },
+                          {
+                            $or: [
+                              { $not: "$$hasDisability" },
+                              {
+                                $cond: {
+                                  if: { $eq: ["$$learnerGender", "M"] },
+                                  then: "$$classInfo.requiresDisability.male",
+                                  else: "$$classInfo.requiresDisability.female",
+                                },
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                      then: "$$classInfo.amount",
+                      else: 0,
+                    },
+                  },
+                },
+              },
+            },
+          },
           disbursedAmount: {
             $cond: {
               if: { $eq: ["$amounts.approved.isDisbursed", true] },
-              then: { $ifNull: ["$amounts.approved.amount", 0] },
+              then: "$criteriaAmount",
               else: 0,
             },
           },
@@ -393,6 +467,8 @@ exports.getStatCardData = async (req, res) => {
           debugInfo: {
             originalApprovedAmount: "$amounts.approved.amount",
             originalIsDisbursed: "$amounts.approved.isDisbursed",
+            learnerClass: "$learnerClass",
+            criteriaAmount: "$criteriaAmount",
             calculatedDisbursedAmount: "$disbursedAmount",
           },
         },
