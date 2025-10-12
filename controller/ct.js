@@ -270,6 +270,35 @@ exports.getStatCardData = async (req, res) => {
     });
     console.log("Amount map:", amountMap);
 
+    // Build dynamic branches for the switch statement
+    const branches = [];
+    Object.keys(amountMap).forEach((className) => {
+      const classData = amountMap[className];
+      if (classData.amount > 0) {
+        // Only include classes with amounts > 0
+        branches.push({
+          case: {
+            $and: [
+              { $eq: ["$learnerClass", className] },
+              {
+                $or: [
+                  { $eq: ["$learnerGender", "F"] }, // Females always qualify if requiresDisability.female = false
+                  {
+                    $and: [
+                      { $eq: ["$learnerGender", "M"] },
+                      { $eq: ["$hasDisability", true] }, // Males need disability if requiresDisability.male = true
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          then: classData.amount,
+        });
+      }
+    });
+    console.log("Dynamic branches:", JSON.stringify(branches, null, 2));
+
     // Simple aggregation pipeline
     const pipeline = [
       {
@@ -372,46 +401,7 @@ exports.getStatCardData = async (req, res) => {
         $addFields: {
           criteriaAmount: {
             $switch: {
-              branches: [
-                {
-                  case: {
-                    $and: [
-                      { $eq: ["$learnerClass", "P7"] },
-                      {
-                        $or: [
-                          { $eq: ["$learnerGender", "F"] },
-                          {
-                            $and: [
-                              { $eq: ["$learnerGender", "M"] },
-                              { $eq: ["$hasDisability", true] },
-                            ],
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                  then: amountMap.P7?.amount || 0,
-                },
-                {
-                  case: {
-                    $and: [
-                      { $eq: ["$learnerClass", "P8"] },
-                      {
-                        $or: [
-                          { $eq: ["$learnerGender", "F"] },
-                          {
-                            $and: [
-                              { $eq: ["$learnerGender", "M"] },
-                              { $eq: ["$hasDisability", true] },
-                            ],
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                  then: amountMap.P8?.amount || 0,
-                },
-              ],
+              branches: branches,
               default: 0,
             },
           },
