@@ -544,7 +544,6 @@ exports.getStatCardData = async (req, res) => {
           },
           accountedAmount: { $ifNull: ["$accountability.amountAccounted", 0] },
         },
-      },
       // Debug stage - let's see what we have
       {
         $addFields: {
@@ -641,8 +640,7 @@ exports.getStatCardData = async (req, res) => {
           },
         },
       },
-      { $sort: { _id: -1 } },
-    ];
+      { $sort: { _id: -1 } }]
 
     console.log("Executing aggregation pipeline...");
     const stats = await CashTransfer.aggregate(pipeline);
@@ -727,7 +725,7 @@ exports.getStatCardData = async (req, res) => {
       details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
-};
+
 
 exports.getUniqueCtSchools = async (req, res) => {
   try {
