@@ -345,7 +345,13 @@ exports.getStatCardData = async (req, res) => {
           learnerGender: { $ifNull: ["$learner.gender", "U"] },
           learnerAttendance: { $ifNull: ["$learner.attendance", 0] },
           schoolOwnership: { $ifNull: ["$school.ownership", "Unknown"] },
-          paidAmount: { $ifNull: ["$amounts.paid.amount", 0] },
+          disbursedAmount: {
+            $cond: {
+              if: { $eq: ["$amounts.approved.isDisbursed", true] },
+              then: { $ifNull: ["$amounts.approved.amount", 0] },
+              else: 0,
+            },
+          },
           accountedAmount: { $ifNull: ["$accountability.amountAccounted", 0] },
         },
       },
@@ -390,7 +396,7 @@ exports.getStatCardData = async (req, res) => {
             },
           },
           totalAttendance: { $sum: "$learnerAttendance" },
-          totalAmountDisbursed: { $sum: "$paidAmount" },
+          totalAmountDisbursed: { $sum: "$disbursedAmount" },
           accountedAmount: { $sum: "$accountedAmount" },
         },
       },
