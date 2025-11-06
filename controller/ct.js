@@ -1074,6 +1074,7 @@ exports.downloadCTBatch = async (req, res) => {
 
     const projection = {
       _id: 1,
+      tranche: 1,
       year: 1,
       "location.state10": 1,
       "location.county28": 1,
@@ -1089,11 +1090,10 @@ exports.downloadCTBatch = async (req, res) => {
       "learner.name.lastName": 1,
       "learner.learnerUniqueID": 1,
       "learner.reference": 1,
+      "learner.disabilities": 1,
       "validation.isValidated": 1,
       "validation.invalidationReason": 1,
       "validation.finalSerialCtefNumber": 1,
-      "amounts.approved.amount": 1,
-      "amounts.approved.currency": 1,
       "amounts.approved.isDisbursed": 1,
     };
 
@@ -1126,14 +1126,120 @@ exports.downloadCTBatch = async (req, res) => {
         .limit(limit);
     }
 
-    const docs = await query.lean();
+    // Execute both queries in parallel for better performance
+    const [docs, criteriaData] = await Promise.all([
+      query.lean(),
+      // Pre-fetch all active criteria to avoid multiple queries
+      CTCriteria.find({ isActive: true }).lean(),
+    ]);
+
+    // Early return if no documents found
+    if (!docs.length) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        limit,
+        page: lastId ? undefined : page,
+        nextLastId: null,
+        hasMore: false,
+        year: currentYear,
+        data: [],
+      });
+    }
+
+    // Create optimized lookup map for criteria by tranche and class
+    const criteriaMap = new Map();
+    for (const criteria of criteriaData) {
+      for (const classInfo of criteria.classes) {
+        const key = `${criteria.tranche}-${classInfo.className}`;
+        criteriaMap.set(key, {
+          amount: classInfo.amount,
+          currency: criteria.currency,
+          requiresDisability: classInfo.requiresDisability,
+        });
+      }
+    }
+
+    // Optimized disability check function
+    const hasDisability = (disabilities) => {
+      if (!disabilities?.[0]?.disabilities) return false;
+      const disabilityData = disabilities[0].disabilities;
+      // Use for...in loop for better performance on objects
+      for (const key in disabilityData) {
+        if (disabilityData[key] > 1) return true;
+      }
+      return false;
+    };
+
+    // Pre-calculate disability status for all learners to avoid repeated calculations
+    const disabilityCache = new Map();
+
+    // Process documents with optimized calculations
+    const processedData = new Array(docs.length);
+    for (let i = 0; i < docs.length; i++) {
+      const { _id, ...doc } = docs[i];
+      const learner = doc.learner;
+      const criteriaKey = `${doc.tranche}-${learner?.classInfo?.class}`;
+      const criteria = criteriaMap.get(criteriaKey);
+
+      let approvedAmount = 0;
+      let currency = "SSP";
+
+      if (criteria && learner) {
+        const gender = learner.gender;
+
+        // Use cache for disability check to avoid repeated calculations
+        let learnerHasDisability = false;
+        if (learner.disabilities) {
+          const disabilityKey = JSON.stringify(learner.disabilities);
+          if (disabilityCache.has(disabilityKey)) {
+            learnerHasDisability = disabilityCache.get(disabilityKey);
+          } else {
+            learnerHasDisability = hasDisability(learner.disabilities);
+            disabilityCache.set(disabilityKey, learnerHasDisability);
+          }
+        }
+
+        // Optimized qualification check
+        const qualifies =
+          (gender === "F" && !criteria.requiresDisability.female) ||
+          (gender === "M" &&
+            (!criteria.requiresDisability.male || learnerHasDisability));
+
+        if (qualifies) {
+          approvedAmount = criteria.amount;
+          currency = criteria.currency;
+        }
+      }
+
+      // Create optimized output object without spread operator for better performance
+      processedData[i] = {
+        tranche: doc.tranche,
+        year: doc.year,
+        location: doc.location,
+        school: doc.school,
+        learner: {
+          dob: learner?.dob,
+          name: learner?.name,
+          learnerUniqueID: learner?.learnerUniqueID,
+          reference: learner?.reference,
+          classInfo: learner?.classInfo,
+          gender: learner?.gender,
+        },
+        validation: doc.validation,
+        amounts: {
+          approved: {
+            amount: approvedAmount,
+            currency: currency,
+            isDisbursed: doc.amounts?.approved?.isDisbursed || false,
+          },
+        },
+      };
+    }
 
     const countFetched = docs.length;
     const nextLastId =
       countFetched > 0 ? String(docs[countFetched - 1]._id) : null;
-
-    // Strip _id from the data payload as per requested fields
-    const data = docs.map(({ _id, ...rest }) => rest);
 
     // Determine if there may be more records
     let hasMore = false;
@@ -1160,7 +1266,7 @@ exports.downloadCTBatch = async (req, res) => {
       hasMore,
       // Include current year for reference
       year: currentYear,
-      data,
+      data: processedData,
     });
   } catch (error) {
     console.error("Error downloading CT batch:", error);

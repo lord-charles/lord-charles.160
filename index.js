@@ -26,6 +26,7 @@ const ct = require("./routes/ct");
 const disabilityEligibility = require("./routes/disabilityEligibility");
 const censusRoutes = require("./routes/census");
 const capitationSettings = require("./routes/capitationSettings");
+const attendanceAnalyticsRoutes = require("./routes/attendanceAnalytics");
 
 // Swagger
 const swaggerUi = require("swagger-ui-express");
@@ -92,6 +93,7 @@ app.use("/express/ct", ct);
 app.use("/express/disability-eligibility", disabilityEligibility);
 app.use("/express/census", censusRoutes);
 app.use("/express/capitation-settings", capitationSettings);
+app.use("/express/attendance-analytics", attendanceAnalyticsRoutes);
 
 // Swagger Documentation Route
 app.use("/express/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
