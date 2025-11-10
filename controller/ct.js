@@ -979,7 +979,7 @@ exports.getDisbursementByYear = async (req, res) => {
 exports.disburseCash = async (req, res) => {
   try {
     const { learnerId } = req.params;
-    const { paymentWitnesses } = req.body;
+    const { paymentWitnesses, dateDisbursed, disbursedBy } = req.body;
 
     // Find the active tranche from CTCriteria
     const activeCriteria = await CTCriteria.findOne({ isActive: true });
@@ -1036,6 +1036,14 @@ exports.disburseCash = async (req, res) => {
     // update payment witnesses
     if (paymentWitnesses) {
       cashTransfer.paymentWitnesses = paymentWitnesses;
+    }
+
+    // update date disbursed and disbursed by
+    if (dateDisbursed) {
+      cashTransfer.amounts.approved.dateDisbursed = dateDisbursed;
+    }
+    if (disbursedBy) {
+      cashTransfer.amounts.approved.disbursedBy = disbursedBy;
     }
 
     await cashTransfer.save();
