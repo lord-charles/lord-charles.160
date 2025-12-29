@@ -42,15 +42,18 @@ const TrancheDistributionSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Per school-type grant rule (OPEX / CAPEX)
+// Per school-type grant rule - REMOVED ENUM to make it dynamic
 const GrantRuleSchema = new mongoose.Schema(
   {
-    schoolType: { type: String, enum: ["PRI", "SEC", "ALP"], required: true },
+    schoolType: { type: String, required: true }, // Now accepts any string, not just ["PRI", "SEC", "ALP"]
     currency: { type: String, default: "SSP" },
     amountPerLearner: { type: Number, default: 0 },
     amountPerSchool: { type: Number, default: 0 },
     exchangeRateToSSP: { type: Number, default: 1 },
-    trancheDistribution: { type: TrancheDistributionSchema, default: () => ({}) },
+    trancheDistribution: {
+      type: TrancheDistributionSchema,
+      default: () => ({}),
+    },
   },
   { _id: false }
 );
@@ -95,14 +98,18 @@ const CapitationSettingsSchema = new mongoose.Schema(
           { name: "SGB", scanRequired: true, dataPostedRequired: true },
           { name: "Attendance", scanRequired: false, dataPostedRequired: true },
           { name: "Enrolment", scanRequired: false, dataPostedRequired: true },
-          { name: "Accountability", scanRequired: true, dataPostedRequired: true },
+          {
+            name: "Accountability",
+            scanRequired: true,
+            dataPostedRequired: true,
+          },
         ],
       },
       ownershipAllowed: { type: OwnershipSettingsSchema, default: () => ({}) },
       operational: { type: OperationalSettingsSchema, default: () => ({}) },
     },
 
-    // OPEX (Capitation Grants)
+    // OPEX (Capitation Grants) - Now supports any school type
     capitationGrants: {
       rules: {
         type: [GrantRuleSchema],
@@ -113,7 +120,14 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 200,
             amountPerSchool: 2000,
             exchangeRateToSSP: 1,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
+            trancheDistribution: {
+              tranche1Pct: 70,
+              tranche2Pct: 20,
+              tranche3Pct: 10,
+              tranche1InflationCorrectionPct: 0,
+              tranche2InflationCorrectionPct: 0,
+              tranche3InflationCorrectionPct: 0,
+            },
           },
           {
             schoolType: "SEC",
@@ -121,7 +135,14 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 300,
             amountPerSchool: 3000,
             exchangeRateToSSP: 1,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 15, tranche2InflationCorrectionPct: 15, tranche3InflationCorrectionPct: 15 },
+            trancheDistribution: {
+              tranche1Pct: 70,
+              tranche2Pct: 20,
+              tranche3Pct: 10,
+              tranche1InflationCorrectionPct: 15,
+              tranche2InflationCorrectionPct: 15,
+              tranche3InflationCorrectionPct: 15,
+            },
           },
           {
             schoolType: "ALP",
@@ -129,13 +150,20 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 200,
             amountPerSchool: 2000,
             exchangeRateToSSP: 1,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
+            trancheDistribution: {
+              tranche1Pct: 70,
+              tranche2Pct: 20,
+              tranche3Pct: 10,
+              tranche1InflationCorrectionPct: 0,
+              tranche2InflationCorrectionPct: 0,
+              tranche3InflationCorrectionPct: 0,
+            },
           },
         ],
       },
     },
 
-    // CAPEX (Capital Spend)
+    // CAPEX (Capital Spend) - Now supports any school type
     capitalSpend: {
       rules: {
         type: [GrantRuleSchema],
@@ -146,7 +174,14 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 20,
             amountPerSchool: 200,
             exchangeRateToSSP: 100,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
+            trancheDistribution: {
+              tranche1Pct: 70,
+              tranche2Pct: 20,
+              tranche3Pct: 10,
+              tranche1InflationCorrectionPct: 0,
+              tranche2InflationCorrectionPct: 0,
+              tranche3InflationCorrectionPct: 0,
+            },
           },
           {
             schoolType: "SEC",
@@ -154,7 +189,14 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 30,
             amountPerSchool: 300,
             exchangeRateToSSP: 100,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
+            trancheDistribution: {
+              tranche1Pct: 70,
+              tranche2Pct: 20,
+              tranche3Pct: 10,
+              tranche1InflationCorrectionPct: 0,
+              tranche2InflationCorrectionPct: 0,
+              tranche3InflationCorrectionPct: 0,
+            },
           },
           {
             schoolType: "ALP",
@@ -162,7 +204,14 @@ const CapitationSettingsSchema = new mongoose.Schema(
             amountPerLearner: 20,
             amountPerSchool: 200,
             exchangeRateToSSP: 100,
-            trancheDistribution: { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 },
+            trancheDistribution: {
+              tranche1Pct: 70,
+              tranche2Pct: 20,
+              tranche3Pct: 10,
+              tranche1InflationCorrectionPct: 0,
+              tranche2InflationCorrectionPct: 0,
+              tranche3InflationCorrectionPct: 0,
+            },
           },
         ],
       },
@@ -170,12 +219,18 @@ const CapitationSettingsSchema = new mongoose.Schema(
 
     // Disbursement and funding types
     disbursement: { type: DisbursementSettingsSchema, default: () => ({}) },
-    fundingTypes: { type: FundingTypesSchema, default: () => ({ capitationGrants: true }) },
+    fundingTypes: {
+      type: FundingTypesSchema,
+      default: () => ({ capitationGrants: true }),
+    },
 
     // Notes / freeform config
     notes: { type: String },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    strict: false, // Allow additional properties not defined in schema
+  }
 );
 
 CapitationSettingsSchema.index({ academicYear: 1 }, { unique: true });

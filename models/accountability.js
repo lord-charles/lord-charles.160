@@ -1,6 +1,19 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+// Accounting Entry Schema for detailed fund accounting
+const accountingEntrySchema = new Schema(
+  {
+    field: { type: String, required: true }, // e.g., "Teaching Materials", "Infrastructure", etc.
+    value: { type: Number, required: true }, // Amount spent/allocated
+    comment: { type: String }, // Additional notes/justification
+    category: { type: String, default: "General" }, // OPEX, CAPEX, etc.
+    dateRecorded: { type: Date, default: Date.now },
+    recordedBy: { type: String }, // Who recorded this entry
+  },
+  { _id: true }
+);
+
 // Accountability Schema
 const accountabilitySchema = new Schema({
   bankInstructed: { type: Boolean, default: false },
@@ -23,6 +36,8 @@ const accountabilitySchema = new Schema({
     designation: { type: String },
     prepareDate: { type: Date },
   },
+  // New field for detailed accounting entries
+  accountingEntries: { type: [accountingEntrySchema], default: [] },
 });
 
 // Revenue Schema

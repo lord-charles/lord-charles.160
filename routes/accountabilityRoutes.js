@@ -3,6 +3,9 @@ const express = require("express");
 const router = express.Router();
 const accountabilityController = require("../controller/accountabilityController");
 
+// STATS ENDPOINT - Must be before /:id route to avoid conflicts
+router.get("/stats/dashboard", accountabilityController.getDashboardStats);
+
 // Routes for accountability
 router.get("/", accountabilityController.getAllAccountabilityEntries);
 router.get("/:id", accountabilityController.getAccountabilityById);
@@ -17,12 +20,27 @@ router.get(
 );
 
 // Approve a specific tranche on an accountability entry
-router.patch(
-  "/approvals/:id/approve",
-  accountabilityController.approveTranche
-);
+router.patch("/approvals/:id/approve", accountabilityController.approveTranche);
 
 // Route for fetching school-specific disbursement details
-router.get("/disbursements/by-school", accountabilityController.getSchoolDisbursements);
+router.get(
+  "/disbursements/by-school",
+  accountabilityController.getSchoolDisbursements
+);
+
+// NEW ROUTES FOR DISBURSEMENT AND ACCOUNTING
+// Disburse funds for a tranche
+router.patch("/:id/disburse", accountabilityController.disburseTranche);
+
+// Accounting entries management
+router.post("/:id/accounting", accountabilityController.addAccountingEntry);
+router.patch(
+  "/:id/accounting/:entryId",
+  accountabilityController.updateAccountingEntry
+);
+router.delete(
+  "/:id/accounting/:entryId",
+  accountabilityController.deleteAccountingEntry
+);
 
 module.exports = router;
