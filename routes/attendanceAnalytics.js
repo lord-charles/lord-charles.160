@@ -16,7 +16,7 @@ const { cacheMiddleware } = require("../middlewares/cacheMiddleware");
  */
 router.get(
   "/",
-  cacheMiddleware(600), // 10 minutes cache
+  cacheMiddleware(6000), // 10 minutes cache
   attendanceAnalyticsController.getAttendanceAnalytics
 );
 
@@ -30,7 +30,7 @@ router.get(
  */
 router.get(
   "/trends",
-  cacheMiddleware(900), // 15 minutes cache
+  cacheMiddleware(9000), // 15 minutes cache
   attendanceAnalyticsController.getAttendanceTrends
 );
 
@@ -44,7 +44,7 @@ router.get(
  */
 router.get(
   "/absence-reasons",
-  cacheMiddleware(1200), // 20 minutes cache
+  cacheMiddleware(12000), // 20 minutes cache
   attendanceAnalyticsController.getAbsenceReasons
 );
 

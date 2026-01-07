@@ -1,6 +1,9 @@
 const router = require("express").Router();
 const schoolController = require("../controller/school-data");
-const { cachePostMiddleware, cacheMiddleware } = require("../middlewares/cacheMiddleware");
+const {
+  cachePostMiddleware,
+  cacheMiddleware,
+} = require("../middlewares/cacheMiddleware");
 
 /**
  * @swagger
@@ -266,16 +269,114 @@ router.get("/schools/criteria", schoolController.getSchoolsByCriteria);
  *       500:
  *         description: Server error.
  */
-router.get("/schools/count-by-type", cacheMiddleware(600), schoolController.countSchoolsByType);
+router.get(
+  "/schools/count-by-type",
+  cacheMiddleware(600),
+  schoolController.countSchoolsByType
+);
 
-router.post("/:id/enrollment/complete", cachePostMiddleware(600), schoolController.markEnrollmentComplete);
-router.get("/enrollment/completed", cacheMiddleware(600), schoolController.getSchoolsWithCompletedEnrollment);
+router.post(
+  "/:id/enrollment/complete",
+  cachePostMiddleware(600),
+  schoolController.markEnrollmentComplete
+);
+/**
+ * @swagger
+ * /enrollment/completed:
+ *   get:
+ *     summary: Get schools with completed enrollment
+ *     tags: [School]
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Year to filter enrollment data (defaults to current year)
+ *       - in: query
+ *         name: state
+ *         schema:
+ *           type: string
+ *         description: Filter by state
+ *       - in: query
+ *         name: payam
+ *         schema:
+ *           type: string
+ *         description: Filter by payam
+ *       - in: query
+ *         name: county
+ *         schema:
+ *           type: string
+ *         description: Filter by county
+ *       - in: query
+ *         name: code
+ *         schema:
+ *           type: string
+ *         description: Filter by school code
+ *     responses:
+ *       200:
+ *         description: Schools with completed enrollment retrieved successfully
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  "/enrollment/completed",
+  cacheMiddleware(300000),
+  schoolController.getSchoolsWithCompletedEnrollment
+);
 
 //dashboard stats
-router.get("/learner-stats-by-state", cacheMiddleware(600), schoolController.getLearnerStatsByState);
-router.get("/school-types-by-state", cacheMiddleware(600), schoolController.getSchoolTypesByState);
+/**
+ * @swagger
+ * /learner-stats-by-state:
+ *   get:
+ *     summary: Get learner statistics grouped by state
+ *     tags: [School]
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Year to filter learner data (defaults to current year)
+ *     responses:
+ *       200:
+ *         description: Learner statistics by state retrieved successfully
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  "/learner-stats-by-state",
+  cacheMiddleware(600),
+  schoolController.getLearnerStatsByState
+);
+router.get(
+  "/school-types-by-state",
+  cacheMiddleware(600),
+  schoolController.getSchoolTypesByState
+);
 
 //school module statcards
-router.get("/overall-learner-stats", cacheMiddleware(600), schoolController.getOverallLearnerStats);
+/**
+ * @swagger
+ * /overall-learner-stats:
+ *   get:
+ *     summary: Get overall learner statistics
+ *     tags: [School]
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Year to filter learner data (defaults to current year)
+ *     responses:
+ *       200:
+ *         description: Overall learner statistics retrieved successfully
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  "/overall-learner-stats",
+  cacheMiddleware(600),
+  schoolController.getOverallLearnerStats
+);
 
 module.exports = router;

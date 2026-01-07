@@ -212,12 +212,10 @@ const markPresentAttendanceForDay = async (req, res) => {
     );
 
     if (!students.length) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "No students found for the provided IDs",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "No students found for the provided IDs",
+      });
     }
 
     // Prepare bulkWrite operations for upsert
@@ -380,12 +378,10 @@ const getAttendanceStatistics = async (req, res) => {
     ]);
 
     if (!studentStats) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "No learners found for the specified filters.",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "No learners found for the specified filters.",
+      });
     }
 
     // Get absence statistics using aggregation with the same filters
@@ -447,9 +443,12 @@ const getAttendanceStatCards = async (req, res) => {
   try {
     const { state, county, payam, code, year } = req.query;
 
+    // Use provided year or default to current year
+    const targetYear = year ? parseInt(year) : new Date().getFullYear();
+
     const currentDate = new Date();
-    const startOfYear = new Date(parseInt(year), 0, 1);
-    const endOfYear = new Date(parseInt(year), 11, 31);
+    const startOfYear = new Date(targetYear, 0, 1);
+    const endOfYear = new Date(targetYear, 11, 31);
     const startOfToday = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
@@ -674,63 +673,71 @@ const getAttendanceStatCards = async (req, res) => {
         totalStudents: uniqueStudentsCount[0]?.uniqueCount || 0,
         dateRange: {
           start: yearToDateStats[0]?.minDate,
-          end: yearToDateStats[0]?.maxDate
-        }
+          end: yearToDateStats[0]?.maxDate,
+        },
       },
       todaySnapshot: {
         recordsLogged: todayStats[0]?.totalRecords || 0,
         absent: todayStats[0]?.totalAbsent || 0,
-        present: (todayStats[0]?.totalRecords || 0) - (todayStats[0]?.totalAbsent || 0),
+        present:
+          (todayStats[0]?.totalRecords || 0) -
+          (todayStats[0]?.totalAbsent || 0),
         absenteeRate: todayStats[0]?.totalRecords
           ? (todayStats[0].totalAbsent / todayStats[0].totalRecords) * 100
-          : 0
+          : 0,
       },
       averageAttendance: {
         overallRate: averageDailyStats[0]?.avgAttendanceRate || 0,
         peakDay: {
           date: peakDayData.date,
-          rate: peakDayData.rate
+          rate: peakDayData.rate,
         },
         lowestDay: {
           date: lowestDayData.date,
-          rate: lowestDayData.rate
-        }
+          rate: lowestDayData.rate,
+        },
       },
       demographics: {
         male: {
           percentage: demographicStats[0]?.totalAbsent
-            ? (demographicStats[0].maleAbsent / demographicStats[0].totalAbsent) * 100
+            ? (demographicStats[0].maleAbsent /
+                demographicStats[0].totalAbsent) *
+              100
             : 0,
-          count: demographicStats[0]?.maleAbsent || 0
+          count: demographicStats[0]?.maleAbsent || 0,
         },
         female: {
           percentage: demographicStats[0]?.totalAbsent
-            ? (demographicStats[0].femaleAbsent / demographicStats[0].totalAbsent) * 100
+            ? (demographicStats[0].femaleAbsent /
+                demographicStats[0].totalAbsent) *
+              100
             : 0,
-          count: demographicStats[0]?.femaleAbsent || 0
+          count: demographicStats[0]?.femaleAbsent || 0,
         },
         disability: {
           percentage: demographicStats[0]?.totalAbsent
-            ? (demographicStats[0].disabilityAbsent / demographicStats[0].totalAbsent) * 100
+            ? (demographicStats[0].disabilityAbsent /
+                demographicStats[0].totalAbsent) *
+              100
             : 0,
-          count: demographicStats[0]?.disabilityAbsent || 0
-        }
+          count: demographicStats[0]?.disabilityAbsent || 0,
+        },
       },
       regionalDistribution: {
-        topCounties: regionalData.topCounties.map(county => ({
+        topCounties: regionalData.topCounties.map((county) => ({
           name: county.name,
           percentage: regionalData.totalAbsent
             ? (county.count / regionalData.totalAbsent) * 100
             : 0,
-          count: county.count
+          count: county.count,
         })),
-        topStates: regionalData.topStates.map(state => ({
+        topStates: regionalData.topStates.map((state) => ({
           name: state.name,
           percentage: regionalData.totalAbsent
             ? (state.count / regionalData.totalAbsent) * 100
             : 0,
-          count: state.count
-        }))
+          count: state.count,
+        })),
       },
       engagement: {
         schoolsReporting: engagementStats[0]?.schoolsReporting || 0,
@@ -739,8 +746,8 @@ const getAttendanceStatCards = async (req, res) => {
               engagementStats[0].totalStudents /
                 engagementStats[0].schoolsReporting
             )
-          : 0
-      }
+          : 0,
+      },
     };
 
     res.status(200).json(response);
@@ -838,12 +845,10 @@ const getSchoolsWithAttendance = async (req, res) => {
     res.status(200).json(results);
   } catch (error) {
     console.error("Error fetching schools with attendance:", error);
-    res
-      .status(500)
-      .json({
-        error: "Failed to fetch schools with attendance",
-        details: error.message,
-      });
+    res.status(500).json({
+      error: "Failed to fetch schools with attendance",
+      details: error.message,
+    });
   }
 };
 
@@ -907,12 +912,10 @@ const getAllSchools = async (req, res) => {
         ...school.toObject(),
         attendanceDays: attendanceMap[school.code] || 0,
       }));
-      return res
-        .status(200)
-        .json({
-          message: "Schools retrieved successfully",
-          data: schoolsWithAttendance,
-        });
+      return res.status(200).json({
+        message: "Schools retrieved successfully",
+        data: schoolsWithAttendance,
+      });
     }
     // If date or date range provided, optionally return attendanceDays for that period
     if (date || (from && to)) {
@@ -957,12 +960,10 @@ const getAllSchools = async (req, res) => {
         ...school.toObject(),
         attendanceDays: attendanceMap[school.code] || 0,
       }));
-      return res
-        .status(200)
-        .json({
-          message: "Schools retrieved successfully",
-          data: schoolsWithAttendance,
-        });
+      return res.status(200).json({
+        message: "Schools retrieved successfully",
+        data: schoolsWithAttendance,
+      });
     }
     // Default fallback (should not happen)
     res
@@ -975,6 +976,175 @@ const getAllSchools = async (req, res) => {
   }
 };
 
+const getAttendanceReports = async (req, res) => {
+  try {
+    const { year, state10, county28, payam28 } = req.query;
+
+    // Use provided year or default to current year
+    const targetYear = year ? parseInt(year) : new Date().getFullYear();
+
+    // Build match conditions for the year
+    const matchConditions = { year: targetYear };
+    if (state10) matchConditions.state10 = state10;
+    if (county28) matchConditions.county28 = county28;
+    if (payam28) matchConditions.payam28 = payam28;
+
+    // Parallel aggregation queries for performance
+    const [monthlyStats, genderStats, stateStats, weeklyTrends] =
+      await Promise.all([
+        // Monthly attendance summary
+        Attendance.aggregate([
+          { $match: matchConditions },
+          {
+            $group: {
+              _id: { $month: "$date" },
+              totalRecords: { $sum: 1 },
+              absentCount: { $sum: { $cond: ["$absent", 1, 0] } },
+              presentCount: { $sum: { $cond: [{ $not: ["$absent"] }, 1, 0] } },
+            },
+          },
+          {
+            $project: {
+              month: "$_id",
+              totalRecords: 1,
+              absentCount: 1,
+              presentCount: 1,
+              attendanceRate: {
+                $multiply: [
+                  { $divide: ["$presentCount", "$totalRecords"] },
+                  100,
+                ],
+              },
+            },
+          },
+          { $sort: { month: 1 } },
+        ]),
+
+        // Gender-based attendance
+        Attendance.aggregate([
+          { $match: matchConditions },
+          {
+            $group: {
+              _id: "$gender",
+              totalRecords: { $sum: 1 },
+              absentCount: { $sum: { $cond: ["$absent", 1, 0] } },
+            },
+          },
+          {
+            $project: {
+              gender: "$_id",
+              totalRecords: 1,
+              absentCount: 1,
+              attendanceRate: {
+                $multiply: [
+                  {
+                    $divide: [
+                      { $subtract: ["$totalRecords", "$absentCount"] },
+                      "$totalRecords",
+                    ],
+                  },
+                  100,
+                ],
+              },
+            },
+          },
+        ]),
+
+        // State-wise attendance (top 10)
+        Attendance.aggregate([
+          { $match: matchConditions },
+          {
+            $group: {
+              _id: "$state10",
+              totalRecords: { $sum: 1 },
+              absentCount: { $sum: { $cond: ["$absent", 1, 0] } },
+            },
+          },
+          {
+            $project: {
+              state: "$_id",
+              totalRecords: 1,
+              absentCount: 1,
+              attendanceRate: {
+                $multiply: [
+                  {
+                    $divide: [
+                      { $subtract: ["$totalRecords", "$absentCount"] },
+                      "$totalRecords",
+                    ],
+                  },
+                  100,
+                ],
+              },
+            },
+          },
+          { $sort: { totalRecords: -1 } },
+          { $limit: 10 },
+        ]),
+
+        // Weekly trends (last 12 weeks)
+        Attendance.aggregate([
+          {
+            $match: {
+              ...matchConditions,
+              date: {
+                $gte: new Date(new Date().setDate(new Date().getDate() - 84)), // 12 weeks ago
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                week: { $week: "$date" },
+                year: { $year: "$date" },
+              },
+              totalRecords: { $sum: 1 },
+              absentCount: { $sum: { $cond: ["$absent", 1, 0] } },
+            },
+          },
+          {
+            $project: {
+              week: "$_id.week",
+              year: "$_id.year",
+              totalRecords: 1,
+              absentCount: 1,
+              attendanceRate: {
+                $multiply: [
+                  {
+                    $divide: [
+                      { $subtract: ["$totalRecords", "$absentCount"] },
+                      "$totalRecords",
+                    ],
+                  },
+                  100,
+                ],
+              },
+            },
+          },
+          { $sort: { year: 1, week: 1 } },
+        ]),
+      ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        monthlyStats,
+        genderDistribution: genderStats,
+        stateStats,
+        weeklyTrends,
+        year: targetYear,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching attendance reports:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch attendance reports",
+      details: error.message,
+    });
+  }
+};
+
 module.exports = {
   markAttendanceBulk,
   getStudentsAttendance,
@@ -984,4 +1154,5 @@ module.exports = {
   getAttendanceStatCards,
   getAllSchools,
   getSchoolsWithAttendance,
+  getAttendanceReports,
 };

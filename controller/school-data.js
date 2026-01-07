@@ -1,12 +1,12 @@
 const schoolData = require("../models/school-data");
-const SchoolData2023 = require('../models/2023Data');
+const SchoolData2023 = require("../models/2023Data");
 
 // Generate a unique school code based on school name
 const generateSchoolCode = async (schoolName) => {
   // Clean the school name and extract meaningful words
-  const cleanName = schoolName.toUpperCase().replace(/[^A-Z\s]/g, '');
-  const words = cleanName.split(/\s+/).filter(word => word.length > 0);
-  
+  const cleanName = schoolName.toUpperCase().replace(/[^A-Z\s]/g, "");
+  const words = cleanName.split(/\s+/).filter((word) => word.length > 0);
+
   // Helper function to check if code exists
   const codeExists = async (code) => {
     const existing = await schoolData.findOne({ code });
@@ -38,9 +38,9 @@ const generateSchoolCode = async (schoolName) => {
   }
 
   // Strategy 4: First letter + variations with common letters
-  const firstLetter = words[0] ? words[0][0] : 'A';
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  
+  const firstLetter = words[0] ? words[0][0] : "A";
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
   for (let i = 0; i < alphabet.length; i++) {
     for (let j = 0; j < alphabet.length; j++) {
       const code = firstLetter + alphabet[i] + alphabet[j];
@@ -52,7 +52,7 @@ const generateSchoolCode = async (schoolName) => {
 
   // Strategy 5: Random 3-letter code (fallback)
   for (let attempt = 0; attempt < 100; attempt++) {
-    let code = '';
+    let code = "";
     for (let i = 0; i < 3; i++) {
       code += alphabet[Math.floor(Math.random() * alphabet.length)];
     }
@@ -61,43 +61,59 @@ const generateSchoolCode = async (schoolName) => {
     }
   }
 
-  throw new Error('Unable to generate unique school code');
+  throw new Error("Unable to generate unique school code");
 };
 
 // Create a new school entry
 exports.createSchool = async (req, res) => {
   try {
-    const { codeType, code: providedCode, schoolName, emisId, ...otherData } = req.body;
+    const {
+      codeType,
+      code: providedCode,
+      schoolName,
+      emisId,
+      ...otherData
+    } = req.body;
 
     let finalCode;
 
     // Handle code generation based on type
-    if (codeType === 'new') {
+    if (codeType === "new") {
       if (!schoolName) {
-        return res.status(400).json({ message: "School name is required for generating new code." });
+        return res.status(400).json({
+          message: "School name is required for generating new code.",
+        });
       }
       finalCode = await generateSchoolCode(schoolName);
-    } else if (codeType === 'existing') {
+    } else if (codeType === "existing") {
       if (!providedCode) {
-        return res.status(400).json({ message: "School code is required when using existing code." });
+        return res.status(400).json({
+          message: "School code is required when using existing code.",
+        });
       }
-      
+
       // Check if the provided code already exists
       const existingSchool = await schoolData.findOne({ code: providedCode });
       if (existingSchool) {
-        return res.status(400).json({ message: "School with this code already exists." });
+        return res
+          .status(400)
+          .json({ message: "School with this code already exists." });
       }
-      
+
       finalCode = providedCode.toUpperCase();
     } else {
-      return res.status(400).json({ message: "Invalid code type. Must be 'new' or 'existing'." });
+      return res
+        .status(400)
+        .json({ message: "Invalid code type. Must be 'new' or 'existing'." });
     }
 
     // Check if emisId exists (if provided)
     if (emisId) {
       const existingEmisSchool = await schoolData.findOne({ emisId });
       if (existingEmisSchool) {
-        return res.status(400).json({ message: "School with this EMIS ID already exists." });
+        return res
+          .status(400)
+          .json({ message: "School with this EMIS ID already exists." });
       }
     }
 
@@ -106,7 +122,7 @@ exports.createSchool = async (req, res) => {
       ...otherData,
       code: finalCode,
       schoolName,
-      emisId
+      emisId,
     };
 
     const newSchool = new schoolData(schoolDataToSave);
@@ -141,18 +157,20 @@ exports.createSchool = async (req, res) => {
       data: {
         school: savedSchool,
         testLearner: testLearner,
-        generatedCode: codeType === 'new' ? finalCode : null
-      }
+        generatedCode: codeType === "new" ? finalCode : null,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: "Error creating school and test learner", error: error.message });
+    res.status(500).json({
+      message: "Error creating school and test learner",
+      error: error.message,
+    });
   }
 };
 
 // Get all schools with optional filtering
 exports.getAllSchools = async (req, res) => {
   try {
-
     const { schoolType, state10, county10, payam10 } = req.query;
     const filter = {};
 
@@ -171,8 +189,7 @@ exports.getAllSchools = async (req, res) => {
       schoolOwnerShip: 1,
       schoolType: 1,
       emisId: 1,
-      "schoolStatus.isOpen": 1
-
+      "schoolStatus.isOpen": 1,
     };
 
     const schools = await schoolData.find(filter, projection);
@@ -190,9 +207,10 @@ exports.getAllSchools = async (req, res) => {
 // Fetch schools whose enrollment is complete
 exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
   try {
-    const currentYear = new Date().getFullYear();
-    const startOfYear = new Date(currentYear, 0, 1);
-    const endOfYear = new Date(currentYear, 11, 31);
+    const { year } = req.query;
+    const selectedYear = year ? parseInt(year) : new Date().getFullYear();
+    const startOfYear = new Date(selectedYear, 0, 1);
+    const endOfYear = new Date(selectedYear, 11, 31);
     const { state, payam, county, code } = req.query;
     const params = {};
     if (state) params.state10 = state;
@@ -211,19 +229,22 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
       schoolOwnerShip: 1,
       schoolType: 1,
       emisId: 1,
-      isEnrollmentComplete: 1
+      isEnrollmentComplete: 1,
     };
 
-    const completedSchools = await schoolData.find({
-      "isEnrollmentComplete": {
-        $elemMatch: {
-          "year": currentYear,
-          "percentageComplete": { $gte: 1 }
-        }
+    const completedSchools = await schoolData.find(
+      {
+        isEnrollmentComplete: {
+          $elemMatch: {
+            year: selectedYear,
+            percentageComplete: { $gte: 1 },
+          },
+        },
+        "schoolStatus.isOpen": "open",
+        ...params,
       },
-      "schoolStatus.isOpen": "open",
-      ...params
-    }, schoolProjection);
+      schoolProjection
+    );
 
     // For each school, get learner statistics from 2023Data
     const schoolsWithStats = await Promise.all(
@@ -235,9 +256,9 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
               isDroppedOut: false,
               $or: [
                 { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
-                { createdAt: { $gte: startOfYear, $lte: endOfYear } }
-              ]
-            }
+                { createdAt: { $gte: startOfYear, $lte: endOfYear } },
+              ],
+            },
           },
           {
             $group: {
@@ -247,26 +268,26 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
                     $and: [
                       { $ne: ["$class", null] },
                       { $ne: ["$class", "undefined"] },
-                      { $ne: ["$class", ""] }
-                    ]
+                      { $ne: ["$class", ""] },
+                    ],
                   },
                   then: "$class",
-                  else: "Unknown"
-                }
+                  else: "Unknown",
+                },
               },
               totalLearners: { $sum: 1 },
               maleLearners: {
-                $sum: { $cond: [{ $eq: ["$gender", "M"] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ["$gender", "M"] }, 1, 0] },
               },
               femaleLearners: {
-                $sum: { $cond: [{ $eq: ["$gender", "F"] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ["$gender", "F"] }, 1, 0] },
               },
               learnersWithDisability: {
-                $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] },
               },
               // Count current year learners using year field
               currentYearLearners: {
-                $sum: { $cond: [{ $eq: ["$year", currentYear] }, 1, 0] }
+                $sum: { $cond: [{ $eq: ["$year", selectedYear] }, 1, 0] },
               },
               currentYearMale: {
                 $sum: {
@@ -274,13 +295,13 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
                     {
                       $and: [
                         { $eq: ["$gender", "M"] },
-                        { $eq: ["$year", currentYear] }
-                      ]
+                        { $eq: ["$year", selectedYear] },
+                      ],
                     },
                     1,
-                    0
-                  ]
-                }
+                    0,
+                  ],
+                },
               },
               currentYearFemale: {
                 $sum: {
@@ -288,13 +309,13 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
                     {
                       $and: [
                         { $eq: ["$gender", "F"] },
-                        { $eq: ["$year", currentYear] }
-                      ]
+                        { $eq: ["$year", selectedYear] },
+                      ],
                     },
                     1,
-                    0
-                  ]
-                }
+                    0,
+                  ],
+                },
               },
               currentYearWithDisability: {
                 $sum: {
@@ -302,20 +323,26 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
                     {
                       $and: [
                         { $eq: ["$isWithDisability", true] },
-                        { $eq: ["$year", currentYear] }
-                      ]
+                        { $eq: ["$year", selectedYear] },
+                      ],
                     },
                     1,
-                    0
-                  ]
-                }
-              }
-            }
+                    0,
+                  ],
+                },
+              },
+            },
           },
           {
             $project: {
               _id: 0,
-              class: { $cond: { if: { $eq: ["$_id", "Unknown"] }, then: "Unknown", else: "$_id" } },
+              class: {
+                $cond: {
+                  if: { $eq: ["$_id", "Unknown"] },
+                  then: "Unknown",
+                  else: "$_id",
+                },
+              },
               total: "$totalLearners",
               male: "$maleLearners",
               female: "$femaleLearners",
@@ -324,10 +351,10 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
                 total: "$currentYearLearners",
                 male: "$currentYearMale",
                 female: "$currentYearFemale",
-                withDisability: "$currentYearWithDisability"
-              }
-            }
-          }
+                withDisability: "$currentYearWithDisability",
+              },
+            },
+          },
         ]);
 
         return {
@@ -338,57 +365,74 @@ exports.getSchoolsWithCompletedEnrollment = async (req, res) => {
               male: stat.male,
               female: stat.female,
               withDisability: stat.withDisability,
-              currentYear: stat.currentYear
+              currentYear: stat.currentYear,
             };
             return acc;
-          }, {})
+          }, {}),
         };
       })
     );
 
     res.json(schoolsWithStats);
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
 // Mark enrollment as complete
 exports.markEnrollmentComplete = async (req, res) => {
   try {
-    const { year, completedBy, comments, percentageComplete, isComplete, learnerEnrollmentComplete } = req.body;
+    const {
+      year,
+      completedBy,
+      comments,
+      percentageComplete,
+      isComplete,
+      learnerEnrollmentComplete,
+    } = req.body;
     const schoolId = req.params.id;
-
     const school = await schoolData.findById(schoolId);
     if (!school) {
       return res.status(404).json({ message: "School not found" });
     }
 
     // Check if enrollment for the given year exists, if not, create it
-    const enrollmentIndex = school.isEnrollmentComplete.findIndex(e => e.year === year);
+    const enrollmentIndex = school.isEnrollmentComplete.findIndex(
+      (e) => e.year === year
+    );
 
     if (enrollmentIndex !== -1) {
       // Update existing entry
-      school.isEnrollmentComplete[enrollmentIndex].isComplete = isComplete
+      school.isEnrollmentComplete[enrollmentIndex].isComplete = isComplete;
       school.isEnrollmentComplete[enrollmentIndex].completedBy = completedBy;
       school.isEnrollmentComplete[enrollmentIndex].year = year;
       school.isEnrollmentComplete[enrollmentIndex].comments = comments;
-      school.isEnrollmentComplete[enrollmentIndex].percentageComplete = percentageComplete;
-      school.isEnrollmentComplete[enrollmentIndex].learnerEnrollmentComplete = learnerEnrollmentComplete;
-
-
-
+      school.isEnrollmentComplete[enrollmentIndex].percentageComplete =
+        percentageComplete;
+      school.isEnrollmentComplete[enrollmentIndex].learnerEnrollmentComplete =
+        learnerEnrollmentComplete;
     } else {
       // Create new entry
-      school.isEnrollmentComplete.push({ year, isComplete, completedBy, comments, percentageComplete, learnerEnrollmentComplete });
+      school.isEnrollmentComplete.push({
+        year,
+        isComplete,
+        completedBy,
+        comments,
+        percentageComplete,
+        learnerEnrollmentComplete,
+      });
     }
 
     await school.save();
     res.json({ message: "Enrollment marked as complete", school });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
-
 
 // Get a single school by ID
 exports.getSchoolById = async (req, res) => {
@@ -508,21 +552,22 @@ exports.countSchoolsByType = async (req, res) => {
 // Get learner statistics by state
 exports.getLearnerStatsByState = async (req, res) => {
   try {
-    const currentYear = new Date().getFullYear();
+    const { year } = req.query;
+    const selectedYear = year ? parseInt(year) : new Date().getFullYear();
 
     // Create date objects with timezone offset
-    const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
-    const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+    const startOfYear = new Date(Date.UTC(selectedYear, 0, 1, 0, 0, 0, 0));
+    const endOfYear = new Date(Date.UTC(selectedYear, 11, 31, 23, 59, 59, 999));
 
     const learnerStats = await SchoolData2023.aggregate([
       {
         $match: {
           $or: [
             { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
-            { createdAt: { $gte: startOfYear, $lte: endOfYear } }
+            { createdAt: { $gte: startOfYear, $lte: endOfYear } },
           ],
-          isDroppedOut: false
-        }
+          isDroppedOut: false,
+        },
       },
       {
         $group: {
@@ -531,48 +576,42 @@ exports.getLearnerStatsByState = async (req, res) => {
           },
           totalLearners: { $sum: 1 },
           newLearners: {
-            $sum: { $cond: [{ $eq: ["$year", currentYear] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$year", selectedYear] }, 1, 0] },
           },
           maleLearners: {
             $sum: {
               $cond: [
                 {
-                  $and: [
-                    { $in: ["$gender", ["M", "Male"]] },
-                  ]
+                  $and: [{ $in: ["$gender", ["M", "Male"]] }],
                 },
                 1,
-                0
-              ]
-            }
+                0,
+              ],
+            },
           },
           femaleLearners: {
             $sum: {
               $cond: [
                 {
-                  $and: [
-                    { $in: ["$gender", ["F", "Female"]] },
-                  ]
+                  $and: [{ $in: ["$gender", ["F", "Female"]] }],
                 },
                 1,
-                0
-              ]
-            }
+                0,
+              ],
+            },
           },
           learnersWithDisability: {
             $sum: {
               $cond: [
                 {
-                  $and: [
-                    { $eq: ["$isWithDisability", true] },
-                  ]
+                  $and: [{ $eq: ["$isWithDisability", true] }],
                 },
                 1,
-                0
-              ]
-            }
-          }
-        }
+                0,
+              ],
+            },
+          },
+        },
       },
       {
         $project: {
@@ -582,19 +621,25 @@ exports.getLearnerStatsByState = async (req, res) => {
           new: "$newLearners",
           male: "$maleLearners",
           female: "$femaleLearners",
-          withDisability: "$learnersWithDisability"
-        }
+          withDisability: "$learnersWithDisability",
+        },
       },
       {
         $sort: {
-          state10: 1
-        }
-      }
+          state10: 1,
+        },
+      },
     ]);
 
     // Calculate and log total learners in different ways for verification
-    const totalBySum = learnerStats.reduce((sum, state) => sum + state.total, 0);
-    const totalByGender = learnerStats.reduce((sum, state) => sum + state.male + state.female, 0);
+    const totalBySum = learnerStats.reduce(
+      (sum, state) => sum + state.total,
+      0
+    );
+    const totalByGender = learnerStats.reduce(
+      (sum, state) => sum + state.male + state.female,
+      0
+    );
 
     // console.log('Total learners (direct sum):', totalBySum);
     // console.log('Total learners (male + female):', totalByGender);
@@ -603,16 +648,19 @@ exports.getLearnerStatsByState = async (req, res) => {
 
     res.json(learnerStats);
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
 // Get overall learner statistics
 exports.getOverallLearnerStats = async (req, res) => {
   try {
-    const currentYear = new Date().getFullYear();
-    const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
-    const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+    const { year } = req.query;
+    const selectedYear = year ? parseInt(year) : new Date().getFullYear();
+    const startOfYear = new Date(Date.UTC(selectedYear, 0, 1, 0, 0, 0, 0));
+    const endOfYear = new Date(Date.UTC(selectedYear, 11, 31, 23, 59, 59, 999));
 
     // Get statistics by education type (PRI, SEC, etc)
     const schoolTypeStats = await SchoolData2023.aggregate([
@@ -620,25 +668,25 @@ exports.getOverallLearnerStats = async (req, res) => {
         $match: {
           $or: [
             { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
-            { createdAt: { $gte: startOfYear, $lte: endOfYear } }
+            { createdAt: { $gte: startOfYear, $lte: endOfYear } },
           ],
-          isDroppedOut: false
-        }
+          isDroppedOut: false,
+        },
       },
       {
         $group: {
           _id: "$education",
           totalLearners: { $sum: 1 },
           maleLearners: {
-            $sum: { $cond: [{ $in: ["$gender", ["M", "Male"]] }, 1, 0] }
+            $sum: { $cond: [{ $in: ["$gender", ["M", "Male"]] }, 1, 0] },
           },
           femaleLearners: {
-            $sum: { $cond: [{ $in: ["$gender", ["F", "Female"]] }, 1, 0] }
+            $sum: { $cond: [{ $in: ["$gender", ["F", "Female"]] }, 1, 0] },
           },
           learnersWithDisability: {
-            $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] }
-          }
-        }
+            $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] },
+          },
+        },
       },
       {
         $project: {
@@ -647,9 +695,9 @@ exports.getOverallLearnerStats = async (req, res) => {
           total: "$totalLearners",
           male: "$maleLearners",
           female: "$femaleLearners",
-          withDisability: "$learnersWithDisability"
-        }
-      }
+          withDisability: "$learnersWithDisability",
+        },
+      },
     ]);
 
     // Get overall totals
@@ -658,25 +706,25 @@ exports.getOverallLearnerStats = async (req, res) => {
         $match: {
           $or: [
             { updatedAt: { $gte: startOfYear, $lte: endOfYear } },
-            { createdAt: { $gte: startOfYear, $lte: endOfYear } }
+            { createdAt: { $gte: startOfYear, $lte: endOfYear } },
           ],
-          isDroppedOut: false
-        }
+          isDroppedOut: false,
+        },
       },
       {
         $group: {
           _id: null,
           totalLearners: { $sum: 1 },
           maleLearners: {
-            $sum: { $cond: [{ $in: ["$gender", ["M", "Male"]] }, 1, 0] }
+            $sum: { $cond: [{ $in: ["$gender", ["M", "Male"]] }, 1, 0] },
           },
           femaleLearners: {
-            $sum: { $cond: [{ $in: ["$gender", ["F", "Female"]] }, 1, 0] }
+            $sum: { $cond: [{ $in: ["$gender", ["F", "Female"]] }, 1, 0] },
           },
           learnersWithDisability: {
-            $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] }
-          }
-        }
+            $sum: { $cond: [{ $eq: ["$isWithDisability", true] }, 1, 0] },
+          },
+        },
       },
       {
         $project: {
@@ -684,28 +732,31 @@ exports.getOverallLearnerStats = async (req, res) => {
           total: "$totalLearners",
           male: "$maleLearners",
           female: "$femaleLearners",
-          withDisability: "$learnersWithDisability"
-        }
-      }
+          withDisability: "$learnersWithDisability",
+        },
+      },
     ]);
 
     // Log total learners from both queries for verification
-    // console.log('Overall total learners:', overallStats[0]?.total || 0);
-    // console.log('Total learners by school type:', schoolTypeStats.reduce((sum, type) => sum + type.total, 0));
+    console.log("Overall total learners:", overallStats[0]?.total || 0);
+    console.log(
+      "Total learners by school type:",
+      schoolTypeStats.reduce((sum, type) => sum + type.total, 0)
+    );
 
     res.json({
       overall: overallStats[0] || {
         total: 0,
         male: 0,
         female: 0,
-        withDisability: 0
+        withDisability: 0,
       },
-      bySchoolType: schoolTypeStats
+      bySchoolType: schoolTypeStats,
     });
   } catch (error) {
     res.status(500).json({
       message: "Error fetching learner statistics",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -716,18 +767,20 @@ exports.getSchoolTypesByState = async (req, res) => {
     const schoolTypeStats = await schoolData.aggregate([
       {
         $match: {
-          schoolType: { $in: ["SEC", "PRI", "ECD", "CGS", "ALP", "ASP", "TTI"] },
-          "schoolStatus.isOpen": "open"
-        }
+          schoolType: {
+            $in: ["SEC", "PRI", "ECD", "CGS", "ALP", "ASP", "TTI"],
+          },
+          "schoolStatus.isOpen": "open",
+        },
       },
       {
         $group: {
           _id: {
             state10: "$state10",
-            schoolType: "$schoolType"
+            schoolType: "$schoolType",
           },
-          count: { $sum: 1 }
-        }
+          count: { $sum: 1 },
+        },
       },
       {
         $group: {
@@ -735,10 +788,10 @@ exports.getSchoolTypesByState = async (req, res) => {
           schoolTypes: {
             $push: {
               type: "$_id.schoolType",
-              count: "$count"
-            }
-          }
-        }
+              count: "$count",
+            },
+          },
+        },
       },
       {
         $project: {
@@ -752,10 +805,10 @@ exports.getSchoolTypesByState = async (req, res) => {
                 $cond: [
                   { $eq: ["$$this.type", "SEC"] },
                   "$$this.count",
-                  "$$value"
-                ]
-              }
-            }
+                  "$$value",
+                ],
+              },
+            },
           },
           PRI: {
             $reduce: {
@@ -765,10 +818,10 @@ exports.getSchoolTypesByState = async (req, res) => {
                 $cond: [
                   { $eq: ["$$this.type", "PRI"] },
                   "$$this.count",
-                  "$$value"
-                ]
-              }
-            }
+                  "$$value",
+                ],
+              },
+            },
           },
           ECD: {
             $reduce: {
@@ -778,10 +831,10 @@ exports.getSchoolTypesByState = async (req, res) => {
                 $cond: [
                   { $eq: ["$$this.type", "ECD"] },
                   "$$this.count",
-                  "$$value"
-                ]
-              }
-            }
+                  "$$value",
+                ],
+              },
+            },
           },
           CGS: {
             $reduce: {
@@ -791,10 +844,10 @@ exports.getSchoolTypesByState = async (req, res) => {
                 $cond: [
                   { $eq: ["$$this.type", "CGS"] },
                   "$$this.count",
-                  "$$value"
-                ]
-              }
-            }
+                  "$$value",
+                ],
+              },
+            },
           },
           ALP: {
             $reduce: {
@@ -804,10 +857,10 @@ exports.getSchoolTypesByState = async (req, res) => {
                 $cond: [
                   { $eq: ["$$this.type", "ALP"] },
                   "$$this.count",
-                  "$$value"
-                ]
-              }
-            }
+                  "$$value",
+                ],
+              },
+            },
           },
           ASP: {
             $reduce: {
@@ -817,10 +870,10 @@ exports.getSchoolTypesByState = async (req, res) => {
                 $cond: [
                   { $eq: ["$$this.type", "ASP"] },
                   "$$this.count",
-                  "$$value"
-                ]
-              }
-            }
+                  "$$value",
+                ],
+              },
+            },
           },
           TTI: {
             $reduce: {
@@ -830,23 +883,25 @@ exports.getSchoolTypesByState = async (req, res) => {
                 $cond: [
                   { $eq: ["$$this.type", "TTI"] },
                   "$$this.count",
-                  "$$value"
-                ]
-              }
-            }
-          }
-        }
+                  "$$value",
+                ],
+              },
+            },
+          },
+        },
       },
       {
         $sort: {
-          state10: 1
-        }
-      }
+          state10: 1,
+        },
+      },
     ]);
 
     res.json(schoolTypeStats);
   } catch (error) {
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
@@ -854,22 +909,24 @@ exports.getSchoolTypesByState = async (req, res) => {
 exports.previewSchoolCode = async (req, res) => {
   try {
     const { schoolName } = req.body;
-    
+
     if (!schoolName) {
       return res.status(400).json({ message: "School name is required." });
     }
 
     const suggestedCode = await generateSchoolCode(schoolName);
-    
+
     res.status(200).json({
       message: "School code generated successfully",
       data: {
         schoolName,
-        suggestedCode
-      }
+        suggestedCode,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: "Error generating school code", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error generating school code", error: error.message });
   }
 };
 
@@ -877,18 +934,23 @@ exports.previewSchoolCode = async (req, res) => {
 exports.checkCodeAvailability = async (req, res) => {
   try {
     const { code } = req.params;
-    
+
     if (!code) {
       return res.status(400).json({ message: "School code is required." });
     }
 
-    const existingSchool = await schoolData.findOne({ code: code.toUpperCase() });
-    
+    const existingSchool = await schoolData.findOne({
+      code: code.toUpperCase(),
+    });
+
     res.status(200).json({
       available: !existingSchool,
-      code: code.toUpperCase()
+      code: code.toUpperCase(),
     });
   } catch (error) {
-    res.status(500).json({ message: "Error checking code availability", error: error.message });
+    res.status(500).json({
+      message: "Error checking code availability",
+      error: error.message,
+    });
   }
 };

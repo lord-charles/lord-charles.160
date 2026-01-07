@@ -1177,7 +1177,12 @@ const getTeachersPerState = async (req, res) => {
       isDroppedOut: false,
     };
 
-    if (year) query.year = year;
+    // Use provided year or default to current year
+    if (year) {
+      query.year = year;
+    } else {
+      query.year = new Date().getFullYear();
+    }
 
     const pipeline = [
       {
@@ -1273,6 +1278,155 @@ const getTeachersByCode = async (req, res) => {
   }
 };
 
+const getTeachersReports = async (req, res) => {
+  try {
+    const { year, state10, county28, payam28 } = req.query;
+
+    // Use provided year or default to current year
+    const targetYear = year ? parseInt(year) : new Date().getFullYear();
+
+    // Build match conditions
+    const matchConditions = {
+      year: targetYear.toString(),
+      // isDroppedOut: false,
+    };
+    if (state10) matchConditions.state10 = state10;
+    if (county28) matchConditions.county28 = county28;
+    if (payam28) matchConditions.payam28 = payam28;
+
+    // Parallel aggregation queries for performance
+    const [
+      statusDistribution,
+      genderDistribution,
+      stateDistribution,
+      qualificationStats,
+      positionStats,
+    ] = await Promise.all([
+      // Teacher status distribution
+      User.aggregate([
+        { $match: matchConditions },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            active: { $sum: { $cond: ["$active", 1, 0] } },
+            inactive: { $sum: { $cond: [{ $not: ["$active"] }, 1, 0] } },
+          },
+        },
+      ]),
+
+      // Gender distribution
+      User.aggregate([
+        { $match: matchConditions },
+        {
+          $group: {
+            _id: "$gender",
+            count: { $sum: 1 },
+            active: { $sum: { $cond: ["$active", 1, 0] } },
+          },
+        },
+        {
+          $project: {
+            gender: "$_id",
+            count: 1,
+            active: 1,
+            activeRate: {
+              $multiply: [{ $divide: ["$active", "$count"] }, 100],
+            },
+          },
+        },
+      ]),
+
+      // State distribution (top 10)
+      User.aggregate([
+        { $match: matchConditions },
+        {
+          $group: {
+            _id: "$state10",
+            total: { $sum: 1 },
+            active: { $sum: { $cond: ["$active", 1, 0] } },
+          },
+        },
+        {
+          $project: {
+            state: "$_id",
+            total: 1,
+            active: 1,
+            activeRate: {
+              $multiply: [{ $divide: ["$active", "$total"] }, 100],
+            },
+          },
+        },
+        { $sort: { total: -1 } },
+        { $limit: 10 },
+      ]),
+
+      // Professional qualification stats
+      User.aggregate([
+        { $match: matchConditions },
+        {
+          $group: {
+            _id: "$professionalQual",
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            qualification: { $ifNull: ["$_id", "Not Specified"] },
+            count: 1,
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 8 },
+      ]),
+
+      // Position distribution
+      User.aggregate([
+        { $match: matchConditions },
+        {
+          $group: {
+            _id: "$position",
+            count: { $sum: 1 },
+            active: { $sum: { $cond: ["$active", 1, 0] } },
+          },
+        },
+        {
+          $project: {
+            position: { $ifNull: ["$_id", "Not Specified"] },
+            count: 1,
+            active: 1,
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 8 },
+      ]),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        statusDistribution: statusDistribution[0] || {
+          total: 0,
+          active: 0,
+          inactive: 0,
+        },
+        genderDistribution,
+        stateDistribution,
+        qualificationStats,
+        positionStats,
+        year: targetYear,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching teachers reports:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch teachers reports",
+      details: error.message,
+    });
+  }
+};
+
 module.exports = {
   createUser,
   logIn,
@@ -1304,4 +1458,5 @@ module.exports = {
   getDroppedOutTeachersPerState,
   getTeachersByCode,
   overallMaleFemaleStat,
+  getTeachersReports,
 };

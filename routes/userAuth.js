@@ -32,8 +32,12 @@ const {
   getDroppedOutTeachersPerState,
   getTeachersByCode,
   overallMaleFemaleStat,
+  getTeachersReports,
 } = require("../controller/userCtrl");
-const { cachePostMiddleware, cacheMiddleware } = require("../middlewares/cacheMiddleware");
+const {
+  cachePostMiddleware,
+  cacheMiddleware,
+} = require("../middlewares/cacheMiddleware");
 
 /**
  * @swagger
@@ -323,7 +327,11 @@ router.post("/verifyToken", verifyToken);
 router.delete("/users/delete-user/:id", deleteUser);
 router.get("/users/get/all/count", getUserCount);
 router.patch("/users/update/:id", updateUser);
-router.post("/download/payams/schools", cachePostMiddleware(600), payamSchoolDownload);
+router.post(
+  "/download/payams/schools",
+  cachePostMiddleware(600),
+  payamSchoolDownload
+);
 router.patch("/update/bulk", updateUsersFieldsBulk);
 
 //for Admin
@@ -336,19 +344,48 @@ router.put("/address", authMiddleware, saveAddress);
 
 //dashboard
 
-router.post("/fetchUsersPerState", cachePostMiddleware(600), fetchUsersPerState);
-router.post("/stateMaleFemaleStat", cachePostMiddleware(600), stateMaleFemaleStat);
+router.post(
+  "/fetchUsersPerState",
+  cachePostMiddleware(600),
+  fetchUsersPerState
+);
+router.post(
+  "/stateMaleFemaleStat",
+  cachePostMiddleware(600),
+  stateMaleFemaleStat
+);
 
 // apis sept 2024
-router.post("/getTeacherCountByLocation", cachePostMiddleware(600), getTeacherCountByLocation);
+router.post(
+  "/getTeacherCountByLocation",
+  cachePostMiddleware(600),
+  getTeacherCountByLocation
+);
 router.post(
   "/getTeachersStatusCountByLocation",
   cachePostMiddleware(600),
   getTeachersStatusCountByLocation
 );
-router.post("/getTeachersPerState", cachePostMiddleware(600), getTeachersPerState);
-router.post("/getActiveTeachersPerState", cachePostMiddleware(600), getActiveTeachersPerState);
-router.post("/getDroppedOutTeachersPerState", cachePostMiddleware(600), getDroppedOutTeachersPerState);
+router.post(
+  "/getTeachersPerState",
+  cachePostMiddleware(600),
+  getTeachersPerState
+);
+router.post(
+  "/getActiveTeachersPerState",
+  cachePostMiddleware(600),
+  getActiveTeachersPerState
+);
+router.post(
+  "/getDroppedOutTeachersPerState",
+  cachePostMiddleware(600),
+  getDroppedOutTeachersPerState
+);
 router.post("/getTeachersByCode", cachePostMiddleware(600), getTeachersByCode);
-router.post("/overallMaleFemaleStat", cachePostMiddleware(600), overallMaleFemaleStat);
+router.post(
+  "/overallMaleFemaleStat",
+  cachePostMiddleware(600),
+  overallMaleFemaleStat
+);
+router.get("/teachers/reports", getTeachersReports);
 module.exports = router;
