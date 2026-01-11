@@ -6,7 +6,7 @@ const RevenueSchema = new mongoose.Schema({
   description: { type: String },
   amount: { type: Number },
   sourceCode: { type: String },
-  group: { type: String, enum: ["OPEX", "CAPEX"] },
+  group: { type: String }, // Remove enum restriction to support dynamic groups
 });
 
 const BudgetItemSchema = new mongoose.Schema({
@@ -28,10 +28,10 @@ const CategorySchema = new mongoose.Schema({
 
 // BudgetGroupSchema
 const BudgetGroupSchema = new mongoose.Schema({
-  group: { type: String, enum: ["OPEX", "CAPEX"] },
+  group: { type: String }, // Remove enum restriction to support dynamic groups
   categories: [CategorySchema],
 });
- 
+
 // BudgetSchema
 const BudgetSchema = new mongoose.Schema({
   submittedAmount: { type: Number },
@@ -112,7 +112,10 @@ const MainSchema = new mongoose.Schema({
   meta: { type: MetaSchema },
   budget: { type: BudgetSchema },
   revenues: [RevenueSchema],
-  accountability: { type: mongoose.Schema.Types.ObjectId, ref: "Accountability" },
+  accountability: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Accountability",
+  },
 });
 
 MainSchema.index({ code: 1 });

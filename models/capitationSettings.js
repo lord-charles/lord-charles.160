@@ -29,12 +29,12 @@ const OperationalSettingsSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Tranche distribution settings (percentages sum may be validated in app logic)
+// Tranche distribution settings
 const TrancheDistributionSchema = new mongoose.Schema(
   {
-    tranche1Pct: { type: Number, default: 70 },
-    tranche2Pct: { type: Number, default: 20 },
-    tranche3Pct: { type: Number, default: 10 },
+    tranche1Pct: { type: Number, required: true },
+    tranche2Pct: { type: Number, required: true },
+    tranche3Pct: { type: Number, required: true },
     tranche1InflationCorrectionPct: { type: Number, default: 0 },
     tranche2InflationCorrectionPct: { type: Number, default: 0 },
     tranche3InflationCorrectionPct: { type: Number, default: 0 },
@@ -42,17 +42,17 @@ const TrancheDistributionSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Per school-type grant rule - REMOVED ENUM to make it dynamic
+// Per school-type grant rule - Dynamic for any school type
 const GrantRuleSchema = new mongoose.Schema(
   {
-    schoolType: { type: String, required: true }, // Now accepts any string, not just ["PRI", "SEC", "ALP"]
-    currency: { type: String, default: "SSP" },
-    amountPerLearner: { type: Number, default: 0 },
-    amountPerSchool: { type: Number, default: 0 },
-    exchangeRateToSSP: { type: Number, default: 1 },
+    schoolType: { type: String, required: true },
+    currency: { type: String, required: true },
+    amountPerLearner: { type: Number, required: true },
+    amountPerSchool: { type: Number, required: true },
+    exchangeRateToSSP: { type: Number, required: true },
     trancheDistribution: {
       type: TrancheDistributionSchema,
-      default: () => ({}),
+      required: true,
     },
   },
   { _id: false }
@@ -72,164 +72,76 @@ const DisbursementSettingsSchema = new mongoose.Schema(
 // Funding types
 const FundingTypesSchema = new mongoose.Schema(
   {
-    capitationGrants: { type: Boolean, default: true }, // CG's
+    capitationGrants: { type: Boolean, default: false },
     otherIncomes: { type: Boolean, default: false },
     otherDonors: { type: Boolean, default: false },
   },
   { _id: false }
 );
 
+// Complete funding group schema with all configurations
+const FundingGroupSchema = new mongoose.Schema(
+  {
+    // Group metadata
+    displayName: { type: String, required: true },
+    description: { type: String },
+    category: {
+      type: String,
+      enum: ["OPEX", "CAPEX", "CUSTOM"],
+      required: true,
+    },
+
+    // Scope and versioning (per group)
+    version: { type: String },
+    effectiveFrom: { type: Date },
+    effectiveTo: { type: Date },
+
+    // Requirements (per group)
+    requirements: {
+      items: [RequirementSchema],
+      ownershipAllowed: OwnershipSettingsSchema,
+      operational: OperationalSettingsSchema,
+    },
+
+    // Grant rules for this group
+    rules: [GrantRuleSchema],
+
+    // Disbursement settings (per group)
+    disbursement: DisbursementSettingsSchema,
+
+    // Funding types (per group)
+    fundingTypes: FundingTypesSchema,
+
+    // Notes (per group)
+    notes: { type: String },
+
+    // Status
+    isActive: { type: Boolean, default: true },
+  },
+  { _id: false, timestamps: true }
+);
+
 const CapitationSettingsSchema = new mongoose.Schema(
   {
-    // Scope and versioning
+    // Global scope and versioning
     academicYear: { type: Number, required: true },
     version: { type: String },
     effectiveFrom: { type: Date },
     effectiveTo: { type: Date },
 
-    // Requirements
-    requirements: {
-      // Items that have both scan + data posted requirements
-      items: {
-        type: [RequirementSchema],
-        default: () => [
-          { name: "SDP", scanRequired: true, dataPostedRequired: true },
-          { name: "Budget", scanRequired: true, dataPostedRequired: true },
-          { name: "SGB", scanRequired: true, dataPostedRequired: true },
-          { name: "Attendance", scanRequired: false, dataPostedRequired: true },
-          { name: "Enrolment", scanRequired: false, dataPostedRequired: true },
-          {
-            name: "Accountability",
-            scanRequired: true,
-            dataPostedRequired: true,
-          },
-        ],
-      },
-      ownershipAllowed: { type: OwnershipSettingsSchema, default: () => ({}) },
-      operational: { type: OperationalSettingsSchema, default: () => ({}) },
+    // Dynamic funding groups - each group has complete configuration
+    fundingGroups: {
+      type: Map,
+      of: FundingGroupSchema,
+      default: () => new Map(),
     },
 
-    // OPEX (Capitation Grants) - Now supports any school type
-    capitationGrants: {
-      rules: {
-        type: [GrantRuleSchema],
-        default: () => [
-          {
-            schoolType: "PRI",
-            currency: "SSP",
-            amountPerLearner: 200,
-            amountPerSchool: 2000,
-            exchangeRateToSSP: 1,
-            trancheDistribution: {
-              tranche1Pct: 70,
-              tranche2Pct: 20,
-              tranche3Pct: 10,
-              tranche1InflationCorrectionPct: 0,
-              tranche2InflationCorrectionPct: 0,
-              tranche3InflationCorrectionPct: 0,
-            },
-          },
-          {
-            schoolType: "SEC",
-            currency: "SSP",
-            amountPerLearner: 300,
-            amountPerSchool: 3000,
-            exchangeRateToSSP: 1,
-            trancheDistribution: {
-              tranche1Pct: 70,
-              tranche2Pct: 20,
-              tranche3Pct: 10,
-              tranche1InflationCorrectionPct: 15,
-              tranche2InflationCorrectionPct: 15,
-              tranche3InflationCorrectionPct: 15,
-            },
-          },
-          {
-            schoolType: "ALP",
-            currency: "SSP",
-            amountPerLearner: 200,
-            amountPerSchool: 2000,
-            exchangeRateToSSP: 1,
-            trancheDistribution: {
-              tranche1Pct: 70,
-              tranche2Pct: 20,
-              tranche3Pct: 10,
-              tranche1InflationCorrectionPct: 0,
-              tranche2InflationCorrectionPct: 0,
-              tranche3InflationCorrectionPct: 0,
-            },
-          },
-        ],
-      },
-    },
-
-    // CAPEX (Capital Spend) - Now supports any school type
-    capitalSpend: {
-      rules: {
-        type: [GrantRuleSchema],
-        default: () => [
-          {
-            schoolType: "PRI",
-            currency: "USD",
-            amountPerLearner: 20,
-            amountPerSchool: 200,
-            exchangeRateToSSP: 100,
-            trancheDistribution: {
-              tranche1Pct: 70,
-              tranche2Pct: 20,
-              tranche3Pct: 10,
-              tranche1InflationCorrectionPct: 0,
-              tranche2InflationCorrectionPct: 0,
-              tranche3InflationCorrectionPct: 0,
-            },
-          },
-          {
-            schoolType: "SEC",
-            currency: "USD",
-            amountPerLearner: 30,
-            amountPerSchool: 300,
-            exchangeRateToSSP: 100,
-            trancheDistribution: {
-              tranche1Pct: 70,
-              tranche2Pct: 20,
-              tranche3Pct: 10,
-              tranche1InflationCorrectionPct: 0,
-              tranche2InflationCorrectionPct: 0,
-              tranche3InflationCorrectionPct: 0,
-            },
-          },
-          {
-            schoolType: "ALP",
-            currency: "USD",
-            amountPerLearner: 20,
-            amountPerSchool: 200,
-            exchangeRateToSSP: 100,
-            trancheDistribution: {
-              tranche1Pct: 70,
-              tranche2Pct: 20,
-              tranche3Pct: 10,
-              tranche1InflationCorrectionPct: 0,
-              tranche2InflationCorrectionPct: 0,
-              tranche3InflationCorrectionPct: 0,
-            },
-          },
-        ],
-      },
-    },
-
-    // Disbursement and funding types
-    disbursement: { type: DisbursementSettingsSchema, default: () => ({}) },
-    fundingTypes: {
-      type: FundingTypesSchema,
-      default: () => ({ capitationGrants: true }),
-    },
-
-    // Notes / freeform config
+    // Global notes
     notes: { type: String },
   },
   {
     timestamps: true,
-    strict: false, // Allow additional properties not defined in schema
+    strict: false,
   }
 );
 

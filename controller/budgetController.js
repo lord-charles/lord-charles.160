@@ -2,18 +2,95 @@ const Budget = require("../models/budget");
 const SchoolData = require("../models/2023Data");
 const Accountability = require("../models/accountability");
 const CapitationSettings = require("../models/capitationSettings");
+
+// Get funding groups for a specific year
+exports.getFundingGroups = async (req, res) => {
+  try {
+    const { year } = req.params;
+
+    if (!year) {
+      return res.status(400).json({ error: "Year parameter is required" });
+    }
+
+    const parsedYear = parseInt(year, 10);
+    if (isNaN(parsedYear)) {
+      return res.status(400).json({ error: "Invalid year format" });
+    }
+
+    const settings = await CapitationSettings.findOne({
+      academicYear: parsedYear,
+    });
+
+    if (!settings) {
+      return res.status(404).json({
+        error: "No capitation settings found for this year",
+        academicYear: parsedYear,
+        fundingGroups: {},
+      });
+    }
+
+    // Convert Map to object for JSON response
+    const fundingGroupsObj = {};
+    if (settings.fundingGroups && settings.fundingGroups.size > 0) {
+      for (const [key, value] of settings.fundingGroups) {
+        fundingGroupsObj[key] = value;
+      }
+    }
+
+    res.status(200).json({
+      academicYear: parsedYear,
+      fundingGroups: fundingGroupsObj,
+    });
+  } catch (error) {
+    console.error("Error fetching funding groups:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Create a new budget
 exports.createBudget = async (req, res) => {
   try {
-    const budget = new Budget(req.body);
-    const savedBudget = await budget.save();
+    const { code, year, budget } = req.body;
+
+    // Check if school already has a budget document for this year
+    if (code && year) {
+      const existingBudget = await Budget.findOne({ code, year });
+
+      if (existingBudget && budget?.groups?.length > 0) {
+        // Check if any of the groups being added already exist
+        const newGroupNames = budget.groups.map((g) => g.group);
+        const existingGroupNames =
+          existingBudget.budget?.groups?.map((g) => g.group) || [];
+
+        const duplicateGroups = newGroupNames.filter((name) =>
+          existingGroupNames.includes(name)
+        );
+
+        if (duplicateGroups.length > 0) {
+          return res.status(400).json({
+            error: "Budget group already exists",
+            duplicateGroups,
+            message: `The following funding groups already exist for this school in ${year}: ${duplicateGroups.join(
+              ", "
+            )}. Each funding group can only be created once per school per year.`,
+          });
+        }
+
+        // If no duplicates, add the new groups to existing budget
+        existingBudget.budget.groups.push(...budget.groups);
+        const savedBudget = await existingBudget.save();
+        return res.status(200).json(savedBudget);
+      }
+    }
+
+    // Create new budget if no existing document or no groups conflict
+    const newBudget = new Budget(req.body);
+    const savedBudget = await newBudget.save();
     res.status(201).json(savedBudget);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
-
-
 
 // Get all budgets
 exports.getBudgets = async (req, res) => {
@@ -33,19 +110,19 @@ exports.getBudgets = async (req, res) => {
                       $reduce: {
                         input: "$budget.groups",
                         initialValue: [],
-                        in: { $concatArrays: ["$$value", "$$this.categories"] }
-                      }
+                        in: { $concatArrays: ["$$value", "$$this.categories"] },
+                      },
                     },
                     initialValue: [],
-                    in: { $concatArrays: ["$$value", "$$this.items"] }
-                  }
+                    in: { $concatArrays: ["$$value", "$$this.items"] },
+                  },
                 },
                 as: "item",
-                in: "$$item.totalCostSSP"
-              }
-            }
-          }
-        }
+                in: "$$item.totalCostSSP",
+              },
+            },
+          },
+        },
       },
       {
         $project: {
@@ -58,9 +135,9 @@ exports.getBudgets = async (req, res) => {
           ownership: 1,
           school: 1,
           submittedAmount: 1,
-          preparedBy: "$meta.preparation.preparedBy"
-        }
-      }
+          preparedBy: "$meta.preparation.preparedBy",
+        },
+      },
     ];
 
     const budgets = await Budget.aggregate(pipeline);
@@ -96,7 +173,9 @@ exports.getBudgetByCode = async (req, res) => {
       return res.status(400).json({ error: "Invalid year format" });
     }
 
-    const budgets = await Budget.findOne({ code, year: parsedYear }).populate("accountability");
+    const budgets = await Budget.findOne({ code, year: parsedYear }).populate(
+      "accountability"
+    );
     if (!budgets || budgets.length === 0) {
       return res.status(404).json({ error: "No budgets found" });
     }
@@ -144,7 +223,10 @@ exports.reviewBudget = async (req, res) => {
             (g.categories || []).reduce((s2, c) => {
               return (
                 s2 +
-                (c.items || []).reduce((s3, it) => s3 + (Number(it.totalCostSSP) || 0), 0)
+                (c.items || []).reduce(
+                  (s3, it) => s3 + (Number(it.totalCostSSP) || 0),
+                  0
+                )
               );
             }, 0)
           );
@@ -155,10 +237,23 @@ exports.reviewBudget = async (req, res) => {
     })();
 
     // Load capitation settings for tranche distribution
-    const settings = await CapitationSettings.findOne({ academicYear: budgetDoc.year }).lean();
+    const settings = await CapitationSettings.findOne({
+      academicYear: budgetDoc.year,
+    }).lean();
     const schoolType = budgetDoc.schoolType;
-    const defaultDist = { tranche1Pct: 70, tranche2Pct: 20, tranche3Pct: 10, tranche1InflationCorrectionPct: 0, tranche2InflationCorrectionPct: 0, tranche3InflationCorrectionPct: 0 };
-    const rule = settings?.capitationGrants?.rules?.find?.((r) => r.schoolType === schoolType) || settings?.capitalSpend?.rules?.find?.((r) => r.schoolType === schoolType);
+    const defaultDist = {
+      tranche1Pct: 70,
+      tranche2Pct: 20,
+      tranche3Pct: 10,
+      tranche1InflationCorrectionPct: 0,
+      tranche2InflationCorrectionPct: 0,
+      tranche3InflationCorrectionPct: 0,
+    };
+    const rule =
+      settings?.capitationGrants?.rules?.find?.(
+        (r) => r.schoolType === schoolType
+      ) ||
+      settings?.capitalSpend?.rules?.find?.((r) => r.schoolType === schoolType);
     const dist = rule?.trancheDistribution || defaultDist;
     const currency = rule?.currency || "SSP";
 
@@ -177,9 +272,27 @@ exports.reviewBudget = async (req, res) => {
     const t3Infl = round2(t3Amt * pct(dist.tranche3InflationCorrectionPct));
 
     const tranches = [
-      { name: "Tranche 1", amountDisbursed: 0, amountApproved: t1Amt, currency, inflationCorrection: t1Infl },
-      { name: "Tranche 2", amountDisbursed: 0, amountApproved: t2Amt, currency, inflationCorrection: t2Infl },
-      { name: "Tranche 3", amountDisbursed: 0, amountApproved: t3Amt, currency, inflationCorrection: t3Infl },
+      {
+        name: "Tranche 1",
+        amountDisbursed: 0,
+        amountApproved: t1Amt,
+        currency,
+        inflationCorrection: t1Infl,
+      },
+      {
+        name: "Tranche 2",
+        amountDisbursed: 0,
+        amountApproved: t2Amt,
+        currency,
+        inflationCorrection: t2Infl,
+      },
+      {
+        name: "Tranche 3",
+        amountDisbursed: 0,
+        amountApproved: t3Amt,
+        currency,
+        inflationCorrection: t3Infl,
+      },
     ];
 
     // Build Accountability payload from available Budget fields only
@@ -200,7 +313,9 @@ exports.reviewBudget = async (req, res) => {
       notes: notes || undefined,
     };
     // Determine review outcome before creating accountability
-    const normalizedStatus = ["Reviewed", "Corrections Required"].includes(reviewStatus)
+    const normalizedStatus = ["Reviewed", "Corrections Required"].includes(
+      reviewStatus
+    )
       ? reviewStatus
       : "Reviewed";
 
@@ -216,7 +331,9 @@ exports.reviewBudget = async (req, res) => {
     }
     if (Array.isArray(corrections)) {
       budgetDoc.budget.corrections = corrections
-        .filter((c) => c && typeof c.note === "string" && c.note.trim().length > 0)
+        .filter(
+          (c) => c && typeof c.note === "string" && c.note.trim().length > 0
+        )
         .map((c) => ({
           note: c.note,
           addedBy: c.addedBy || `${reviewedByName} (${reviewedByDesignation})`,
@@ -234,7 +351,9 @@ exports.reviewBudget = async (req, res) => {
     }
 
     // Otherwise create Accountability and link it
-    const accountabilityDoc = await Accountability.create(accountabilityPayload);
+    const accountabilityDoc = await Accountability.create(
+      accountabilityPayload
+    );
     budgetDoc.accountability = accountabilityDoc._id;
     await budgetDoc.save();
 
@@ -274,7 +393,9 @@ exports.unreviewBudget = async (req, res) => {
     budgetDoc.budget.corrections = [];
     await budgetDoc.save();
 
-    return res.status(200).json({ message: "Budget unreviewed and Accountability deleted" });
+    return res
+      .status(200)
+      .json({ message: "Budget unreviewed and Accountability deleted" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
