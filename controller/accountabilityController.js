@@ -1,5 +1,6 @@
 const Accountability = require("../models/accountability");
 const Budget = require("../models/budget");
+const FinancialCalculationService = require("../services/financialCalculationService");
 
 // Get all accountability entries
 const getAllAccountabilityEntries = async (req, res) => {
@@ -424,6 +425,7 @@ const approveTranche = async (req, res) => {
       approvalDate,
       status,
       remarks,
+      amountApproved,
     } = req.body;
 
     if (!trancheName) {
@@ -439,6 +441,11 @@ const approveTranche = async (req, res) => {
       "tranches.$[t].approval.status": status || "Approved",
       "tranches.$[t].approval.remarks": remarks ?? null,
     };
+
+    // Update amountApproved if provided
+    if (amountApproved !== undefined && amountApproved !== null) {
+      update["tranches.$[t].amountApproved"] = Number(amountApproved);
+    }
 
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
@@ -475,7 +482,13 @@ const approveTranche = async (req, res) => {
 const disburseTranche = async (req, res) => {
   try {
     const { id } = req.params; // accountability document ID
-    const { trancheName, amountDisbursed, paidBy, disbursementDate } = req.body;
+    const {
+      trancheName,
+      amountDisbursed,
+      paidBy,
+      disbursementDate,
+      paidThrough,
+    } = req.body;
 
     if (!trancheName || amountDisbursed === undefined) {
       return res.status(400).json({
@@ -483,13 +496,54 @@ const disburseTranche = async (req, res) => {
       });
     }
 
+    if (
+      !paidThrough ||
+      !["Bank", "Pay Agent", "Mobile Money"].includes(paidThrough)
+    ) {
+      return res.status(400).json({
+        message: "paidThrough must be one of: Bank, Pay Agent, Mobile Money",
+      });
+    }
+
+    // Find the accountability document and tranche to validate
+    const accountability = await Accountability.findById(id);
+    if (!accountability) {
+      return res
+        .status(404)
+        .json({ message: "Accountability entry not found" });
+    }
+
+    const tranche = accountability.tranches.find((t) => t.name === trancheName);
+    if (!tranche) {
+      return res.status(404).json({ message: "Tranche not found" });
+    }
+
+    // Validate that disbursement doesn't exceed approved amount
+    const amountApproved = tranche.amountApproved || 0;
+    const requestedAmount = Number(amountDisbursed);
+
+    if (requestedAmount > amountApproved) {
+      return res.status(400).json({
+        message: `Cannot disburse ${requestedAmount} SSP. Approved amount is ${amountApproved} SSP.`,
+        amountApproved,
+        requestedAmount,
+      });
+    }
+
     const update = {
-      "tranches.$[t].amountDisbursed": Number(amountDisbursed),
+      "tranches.$[t].amountDisbursed": requestedAmount,
       "tranches.$[t].paidBy": paidBy || "Unknown",
+      "tranches.$[t].paidThrough": paidThrough,
       "tranches.$[t].dateDisbursed": disbursementDate
         ? new Date(disbursementDate)
         : new Date(),
+      "tranches.$[t].fundsAccountability.receivedBySchool": requestedAmount,
     };
+
+    // If paid through bank, set bankInstructed to true
+    if (paidThrough === "Bank") {
+      update["tranches.$[t].fundsAccountability.bankInstructed"] = true;
+    }
 
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
@@ -939,6 +993,125 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// Record returned funds for a tranche
+const recordReturnedFunds = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { trancheName, amount, reason, recordedBy } = req.body;
+
+    if (!trancheName || !amount) {
+      return res.status(400).json({
+        message: "trancheName and amount are required",
+      });
+    }
+
+    const update = {
+      "tranches.$[t].fundsAccountability.returnedFunds.amount": Number(amount),
+      "tranches.$[t].fundsAccountability.returnedFunds.returnDate": new Date(),
+      "tranches.$[t].fundsAccountability.returnedFunds.reason": reason || "",
+      "tranches.$[t].fundsAccountability.returnedFunds.recordedBy":
+        recordedBy || "Unknown",
+    };
+
+    const updated = await Accountability.findOneAndUpdate(
+      { _id: id },
+      { $set: update },
+      {
+        new: true,
+        arrayFilters: [{ "t.name": trancheName }],
+        runValidators: true,
+      }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Entry or tranche not found" });
+    }
+
+    return res.status(200).json({
+      message: "Returned funds recorded successfully",
+      entryId: updated._id,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error recording returned funds",
+      error: error.message,
+    });
+  }
+};
+
+// Record held funds for a tranche
+const recordHeldFunds = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { trancheName, amount, heldBy, reason, recordedBy } = req.body;
+
+    if (!trancheName || !amount) {
+      return res.status(400).json({
+        message: "trancheName and amount are required",
+      });
+    }
+
+    const update = {
+      "tranches.$[t].fundsAccountability.heldFunds.amount": Number(amount),
+      "tranches.$[t].fundsAccountability.heldFunds.heldBy": heldBy || "",
+      "tranches.$[t].fundsAccountability.heldFunds.reason": reason || "",
+      "tranches.$[t].fundsAccountability.heldFunds.dateHeld": new Date(),
+      "tranches.$[t].fundsAccountability.heldFunds.recordedBy":
+        recordedBy || "Unknown",
+    };
+
+    const updated = await Accountability.findOneAndUpdate(
+      { _id: id },
+      { $set: update },
+      {
+        new: true,
+        arrayFilters: [{ "t.name": trancheName }],
+        runValidators: true,
+      }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Entry or tranche not found" });
+    }
+
+    return res.status(200).json({
+      message: "Held funds recorded successfully",
+      entryId: updated._id,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error recording held funds",
+      error: error.message,
+    });
+  }
+};
+
+// Get financial summary with real-time calculations
+const getFinancialSummary = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const accountability = await Accountability.findById(id);
+    if (!accountability) {
+      return res
+        .status(404)
+        .json({ message: "Accountability record not found" });
+    }
+
+    const summary = await FinancialCalculationService.calculateFinancialSummary(
+      id,
+      accountability.academicYear
+    );
+
+    return res.status(200).json(summary);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error calculating financial summary",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllAccountabilityEntries,
   getAccountabilityById,
@@ -951,9 +1124,13 @@ module.exports = {
   approveTranche,
   // NEW ENDPOINTS
   disburseTranche,
+  recordReturnedFunds,
+  recordHeldFunds,
   addAccountingEntry,
   updateAccountingEntry,
   deleteAccountingEntry,
   // STATS ENDPOINT
   getDashboardStats,
+  // FINANCIAL CALCULATIONS
+  getFinancialSummary,
 };

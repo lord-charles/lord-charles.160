@@ -129,6 +129,9 @@ const CapitationSettingsSchema = new mongoose.Schema(
     effectiveFrom: { type: Date },
     effectiveTo: { type: Date },
 
+    // Global exchange rate (USD to SSP)
+    exchangeRateUSDtoSSP: { type: Number, default: 1 },
+
     // Dynamic funding groups - each group has complete configuration
     fundingGroups: {
       type: Map,

@@ -21,10 +21,18 @@ const accountabilitySchema = new Schema({
     amount: { type: Number, default: 0 },
     returnDate: { type: Date },
     reason: { type: String },
+    recordedBy: { type: String },
+  },
+  heldFunds: {
+    amount: { type: Number, default: 0 },
+    heldBy: { type: String },
+    reason: { type: String },
+    dateHeld: { type: Date },
+    recordedBy: { type: String },
   },
   waivedAmount: { type: Number, default: 0 },
-  heldBy: { type: String },
-  heldAmount: { type: Number, default: 0 },
+  heldBy: { type: String }, // Deprecated - use heldFunds.heldBy
+  heldAmount: { type: Number, default: 0 }, // Deprecated - use heldFunds.amount
   receivedBySchool: { type: Number, default: 0 },
   reviewedBy: {
     name: { type: String },
@@ -79,6 +87,11 @@ const trancheSchema = new Schema({
   amountDisbursed: { type: Number, default: 0 },
   currency: { type: String, default: "SSP" },
   dateDisbursed: { type: Date },
+  paidThrough: {
+    type: String,
+    enum: ["Bank", "Pay Agent", "Mobile Money", ""],
+    default: "",
+  },
   inflationCorrection: { type: Number, default: 0 },
   previousTrancheLedgerAccountedFor: { type: Boolean },
   previousTranchLedgerAccountedForPercentage: { type: Number },

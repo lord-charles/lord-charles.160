@@ -197,6 +197,7 @@ exports.reviewBudget = async (req, res) => {
       reviewStatus,
       corrections,
       reviewNotes,
+      reviewDate,
     } = req.body || {};
 
     const budgetDoc = await Budget.findById(id);
@@ -322,7 +323,9 @@ exports.reviewBudget = async (req, res) => {
     // Common review metadata
     budgetDoc.budget = budgetDoc.budget || {};
     budgetDoc.budget.reviewedBy = `${reviewedByName} (${reviewedByDesignation})`;
-    budgetDoc.budget.reviewDate = new Date();
+    budgetDoc.budget.reviewDate = reviewDate
+      ? new Date(reviewDate)
+      : new Date();
     budgetDoc.budget.reviewStatus = normalizedStatus;
     if (typeof reviewNotes === "string") {
       budgetDoc.budget.reviewNotes = reviewNotes;

@@ -32,6 +32,13 @@ router.get(
 // Disburse funds for a tranche
 router.patch("/:id/disburse", accountabilityController.disburseTranche);
 
+// Record returned and held funds
+router.patch(
+  "/:id/returned-funds",
+  accountabilityController.recordReturnedFunds
+);
+router.patch("/:id/held-funds", accountabilityController.recordHeldFunds);
+
 // Accounting entries management
 router.post("/:id/accounting", accountabilityController.addAccountingEntry);
 router.patch(
@@ -41,6 +48,12 @@ router.patch(
 router.delete(
   "/:id/accounting/:entryId",
   accountabilityController.deleteAccountingEntry
+);
+
+// Financial summary with real-time calculations
+router.get(
+  "/:id/financial-summary",
+  accountabilityController.getFinancialSummary
 );
 
 module.exports = router;
