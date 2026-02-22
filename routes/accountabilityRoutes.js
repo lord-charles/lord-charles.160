@@ -39,6 +39,10 @@ router.patch(
 );
 router.patch("/:id/held-funds", accountabilityController.recordHeldFunds);
 
+// Suppliers (State Anchor disbursements)
+router.post("/:id/suppliers", accountabilityController.addSupplier);
+router.delete("/:id/suppliers", accountabilityController.removeSupplier);
+
 // Accounting entries management
 router.post("/:id/accounting", accountabilityController.addAccountingEntry);
 router.patch(

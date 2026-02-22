@@ -46,6 +46,17 @@ const accountabilitySchema = new Schema({
   },
   // New field for detailed accounting entries
   accountingEntries: { type: [accountingEntrySchema], default: [] },
+  // Suppliers (when disbursed through State Anchor)
+  suppliers: [
+    {
+      name: { type: String },
+      supplies: { type: String }, // What they supply
+      contact: { type: String },
+      amount: { type: Number },
+      addedAt: { type: Date, default: Date.now },
+      addedBy: { type: String },
+    },
+  ],
 });
 
 // Revenue Schema
@@ -84,12 +95,24 @@ const expenditureSchema = new Schema({
 // Tranche Schema
 const trancheSchema = new Schema({
   name: { type: String },
+  // Optional funding group this tranche belongs to (e.g., "opexTest", "capexTest")
+  fundingGroup: { type: String },
   amountDisbursed: { type: Number, default: 0 },
   currency: { type: String, default: "SSP" },
   dateDisbursed: { type: Date },
   paidThrough: {
     type: String,
-    enum: ["Bank", "Pay Agent", "Mobile Money", ""],
+    enum: [
+      "Bank Transfer",
+      "Bank", // legacy
+      "State Anchor",
+      "Third Party Agents",
+      "Pay Agent", // legacy
+      "Mobile Money",
+      "SMoE",
+      "SMoF",
+      "", // legacy/empty
+    ],
     default: "",
   },
   inflationCorrection: { type: Number, default: 0 },

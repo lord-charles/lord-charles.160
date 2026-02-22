@@ -63,7 +63,7 @@ exports.createBudget = async (req, res) => {
           existingBudget.budget?.groups?.map((g) => g.group) || [];
 
         const duplicateGroups = newGroupNames.filter((name) =>
-          existingGroupNames.includes(name)
+          existingGroupNames.includes(name),
         );
 
         if (duplicateGroups.length > 0) {
@@ -71,7 +71,7 @@ exports.createBudget = async (req, res) => {
             error: "Budget group already exists",
             duplicateGroups,
             message: `The following funding groups already exist for this school in ${year}: ${duplicateGroups.join(
-              ", "
+              ", ",
             )}. Each funding group can only be created once per school per year.`,
           });
         }
@@ -174,7 +174,7 @@ exports.getBudgetByCode = async (req, res) => {
     }
 
     const budgets = await Budget.findOne({ code, year: parsedYear }).populate(
-      "accountability"
+      "accountability",
     );
     if (!budgets || budgets.length === 0) {
       return res.status(404).json({ error: "No budgets found" });
@@ -186,11 +186,12 @@ exports.getBudgetByCode = async (req, res) => {
   }
 };
 
-// Review a budget and create an Accountability record using available Budget data
+// Review a budget funding group and create/update an Accountability record
 exports.reviewBudget = async (req, res) => {
   try {
     const { id } = req.params;
     const {
+      fundingGroup,
       reviewedByName,
       reviewedByDesignation,
       notes,
@@ -200,36 +201,37 @@ exports.reviewBudget = async (req, res) => {
       reviewDate,
     } = req.body || {};
 
+    if (!fundingGroup) {
+      return res
+        .status(400)
+        .json({ error: "fundingGroup is required for review" });
+    }
     const budgetDoc = await Budget.findById(id);
     if (!budgetDoc) return res.status(404).json({ error: "Budget not found" });
 
-    // If already linked to an Accountability, return existing linkage
-    if (budgetDoc.accountability) {
-      return res.status(200).json({
-        message: "Budget already reviewed",
-        accountabilityId: budgetDoc.accountability,
+    const groups = budgetDoc.budget?.groups || [];
+    const targetGroup = groups.find((g) => g.group === fundingGroup);
+    if (!targetGroup) {
+      return res.status(400).json({
+        error: "Funding group not found on budget",
+        fundingGroup,
       });
     }
 
-    // Compute submitted amount from available data (prefer stored submittedAmount)
+    // Compute submitted amount from available data (prefer stored submittedAmount for this group)
     const submittedAmount = (() => {
       const stored = budgetDoc.budget?.submittedAmount;
       if (typeof stored === "number" && !Number.isNaN(stored)) return stored;
-      // Fallback: sum totals from groups -> categories -> items
+      // Fallback: sum totals from this funding group's categories -> items
       try {
-        const groups = budgetDoc.budget?.groups || [];
-        return groups.reduce((sum, g) => {
+        const categories = targetGroup.categories || [];
+        return categories.reduce((catSum, c) => {
           return (
-            sum +
-            (g.categories || []).reduce((s2, c) => {
-              return (
-                s2 +
-                (c.items || []).reduce(
-                  (s3, it) => s3 + (Number(it.totalCostSSP) || 0),
-                  0
-                )
-              );
-            }, 0)
+            catSum +
+            (c.items || []).reduce(
+              (itemSum, it) => itemSum + (Number(it.totalCostSSP) || 0),
+              0,
+            )
           );
         }, 0);
       } catch (_) {
@@ -237,26 +239,76 @@ exports.reviewBudget = async (req, res) => {
       }
     })();
 
-    // Load capitation settings for tranche distribution
+    // Load capitation settings for tranche distribution (per funding group)
     const settings = await CapitationSettings.findOne({
-      academicYear: budgetDoc.year,
-    }).lean();
+      academicYear: parseInt(budgetDoc.year, 10),
+    });
+    if (!settings) {
+      return res.status(400).json({
+        error: "No capitation settings found for academic year",
+        academicYear: budgetDoc.year,
+      });
+    }
+
     const schoolType = budgetDoc.schoolType;
-    const defaultDist = {
-      tranche1Pct: 70,
-      tranche2Pct: 20,
-      tranche3Pct: 10,
-      tranche1InflationCorrectionPct: 0,
-      tranche2InflationCorrectionPct: 0,
-      tranche3InflationCorrectionPct: 0,
-    };
-    const rule =
-      settings?.capitationGrants?.rules?.find?.(
-        (r) => r.schoolType === schoolType
-      ) ||
-      settings?.capitalSpend?.rules?.find?.((r) => r.schoolType === schoolType);
-    const dist = rule?.trancheDistribution || defaultDist;
-    const currency = rule?.currency || "SSP";
+    // fundingGroups is a Map in mongoose; support both Map and plain object access
+    const rawFundingGroups = settings.fundingGroups;
+    const isMap =
+      rawFundingGroups && typeof rawFundingGroups.get === "function";
+    const entries = isMap
+      ? Array.from(rawFundingGroups.entries())
+      : rawFundingGroups
+        ? Object.entries(rawFundingGroups)
+        : [];
+
+    // Look up by key first (e.g. "capexTest"), then by displayName (e.g. "CAPEX TEST")
+    let groupConfig = isMap
+      ? rawFundingGroups.get(fundingGroup)
+      : rawFundingGroups?.[fundingGroup];
+    if (!groupConfig && entries.length > 0) {
+      const byDisplayName = entries.find(
+        ([_, config]) =>
+          config &&
+          String(config.displayName || "").trim().toLowerCase() ===
+            String(fundingGroup || "").trim().toLowerCase()
+      );
+      if (byDisplayName) groupConfig = byDisplayName[1];
+    }
+
+    if (!groupConfig) {
+      return res.status(400).json({
+        error: "No capitation funding group configuration found",
+        fundingGroup,
+        hint: "Capitation keys are per funding group (e.g. capexTest, opexTest). Match by key or by displayName.",
+      });
+    }
+
+    if (!Array.isArray(groupConfig.rules) || groupConfig.rules.length === 0) {
+      return res.status(400).json({
+        error: "No capitation rules configured for funding group",
+        fundingGroup,
+      });
+    }
+
+    const rule = groupConfig.rules.find((r) => r.schoolType === schoolType);
+    if (!rule) {
+      return res.status(400).json({
+        error: "No capitation rule found for school type in funding group",
+        fundingGroup,
+        schoolType,
+      });
+    }
+
+    const dist = rule.trancheDistribution;
+    if (!dist) {
+      return res.status(400).json({
+        error: "No tranche distribution configured for funding group rule",
+        fundingGroup,
+        schoolType,
+      });
+    }
+
+    const currency = rule.currency || "SSP";
 
     const pct = (v) => (Number(v) || 0) / 100;
     const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
@@ -275,6 +327,7 @@ exports.reviewBudget = async (req, res) => {
     const tranches = [
       {
         name: "Tranche 1",
+        fundingGroup,
         amountDisbursed: 0,
         amountApproved: t1Amt,
         currency,
@@ -282,6 +335,7 @@ exports.reviewBudget = async (req, res) => {
       },
       {
         name: "Tranche 2",
+        fundingGroup,
         amountDisbursed: 0,
         amountApproved: t2Amt,
         currency,
@@ -289,6 +343,7 @@ exports.reviewBudget = async (req, res) => {
       },
       {
         name: "Tranche 3",
+        fundingGroup,
         amountDisbursed: 0,
         amountApproved: t3Amt,
         currency,
@@ -315,12 +370,12 @@ exports.reviewBudget = async (req, res) => {
     };
     // Determine review outcome before creating accountability
     const normalizedStatus = ["Reviewed", "Corrections Required"].includes(
-      reviewStatus
+      reviewStatus,
     )
       ? reviewStatus
       : "Reviewed";
 
-    // Common review metadata
+    // Common review metadata (legacy whole-budget fields)
     budgetDoc.budget = budgetDoc.budget || {};
     budgetDoc.budget.reviewedBy = `${reviewedByName} (${reviewedByDesignation})`;
     budgetDoc.budget.reviewDate = reviewDate
@@ -335,13 +390,54 @@ exports.reviewBudget = async (req, res) => {
     if (Array.isArray(corrections)) {
       budgetDoc.budget.corrections = corrections
         .filter(
-          (c) => c && typeof c.note === "string" && c.note.trim().length > 0
+          (c) => c && typeof c.note === "string" && c.note.trim().length > 0,
         )
         .map((c) => ({
           note: c.note,
           addedBy: c.addedBy || `${reviewedByName} (${reviewedByDesignation})`,
           addedAt: c.addedAt ? new Date(c.addedAt) : new Date(),
         }));
+    }
+
+    // Group-level review metadata
+    budgetDoc.budget.fundingGroupReviews =
+      budgetDoc.budget.fundingGroupReviews || [];
+    const existingGroupReviewIndex =
+      budgetDoc.budget.fundingGroupReviews.findIndex(
+        (gr) => gr.group === fundingGroup,
+      );
+
+    const groupReviewPayload = {
+      group: fundingGroup,
+      reviewedBy: `${reviewedByName} (${reviewedByDesignation})`,
+      reviewDate: budgetDoc.budget.reviewDate,
+      reviewStatus: normalizedStatus,
+      reviewNotes:
+        typeof reviewNotes === "string"
+          ? reviewNotes
+          : typeof notes === "string"
+            ? notes
+            : undefined,
+      corrections: Array.isArray(corrections)
+        ? corrections
+            .filter(
+              (c) =>
+                c && typeof c.note === "string" && c.note.trim().length > 0,
+            )
+            .map((c) => ({
+              note: c.note,
+              addedBy:
+                c.addedBy || `${reviewedByName} (${reviewedByDesignation})`,
+              addedAt: c.addedAt ? new Date(c.addedAt) : new Date(),
+            }))
+        : [],
+    };
+
+    if (existingGroupReviewIndex >= 0) {
+      budgetDoc.budget.fundingGroupReviews[existingGroupReviewIndex] =
+        groupReviewPayload;
+    } else {
+      budgetDoc.budget.fundingGroupReviews.push(groupReviewPayload);
     }
 
     // If corrections are required, do NOT create Accountability yet
@@ -353,27 +449,50 @@ exports.reviewBudget = async (req, res) => {
       });
     }
 
-    // Otherwise create Accountability and link it
-    const accountabilityDoc = await Accountability.create(
-      accountabilityPayload
-    );
-    budgetDoc.accountability = accountabilityDoc._id;
+    // Otherwise create or update Accountability and link it
+    let accountabilityDoc;
+    if (budgetDoc.accountability) {
+      accountabilityDoc = await Accountability.findById(
+        budgetDoc.accountability,
+      );
+      if (!accountabilityDoc) {
+        accountabilityDoc = await Accountability.create(accountabilityPayload);
+        budgetDoc.accountability = accountabilityDoc._id;
+      }
+    } else {
+      accountabilityDoc = await Accountability.create(accountabilityPayload);
+      budgetDoc.accountability = accountabilityDoc._id;
+    }
+
+    // Append this funding group's tranches; keep existing tranches for other groups
+    accountabilityDoc.tranches = accountabilityDoc.tranches || [];
+    accountabilityDoc.tranches.push(...tranches);
+    await accountabilityDoc.save();
     await budgetDoc.save();
 
     return res.status(201).json({
-      message: "Budget reviewed and Accountability record created",
+      message: "Budget funding group reviewed and Accountability updated",
       accountability: accountabilityDoc,
       budgetId: budgetDoc._id,
+      fundingGroup,
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
 
-// Unreview a budget: delete linked Accountability and clear review fields
+// Unreview a budget funding group: remove that group's tranches and clear review fields
 exports.unreviewBudget = async (req, res) => {
   try {
     const { id } = req.params;
+    const { fundingGroup } = req.body || {};
+
+    if (!fundingGroup) {
+      return res
+        .status(400)
+        .json({ error: "fundingGroup is required to unreview" });
+    }
+
     const budgetDoc = await Budget.findById(id);
     if (!budgetDoc) return res.status(404).json({ error: "Budget not found" });
 
@@ -383,22 +502,50 @@ exports.unreviewBudget = async (req, res) => {
       return res.status(200).json({ message: "Budget is not reviewed" });
     }
 
-    // Delete the Accountability record
-    await Accountability.findByIdAndDelete(accountabilityId);
+    const accountabilityDoc = await Accountability.findById(accountabilityId);
+    if (accountabilityDoc) {
+      accountabilityDoc.tranches =
+        accountabilityDoc.tranches?.filter(
+          (t) => t.fundingGroup !== fundingGroup,
+        ) || [];
 
-    // Clear review fields and unlink
-    budgetDoc.accountability = undefined;
+      // If no tranches remain, delete the Accountability document and unlink
+      if (accountabilityDoc.tranches.length === 0) {
+        await Accountability.findByIdAndDelete(accountabilityId);
+        budgetDoc.accountability = undefined;
+      } else {
+        await accountabilityDoc.save();
+      }
+    }
+
+    // Clear group-level review fields
     budgetDoc.budget = budgetDoc.budget || {};
-    budgetDoc.budget.reviewedBy = undefined;
-    budgetDoc.budget.reviewDate = undefined;
-    budgetDoc.budget.reviewStatus = "Unreviewed";
-    budgetDoc.budget.reviewNotes = undefined;
-    budgetDoc.budget.corrections = [];
+    budgetDoc.budget.fundingGroupReviews =
+      budgetDoc.budget.fundingGroupReviews || [];
+    budgetDoc.budget.fundingGroupReviews =
+      budgetDoc.budget.fundingGroupReviews.filter(
+        (gr) => gr.group !== fundingGroup,
+      );
+
+    // Legacy whole-budget review fields remain untouched for other groups;
+    // if no group reviews remain, reset to Unreviewed
+    if (
+      !budgetDoc.budget.fundingGroupReviews ||
+      budgetDoc.budget.fundingGroupReviews.length === 0
+    ) {
+      budgetDoc.budget.reviewedBy = undefined;
+      budgetDoc.budget.reviewDate = undefined;
+      budgetDoc.budget.reviewStatus = "Unreviewed";
+      budgetDoc.budget.reviewNotes = undefined;
+      budgetDoc.budget.corrections = [];
+    }
+
     await budgetDoc.save();
 
-    return res
-      .status(200)
-      .json({ message: "Budget unreviewed and Accountability deleted" });
+    return res.status(200).json({
+      message: "Budget funding group unreviewed",
+      fundingGroup,
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -464,7 +611,7 @@ exports.getEligibility = async (req, res) => {
           "meta.governance": 1,
           "meta.estimateLearnerEnrolment": 1,
           "budget.submittedAmount": 1,
-        }
+        },
       ),
     ]);
 

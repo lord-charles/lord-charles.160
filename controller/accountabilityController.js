@@ -420,6 +420,7 @@ const approveTranche = async (req, res) => {
     const { id } = req.params;
     const {
       trancheName,
+      fundingGroup,
       approvedBy,
       approverName,
       approvalDate,
@@ -447,12 +448,17 @@ const approveTranche = async (req, res) => {
       update["tranches.$[t].amountApproved"] = Number(amountApproved);
     }
 
+    // Match by name and optionally by fundingGroup when multiple tranches share the same name
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }]
+      : [{ "t.name": trancheName }];
+
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
       { $set: update },
       {
         new: true,
-        arrayFilters: [{ "t.name": trancheName }],
+        arrayFilters,
         runValidators: true,
       }
     );
@@ -462,9 +468,11 @@ const approveTranche = async (req, res) => {
     }
 
     // Return the updated tranche only for convenience
-    const updatedTranche = (updated.tranches || []).find(
-      (tr) => tr.name === trancheName
-    );
+    const updatedTranche = (updated.tranches || []).find((tr) => {
+      if (tr.name !== trancheName) return false;
+      if (fundingGroup && tr.fundingGroup !== fundingGroup) return false;
+      return true;
+    });
 
     return res.status(200).json({
       message: "Tranche approved successfully",
@@ -484,6 +492,7 @@ const disburseTranche = async (req, res) => {
     const { id } = req.params; // accountability document ID
     const {
       trancheName,
+      fundingGroup,
       amountDisbursed,
       paidBy,
       disbursementDate,
@@ -496,12 +505,20 @@ const disburseTranche = async (req, res) => {
       });
     }
 
-    if (
-      !paidThrough ||
-      !["Bank", "Pay Agent", "Mobile Money"].includes(paidThrough)
-    ) {
+    const validPaidThrough = [
+      "Bank Transfer",
+      "Bank",
+      "State Anchor",
+      "Third Party Agents",
+      "Pay Agent",
+      "Mobile Money",
+      "SMoE",
+      "SMoF",
+    ];
+    if (!paidThrough || !validPaidThrough.includes(paidThrough)) {
       return res.status(400).json({
-        message: "paidThrough must be one of: Bank, Pay Agent, Mobile Money",
+        message:
+          "paidThrough must be one of: Bank Transfer, State Anchor, Third Party Agents, Mobile Money, SMoE, SMoF",
       });
     }
 
@@ -513,7 +530,11 @@ const disburseTranche = async (req, res) => {
         .json({ message: "Accountability entry not found" });
     }
 
-    const tranche = accountability.tranches.find((t) => t.name === trancheName);
+    const tranche = accountability.tranches.find(
+      (t) =>
+        t.name === trancheName &&
+        (fundingGroup ? t.fundingGroup === fundingGroup : true)
+    );
     if (!tranche) {
       return res.status(404).json({ message: "Tranche not found" });
     }
@@ -540,17 +561,21 @@ const disburseTranche = async (req, res) => {
       "tranches.$[t].fundsAccountability.receivedBySchool": requestedAmount,
     };
 
-    // If paid through bank, set bankInstructed to true
-    if (paidThrough === "Bank") {
+    // If paid through bank/bank transfer, set bankInstructed to true
+    if (paidThrough === "Bank" || paidThrough === "Bank Transfer") {
       update["tranches.$[t].fundsAccountability.bankInstructed"] = true;
     }
+
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }]
+      : [{ "t.name": trancheName }];
 
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
       { $set: update },
       {
         new: true,
-        arrayFilters: [{ "t.name": trancheName }],
+        arrayFilters,
         runValidators: true,
       }
     );
@@ -560,7 +585,9 @@ const disburseTranche = async (req, res) => {
     }
 
     const updatedTranche = (updated.tranches || []).find(
-      (tr) => tr.name === trancheName
+      (tr) =>
+        tr.name === trancheName &&
+        (fundingGroup ? tr.fundingGroup === fundingGroup : true)
     );
 
     return res.status(200).json({
@@ -997,7 +1024,7 @@ const getDashboardStats = async (req, res) => {
 const recordReturnedFunds = async (req, res) => {
   try {
     const { id } = req.params;
-    const { trancheName, amount, reason, recordedBy } = req.body;
+    const { trancheName, fundingGroup, amount, reason, recordedBy } = req.body;
 
     if (!trancheName || !amount) {
       return res.status(400).json({
@@ -1013,12 +1040,16 @@ const recordReturnedFunds = async (req, res) => {
         recordedBy || "Unknown",
     };
 
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }]
+      : [{ "t.name": trancheName }];
+
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
       { $set: update },
       {
         new: true,
-        arrayFilters: [{ "t.name": trancheName }],
+        arrayFilters,
         runValidators: true,
       }
     );
@@ -1043,7 +1074,14 @@ const recordReturnedFunds = async (req, res) => {
 const recordHeldFunds = async (req, res) => {
   try {
     const { id } = req.params;
-    const { trancheName, amount, heldBy, reason, recordedBy } = req.body;
+    const {
+      trancheName,
+      fundingGroup,
+      amount,
+      heldBy,
+      reason,
+      recordedBy,
+    } = req.body;
 
     if (!trancheName || !amount) {
       return res.status(400).json({
@@ -1060,12 +1098,16 @@ const recordHeldFunds = async (req, res) => {
         recordedBy || "Unknown",
     };
 
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }]
+      : [{ "t.name": trancheName }];
+
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
       { $set: update },
       {
         new: true,
-        arrayFilters: [{ "t.name": trancheName }],
+        arrayFilters,
         runValidators: true,
       }
     );
@@ -1081,6 +1123,139 @@ const recordHeldFunds = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error recording held funds",
+      error: error.message,
+    });
+  }
+};
+
+// Add supplier to a tranche (when disbursed through State Anchor)
+const addSupplier = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      trancheName,
+      fundingGroup,
+      name,
+      supplies,
+      contact,
+      amount,
+      recordedBy,
+    } = req.body;
+
+    if (!trancheName || !name || !supplies) {
+      return res.status(400).json({
+        message: "trancheName, name, and supplies are required",
+      });
+    }
+
+    const supplierDoc = {
+      name: String(name).trim(),
+      supplies: String(supplies).trim(),
+      contact: contact ? String(contact).trim() : "",
+      amount: amount != null ? Number(amount) : undefined,
+      addedAt: new Date(),
+      addedBy: recordedBy || "Unknown",
+    };
+
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }]
+      : [{ "t.name": trancheName }];
+
+    const updated = await Accountability.findOneAndUpdate(
+      { _id: id },
+      { $push: { "tranches.$[t].fundsAccountability.suppliers": supplierDoc } },
+      { new: true, arrayFilters, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Entry or tranche not found" });
+    }
+
+    const tranche = (updated.tranches || []).find(
+      (tr) =>
+        tr.name === trancheName &&
+        (fundingGroup ? tr.fundingGroup === fundingGroup : true)
+    );
+    const suppliers = tranche?.fundsAccountability?.suppliers || [];
+
+    return res.status(201).json({
+      message: "Supplier added successfully",
+      supplier: supplierDoc,
+      suppliers,
+      entryId: updated._id,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error adding supplier",
+      error: error.message,
+    });
+  }
+};
+
+// Remove supplier from a tranche
+const removeSupplier = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { trancheName, fundingGroup, supplierIndex } = req.body;
+
+    if (!trancheName || supplierIndex === undefined) {
+      return res.status(400).json({
+        message: "trancheName and supplierIndex are required",
+      });
+    }
+
+    const idx = Number(supplierIndex);
+    if (!Number.isInteger(idx) || idx < 0) {
+      return res.status(400).json({ message: "Invalid supplierIndex" });
+    }
+
+    const accountability = await Accountability.findById(id);
+    if (!accountability) {
+      return res.status(404).json({ message: "Accountability not found" });
+    }
+
+    const tranche = accountability.tranches.find(
+      (t) =>
+        t.name === trancheName &&
+        (fundingGroup ? t.fundingGroup === fundingGroup : true)
+    );
+    if (!tranche) {
+      return res.status(404).json({ message: "Tranche not found" });
+    }
+
+    const suppliers = tranche.fundsAccountability?.suppliers || [];
+    if (idx >= suppliers.length) {
+      return res.status(400).json({ message: "Supplier index out of range" });
+    }
+
+    suppliers.splice(idx, 1);
+
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }]
+      : [{ "t.name": trancheName }];
+
+    const updated = await Accountability.findOneAndUpdate(
+      { _id: id },
+      {
+        $set: {
+          "tranches.$[t].fundsAccountability.suppliers": suppliers,
+        },
+      },
+      { new: true, arrayFilters, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Entry or tranche not found" });
+    }
+
+    return res.status(200).json({
+      message: "Supplier removed successfully",
+      suppliers,
+      entryId: updated._id,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error removing supplier",
       error: error.message,
     });
   }
@@ -1126,6 +1301,8 @@ module.exports = {
   disburseTranche,
   recordReturnedFunds,
   recordHeldFunds,
+  addSupplier,
+  removeSupplier,
   addAccountingEntry,
   updateAccountingEntry,
   deleteAccountingEntry,

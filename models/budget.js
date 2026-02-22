@@ -26,6 +26,32 @@ const CategorySchema = new mongoose.Schema({
   items: [BudgetItemSchema],
 });
 
+// Per-funding-group review metadata (group-level review instead of whole budget only)
+const FundingGroupReviewSchema = new mongoose.Schema(
+  {
+    group: { type: String, required: true },
+    reviewedBy: { type: String },
+    reviewDate: { type: Date },
+    reviewStatus: {
+      type: String,
+      enum: ["Unreviewed", "Reviewed", "Corrections Required"],
+      default: "Unreviewed",
+    },
+    reviewNotes: { type: String },
+    corrections: [
+      new mongoose.Schema(
+        {
+          note: { type: String },
+          addedBy: { type: String },
+          addedAt: { type: Date, default: Date.now },
+        },
+        { _id: false }
+      ),
+    ],
+  },
+  { _id: false }
+);
+
 // BudgetGroupSchema
 const BudgetGroupSchema = new mongoose.Schema({
   group: { type: String }, // Remove enum restriction to support dynamic groups
@@ -54,6 +80,8 @@ const BudgetSchema = new mongoose.Schema({
     ),
   ],
   previousYearLedgerAccountedFor: { type: Boolean, default: false },
+  // Group-level reviews to support reviewing budgets per funding group
+  fundingGroupReviews: [FundingGroupReviewSchema],
   groups: [BudgetGroupSchema],
 });
 
