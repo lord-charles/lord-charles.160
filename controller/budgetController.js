@@ -47,6 +47,78 @@ exports.getFundingGroups = async (req, res) => {
   }
 };
 
+// Get documents for a budget (optionally filtered by fundingGroup)
+exports.getBudgetDocuments = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fundingGroup } = req.query;
+
+    const budget = await Budget.findById(id);
+    if (!budget) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+
+    let docs = (budget.budget && budget.budget.documents) || [];
+    if (fundingGroup) {
+      docs = docs.filter(
+        (d) => d.fundingGroup && d.fundingGroup === String(fundingGroup),
+      );
+    }
+
+    res.status(200).json({ documents: docs });
+  } catch (error) {
+    console.error("Error fetching budget documents:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Add a document entry for a specific budget + funding group
+exports.addBudgetDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fundingGroup, name, url, key, uploadedBy } = req.body || {};
+
+    if (!fundingGroup || !name || !url) {
+      return res.status(400).json({
+        error: "fundingGroup, name and url are required",
+      });
+    }
+
+    const budget = await Budget.findById(id);
+    if (!budget) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+
+    if (!budget.budget) {
+      budget.budget = {};
+    }
+    if (!Array.isArray(budget.budget.documents)) {
+      budget.budget.documents = [];
+    }
+
+    const docEntry = {
+      fundingGroup,
+      name,
+      url,
+      key: key || undefined,
+      uploadedBy: uploadedBy || undefined,
+      uploadedAt: new Date(),
+    };
+
+    budget.budget.documents.push(docEntry);
+    await budget.save();
+
+    const groupDocs = budget.budget.documents.filter(
+      (d) => d.fundingGroup === fundingGroup,
+    );
+
+    res.status(200).json({ documents: groupDocs });
+  } catch (error) {
+    console.error("Error adding budget document:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Create a new budget
 exports.createBudget = async (req, res) => {
   try {
@@ -218,11 +290,8 @@ exports.reviewBudget = async (req, res) => {
       });
     }
 
-    // Compute submitted amount from available data (prefer stored submittedAmount for this group)
+    // Compute submitted amount FROM THIS FUNDING GROUP ONLY
     const submittedAmount = (() => {
-      const stored = budgetDoc.budget?.submittedAmount;
-      if (typeof stored === "number" && !Number.isNaN(stored)) return stored;
-      // Fallback: sum totals from this funding group's categories -> items
       try {
         const categories = targetGroup.categories || [];
         return categories.reduce((catSum, c) => {
@@ -464,8 +533,11 @@ exports.reviewBudget = async (req, res) => {
       budgetDoc.accountability = accountabilityDoc._id;
     }
 
-    // Append this funding group's tranches; keep existing tranches for other groups
+    // Replace this funding group's tranches; keep existing tranches for other groups
     accountabilityDoc.tranches = accountabilityDoc.tranches || [];
+    accountabilityDoc.tranches = accountabilityDoc.tranches.filter(
+      (t) => t.fundingGroup !== fundingGroup,
+    );
     accountabilityDoc.tranches.push(...tranches);
     await accountabilityDoc.save();
     await budgetDoc.save();

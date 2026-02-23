@@ -58,6 +58,19 @@ const BudgetGroupSchema = new mongoose.Schema({
   categories: [CategorySchema],
 });
 
+// Per-budget document metadata (per funding group)
+const BudgetDocumentSchema = new mongoose.Schema(
+  {
+    fundingGroup: { type: String, required: true },
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    key: { type: String },
+    uploadedAt: { type: Date, default: Date.now },
+    uploadedBy: { type: String },
+  },
+  { _id: false }
+);
+
 // BudgetSchema
 const BudgetSchema = new mongoose.Schema({
   submittedAmount: { type: Number },
@@ -83,6 +96,8 @@ const BudgetSchema = new mongoose.Schema({
   // Group-level reviews to support reviewing budgets per funding group
   fundingGroupReviews: [FundingGroupReviewSchema],
   groups: [BudgetGroupSchema],
+  // Documents that support the budget, grouped by fundingGroup
+  documents: [BudgetDocumentSchema],
 });
 
 // MetaSchema

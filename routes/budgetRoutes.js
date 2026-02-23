@@ -10,6 +10,8 @@ const {
   reviewBudget,
   unreviewBudget,
   getFundingGroups,
+  getBudgetDocuments,
+  addBudgetDocument,
 } = require("../controller/budgetController");
 const { cacheMiddleware } = require("../middlewares/cacheMiddleware");
 
@@ -24,6 +26,10 @@ router.get("/code/:code/:year", getBudgetByCode);
 
 // Get funding groups for a specific year
 router.get("/funding-groups/:year", cacheMiddleware(300), getFundingGroups);
+
+// Budget documents per budget (optionally filtered by fundingGroup)
+router.get("/:id/documents", getBudgetDocuments);
+router.post("/:id/documents", addBudgetDocument);
 
 router.get("/get/eligibility", cacheMiddleware(600), getEligibility);
 
