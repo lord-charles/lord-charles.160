@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const accountabilityController = require("../controller/accountabilityController");
+const { authMiddleware } = require("../middlewares/authMiddleware");
 
 // STATS ENDPOINT - Must be before /:id route to avoid conflicts
 router.get("/stats/dashboard", accountabilityController.getDashboardStats);
@@ -16,7 +17,7 @@ router.delete("/:id", accountabilityController.deleteAccountabilityEntry);
 //APPROVALS
 router.get(
   "/approvals/get-all",
-  accountabilityController.getAllApprovalEntries
+  accountabilityController.getAllApprovalEntries,
 );
 
 // Approve a specific tranche on an accountability entry
@@ -25,7 +26,7 @@ router.patch("/approvals/:id/approve", accountabilityController.approveTranche);
 // Route for fetching school-specific disbursement details
 router.get(
   "/disbursements/by-school",
-  accountabilityController.getSchoolDisbursements
+  accountabilityController.getSchoolDisbursements,
 );
 
 // NEW ROUTES FOR DISBURSEMENT AND ACCOUNTING
@@ -35,7 +36,7 @@ router.patch("/:id/disburse", accountabilityController.disburseTranche);
 // Record returned and held funds
 router.patch(
   "/:id/returned-funds",
-  accountabilityController.recordReturnedFunds
+  accountabilityController.recordReturnedFunds,
 );
 router.patch("/:id/held-funds", accountabilityController.recordHeldFunds);
 
@@ -47,17 +48,23 @@ router.delete("/:id/suppliers", accountabilityController.removeSupplier);
 router.post("/:id/accounting", accountabilityController.addAccountingEntry);
 router.patch(
   "/:id/accounting/:entryId",
-  accountabilityController.updateAccountingEntry
+  accountabilityController.updateAccountingEntry,
+);
+// Status/approval for accounting entries - restricted via auth + role check in controller
+router.patch(
+  "/:id/accounting/:entryId/status",
+  // authMiddleware,
+  accountabilityController.updateAccountingEntryStatus,
 );
 router.delete(
   "/:id/accounting/:entryId",
-  accountabilityController.deleteAccountingEntry
+  accountabilityController.deleteAccountingEntry,
 );
 
 // Financial summary with real-time calculations
 router.get(
   "/:id/financial-summary",
-  accountabilityController.getFinancialSummary
+  accountabilityController.getFinancialSummary,
 );
 
 module.exports = router;

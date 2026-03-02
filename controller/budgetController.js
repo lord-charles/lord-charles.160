@@ -418,7 +418,7 @@ exports.reviewBudget = async (req, res) => {
         currency,
         inflationCorrection: t3Infl,
       },
-    ];
+    ].filter((t) => Number(t.amountApproved) > 0);
 
     // Build Accountability payload from available Budget fields only
     const accountabilityPayload = {

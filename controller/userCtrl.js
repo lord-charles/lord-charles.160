@@ -136,11 +136,17 @@ const logIn = asyncHandler(async (req, res) => {
       { expiresIn: "1d" }
     );
     res.status(200).json({
+      // legacy fields
       user: user.username,
-      token,
+      // structured user info for NextAuth / frontend
+      _id: user._id,
+      username: user.username,
+      email: user.email || "",
       userType: user.userType,
       firstname: user.firstname,
       lastname: user.lastname,
+      role: user.role || null,
+      token,
     });
   } else {
     res.status(404).json({ message: "Wrong password!" });

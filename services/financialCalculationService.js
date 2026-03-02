@@ -22,21 +22,27 @@ class FinancialCalculationService {
     // 1. Calculate opening balance from previous year's unaccounted funds
     const openingBalance = await this.calculateOpeningBalance(
       accountability.code,
-      academicYear
+      academicYear,
     );
 
     // 2. Calculate current year total disbursements
     const totalDisbursed = accountability.tranches.reduce(
       (sum, tranche) => sum + (tranche.amountDisbursed || 0),
-      0
+      0,
     );
 
-    // 3. Calculate total accounted (sum of all accounting entries)
+    // 3. Calculate total accounted (sum of all APPROVED accounting entries)
     const totalAccounted = accountability.tranches.reduce((sum, tranche) => {
       const entries = tranche.fundsAccountability?.accountingEntries || [];
-      const trancheTotal = entries.reduce(
+      const approvedEntries = entries.filter(
+        (entry) =>
+          !entry.status ||
+          entry.status === "approved" ||
+          entry.status === "Approved",
+      );
+      const trancheTotal = approvedEntries.reduce(
         (s, entry) => s + (entry.value || 0),
-        0
+        0,
       );
       return sum + trancheTotal;
     }, 0);
@@ -64,7 +70,7 @@ class FinancialCalculationService {
     // 9. Get previous year accounting status
     const previousYearStatus = await this.getPreviousYearStatus(
       accountability.code,
-      academicYear
+      academicYear,
     );
 
     return {
@@ -104,13 +110,21 @@ class FinancialCalculationService {
     // Calculate total disbursed in previous year
     const totalDisbursed = previousRecord.tranches.reduce(
       (sum, tranche) => sum + (tranche.amountDisbursed || 0),
-      0
+      0,
     );
 
-    // Calculate total accounted in previous year
+    // Calculate total accounted in previous year (only approved entries)
     const totalAccounted = previousRecord.tranches.reduce((sum, tranche) => {
       const entries = tranche.fundsAccountability?.accountingEntries || [];
-      return sum + entries.reduce((s, entry) => s + (entry.value || 0), 0);
+      const approvedEntries = entries.filter(
+        (entry) =>
+          !entry.status ||
+          entry.status === "approved" ||
+          entry.status === "Approved",
+      );
+      return (
+        sum + approvedEntries.reduce((s, entry) => s + (entry.value || 0), 0)
+      );
     }, 0);
 
     // Unaccounted funds from previous year become opening balance
@@ -142,12 +156,20 @@ class FinancialCalculationService {
 
     const totalDisbursed = previousRecord.tranches.reduce(
       (sum, tranche) => sum + (tranche.amountDisbursed || 0),
-      0
+      0,
     );
 
     const totalAccounted = previousRecord.tranches.reduce((sum, tranche) => {
       const entries = tranche.fundsAccountability?.accountingEntries || [];
-      return sum + entries.reduce((s, entry) => s + (entry.value || 0), 0);
+      const approvedEntries = entries.filter(
+        (entry) =>
+          !entry.status ||
+          entry.status === "approved" ||
+          entry.status === "Approved",
+      );
+      return (
+        sum + approvedEntries.reduce((s, entry) => s + (entry.value || 0), 0)
+      );
     }, 0);
 
     const percentage =
@@ -167,9 +189,15 @@ class FinancialCalculationService {
   static calculateTrancheSummary(tranche) {
     const amountDisbursed = tranche.amountDisbursed || 0;
     const entries = tranche.fundsAccountability?.accountingEntries || [];
-    const totalAccounted = entries.reduce(
+    const approvedEntries = entries.filter(
+      (entry) =>
+        !entry.status ||
+        entry.status === "approved" ||
+        entry.status === "Approved",
+    );
+    const totalAccounted = approvedEntries.reduce(
       (sum, entry) => sum + (entry.value || 0),
-      0
+      0,
     );
     const remaining = amountDisbursed - totalAccounted;
     const percentage =
@@ -197,7 +225,7 @@ class FinancialCalculationService {
 
     const summary = await this.calculateFinancialSummary(
       accountabilityId,
-      accountability.academicYear
+      accountability.academicYear,
     );
 
     // Update the stored financial summary

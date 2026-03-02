@@ -37,4 +37,28 @@ const isAdmin = asyncHandler(async (req, res, next) => {
   next();
 });
 
-module.exports = { authMiddleware, isAdmin };
+// Require a specific permission from the embedded role document
+const requirePermission = (permission) =>
+  asyncHandler(async (req, res, next) => {
+    const user = req.user?.details;
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: "Not authenticated to perform this action" });
+    }
+
+    const permissions = Array.isArray(user.role?.permissions)
+      ? user.role.permissions
+      : [];
+
+    if (!permissions.includes(permission)) {
+      return res.status(403).json({
+        message: "Forbidden: missing required permission",
+        requiredPermission: permission,
+      });
+    }
+
+    next();
+  });
+
+module.exports = { authMiddleware, isAdmin, requirePermission };

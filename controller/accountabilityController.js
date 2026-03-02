@@ -71,10 +71,32 @@ const getAllAccountabilityEntries = async (req, res) => {
           },
           accountingEntriesTotal: {
             $sum: {
-              $ifNull: [
-                "$tranches.fundsAccountability.accountingEntries.value",
-                0,
-              ],
+              $map: {
+                input: {
+                  $filter: {
+                    input: {
+                      $ifNull: [
+                        "$tranches.fundsAccountability.accountingEntries",
+                        [],
+                      ],
+                    },
+                    as: "e",
+                    cond: {
+                      $or: [
+                        { $eq: ["$$e.status", "approved"] },
+                        {
+                          $and: [
+                            { $ifNull: ["$$e.status", false] },
+                            { $ne: ["$$e.status", "rejected"] },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                },
+                as: "e",
+                in: { $ifNull: ["$$e.value", 0] },
+              },
             },
           },
           revenueTotal: {
@@ -394,7 +416,7 @@ const getSchoolDisbursements = async (req, res) => {
           disbursements: 1,
         },
       },
-      { $sort: { schoolName: 1 } }
+      { $sort: { schoolName: 1 } },
     );
 
     const disbursements = await Accountability.aggregate(pipeline);
@@ -460,7 +482,7 @@ const approveTranche = async (req, res) => {
         new: true,
         arrayFilters,
         runValidators: true,
-      }
+      },
     );
 
     if (!updated) {
@@ -533,7 +555,7 @@ const disburseTranche = async (req, res) => {
     const tranche = accountability.tranches.find(
       (t) =>
         t.name === trancheName &&
-        (fundingGroup ? t.fundingGroup === fundingGroup : true)
+        (fundingGroup ? t.fundingGroup === fundingGroup : true),
     );
     if (!tranche) {
       return res.status(404).json({ message: "Tranche not found" });
@@ -577,7 +599,7 @@ const disburseTranche = async (req, res) => {
         new: true,
         arrayFilters,
         runValidators: true,
-      }
+      },
     );
 
     if (!updated) {
@@ -587,7 +609,7 @@ const disburseTranche = async (req, res) => {
     const updatedTranche = (updated.tranches || []).find(
       (tr) =>
         tr.name === trancheName &&
-        (fundingGroup ? tr.fundingGroup === fundingGroup : true)
+        (fundingGroup ? tr.fundingGroup === fundingGroup : true),
     );
 
     return res.status(200).json({
@@ -607,14 +629,28 @@ const disburseTranche = async (req, res) => {
 const addAccountingEntry = async (req, res) => {
   try {
     const { id } = req.params; // accountability document ID
-    const { trancheName, field, value, comment, category, recordedBy } =
-      req.body;
+    const {
+      trancheName,
+      field,
+      value,
+      comment,
+      category,
+      recordedBy,
+      origin,
+      isManual,
+    } = req.body;
 
     if (!trancheName || !field || value === undefined) {
       return res.status(400).json({
         message: "trancheName, field, and value are required",
       });
     }
+
+    // Determine origin and status:
+    // - Manual entries should start as "pending" for approval.
+    // - Entries linked to budget items are treated as immediately approved.
+    const isManualEntry =
+      isManual === true || String(origin).toLowerCase() === "manual";
 
     const accountingEntry = {
       field,
@@ -623,6 +659,8 @@ const addAccountingEntry = async (req, res) => {
       category: category || "General",
       dateRecorded: new Date(),
       recordedBy: recordedBy || "Unknown",
+      origin: isManualEntry ? "manual" : "budget-item",
+      status: isManualEntry ? "pending" : "approved",
     };
 
     const updated = await Accountability.findOneAndUpdate(
@@ -637,7 +675,7 @@ const addAccountingEntry = async (req, res) => {
         new: true,
         arrayFilters: [{ "t.name": trancheName }],
         runValidators: true,
-      }
+      },
     );
 
     if (!updated) {
@@ -645,7 +683,7 @@ const addAccountingEntry = async (req, res) => {
     }
 
     const updatedTranche = (updated.tranches || []).find(
-      (tr) => tr.name === trancheName
+      (tr) => tr.name === trancheName,
     );
 
     return res.status(200).json({
@@ -661,7 +699,7 @@ const addAccountingEntry = async (req, res) => {
   }
 };
 
-// Update accounting entry
+// Update accounting entry (content only, not status/approval)
 const updateAccountingEntry = async (req, res) => {
   try {
     const { id, entryId } = req.params; // accountability ID and accounting entry ID
@@ -696,7 +734,7 @@ const updateAccountingEntry = async (req, res) => {
         new: true,
         arrayFilters: [{ "t.name": trancheName }, { "e._id": entryId }],
         runValidators: true,
-      }
+      },
     );
 
     if (!updated) {
@@ -712,6 +750,114 @@ const updateAccountingEntry = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error updating accounting entry",
+      error: error.message,
+    });
+  }
+};
+
+const User = require("../models/userModel");
+
+// Update accounting entry status (approve/reject) with explicit user permission check
+const updateAccountingEntryStatus = async (req, res) => {
+  try {
+    const { id, entryId } = req.params;
+    const { trancheName, status, fundingGroup, userId } = req.body || {};
+
+    if (!trancheName) {
+      return res.status(400).json({ message: "trancheName is required" });
+    }
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ message: "Missing userId for permission check" });
+    }
+
+    // Permission check: load user and verify role/permissions
+    const user = await User.findById(userId).select(
+      "role firstname lastname username email",
+    );
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found for approval",
+        errorMessage: "User not found for approval",
+      });
+    }
+
+    const role = user.role || {};
+    const hasApprovalRole =
+      role.name === "ACCOUNTABILTY_ITEMS_APPROVAL" &&
+      Array.isArray(role.permissions) &&
+      role.permissions.includes("Capitation Grants") &&
+      Array.isArray(role.roles) &&
+      role.roles.includes("write");
+
+    if (!hasApprovalRole) {
+      return res.status(403).json({
+        message: "Forbidden resource",
+        errorMessage: "You are not authorized to update this accounting entry",
+      });
+    }
+
+    // Load document and update in memory to avoid arrayFilters issues
+    const accDoc = await Accountability.findById(id);
+    if (!accDoc) {
+      return res.status(404).json({
+        message: "Accountability record not found",
+        errorMessage: "Accountability record not found",
+      });
+    }
+
+    const tranche = accDoc.tranches.find((t) => {
+      if (t.name !== trancheName) return false;
+      if (fundingGroup && t.fundingGroup && t.fundingGroup !== fundingGroup)
+        return false;
+      return true;
+    });
+
+    if (!tranche || !tranche.fundsAccountability) {
+      return res.status(404).json({
+        message: "Tranche not found for status update",
+        errorMessage: "Tranche not found for status update",
+      });
+    }
+
+    const entries = tranche.fundsAccountability.accountingEntries || [];
+    const entry = entries.find(
+      (e) => e && e._id && e._id.toString() === entryId.toString(),
+    );
+
+    if (!entry) {
+      return res.status(404).json({
+        message: "Accounting entry not found",
+        errorMessage: "Accounting entry not found",
+      });
+    }
+
+    entry.status = status;
+
+    if (status === "approved") {
+      const approverName =
+        `${user.firstname || ""} ${user.lastname || ""}`.trim() ||
+        user.username ||
+        user.email ||
+        "Unknown";
+      entry.approvedBy = approverName;
+      entry.approvedAt = new Date();
+    }
+
+    await accDoc.save();
+
+    return res.status(200).json({
+      message: "Accounting entry status updated successfully",
+      entryId: accDoc._id,
+      status: entry.status,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error updating accounting entry status",
       error: error.message,
     });
   }
@@ -740,7 +886,7 @@ const deleteAccountingEntry = async (req, res) => {
         new: true,
         arrayFilters: [{ "t.name": trancheName }],
         runValidators: true,
-      }
+      },
     );
 
     if (!updated) {
@@ -978,7 +1124,7 @@ const getDashboardStats = async (req, res) => {
               (accountabilityResult.schoolsWithApprovals /
                 budgetResult.totalSchoolsWithBudgets) *
                 100 *
-                10
+                10,
             ) / 10
           : 0,
 
@@ -992,7 +1138,7 @@ const getDashboardStats = async (req, res) => {
               (accountabilityResult.schoolsWithDisbursements /
                 accountabilityResult.schoolsWithApprovals) *
                 100 *
-                10
+                10,
             ) / 10
           : 0,
 
@@ -1006,7 +1152,7 @@ const getDashboardStats = async (req, res) => {
               (accountabilityResult.schoolsWithAccountability /
                 accountabilityResult.schoolsWithDisbursements) *
                 100 *
-                10
+                10,
             ) / 10
           : 0,
     };
@@ -1051,7 +1197,7 @@ const recordReturnedFunds = async (req, res) => {
         new: true,
         arrayFilters,
         runValidators: true,
-      }
+      },
     );
 
     if (!updated) {
@@ -1074,14 +1220,8 @@ const recordReturnedFunds = async (req, res) => {
 const recordHeldFunds = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      trancheName,
-      fundingGroup,
-      amount,
-      heldBy,
-      reason,
-      recordedBy,
-    } = req.body;
+    const { trancheName, fundingGroup, amount, heldBy, reason, recordedBy } =
+      req.body;
 
     if (!trancheName || !amount) {
       return res.status(400).json({
@@ -1109,7 +1249,7 @@ const recordHeldFunds = async (req, res) => {
         new: true,
         arrayFilters,
         runValidators: true,
-      }
+      },
     );
 
     if (!updated) {
@@ -1164,7 +1304,7 @@ const addSupplier = async (req, res) => {
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
       { $push: { "tranches.$[t].fundsAccountability.suppliers": supplierDoc } },
-      { new: true, arrayFilters, runValidators: true }
+      { new: true, arrayFilters, runValidators: true },
     );
 
     if (!updated) {
@@ -1174,7 +1314,7 @@ const addSupplier = async (req, res) => {
     const tranche = (updated.tranches || []).find(
       (tr) =>
         tr.name === trancheName &&
-        (fundingGroup ? tr.fundingGroup === fundingGroup : true)
+        (fundingGroup ? tr.fundingGroup === fundingGroup : true),
     );
     const suppliers = tranche?.fundsAccountability?.suppliers || [];
 
@@ -1217,7 +1357,7 @@ const removeSupplier = async (req, res) => {
     const tranche = accountability.tranches.find(
       (t) =>
         t.name === trancheName &&
-        (fundingGroup ? t.fundingGroup === fundingGroup : true)
+        (fundingGroup ? t.fundingGroup === fundingGroup : true),
     );
     if (!tranche) {
       return res.status(404).json({ message: "Tranche not found" });
@@ -1241,7 +1381,7 @@ const removeSupplier = async (req, res) => {
           "tranches.$[t].fundsAccountability.suppliers": suppliers,
         },
       },
-      { new: true, arrayFilters, runValidators: true }
+      { new: true, arrayFilters, runValidators: true },
     );
 
     if (!updated) {
@@ -1275,7 +1415,7 @@ const getFinancialSummary = async (req, res) => {
 
     const summary = await FinancialCalculationService.calculateFinancialSummary(
       id,
-      accountability.academicYear
+      accountability.academicYear,
     );
 
     return res.status(200).json(summary);
@@ -1306,6 +1446,7 @@ module.exports = {
   addAccountingEntry,
   updateAccountingEntry,
   deleteAccountingEntry,
+  updateAccountingEntryStatus,
   // STATS ENDPOINT
   getDashboardStats,
   // FINANCIAL CALCULATIONS

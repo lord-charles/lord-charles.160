@@ -10,6 +10,20 @@ const accountingEntrySchema = new Schema(
     category: { type: String, default: "General" }, // OPEX, CAPEX, etc.
     dateRecorded: { type: Date, default: Date.now },
     recordedBy: { type: String }, // Who recorded this entry
+    // Origin of the entry: linked to a budget item or manually entered
+    origin: {
+      type: String,
+      enum: ["budget-item", "manual"],
+      default: "budget-item",
+    },
+    // Workflow status for manual entries
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "approved",
+    },
+    approvedBy: { type: String },
+    approvedAt: { type: Date },
   },
   { _id: true }
 );
