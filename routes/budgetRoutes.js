@@ -19,7 +19,8 @@ const router = express.Router();
 
 router.post("/", createBudget);
 
-router.get("/", cacheMiddleware(600), getBudgets);
+// Return fresh data so fundingGroupsSummary is always up to date
+router.get("/", getBudgets);
 
 // Specific routes must come before parameterized routes
 router.get("/code/:code/:year", getBudgetByCode);

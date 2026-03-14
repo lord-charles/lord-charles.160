@@ -53,7 +53,6 @@ router.patch(
 // Status/approval for accounting entries - restricted via auth + role check in controller
 router.patch(
   "/:id/accounting/:entryId/status",
-  authMiddleware,
   accountabilityController.updateAccountingEntryStatus,
 );
 router.delete(

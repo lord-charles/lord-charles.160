@@ -631,6 +631,7 @@ const addAccountingEntry = async (req, res) => {
     const { id } = req.params; // accountability document ID
     const {
       trancheName,
+      fundingGroup,
       field,
       value,
       comment,
@@ -663,6 +664,11 @@ const addAccountingEntry = async (req, res) => {
       status: isManualEntry ? "pending" : "approved",
     };
 
+    // Build array filters to match the correct tranche
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }]
+      : [{ "t.name": trancheName }];
+
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
       {
@@ -673,7 +679,7 @@ const addAccountingEntry = async (req, res) => {
       },
       {
         new: true,
-        arrayFilters: [{ "t.name": trancheName }],
+        arrayFilters,
         runValidators: true,
       },
     );
@@ -703,7 +709,7 @@ const addAccountingEntry = async (req, res) => {
 const updateAccountingEntry = async (req, res) => {
   try {
     const { id, entryId } = req.params; // accountability ID and accounting entry ID
-    const { trancheName, field, value, comment, category } = req.body;
+    const { trancheName, fundingGroup, field, value, comment, category } = req.body;
 
     if (!trancheName) {
       return res.status(400).json({ message: "trancheName is required" });
@@ -727,12 +733,17 @@ const updateAccountingEntry = async (req, res) => {
         "tranches.$[t].fundsAccountability.accountingEntries.$[e].category"
       ] = category;
 
+    // Build array filters to match the correct tranche
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }, { "e._id": entryId }]
+      : [{ "t.name": trancheName }, { "e._id": entryId }];
+
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
       { $set: updateFields },
       {
         new: true,
-        arrayFilters: [{ "t.name": trancheName }, { "e._id": entryId }],
+        arrayFilters,
         runValidators: true,
       },
     );
@@ -867,11 +878,16 @@ const updateAccountingEntryStatus = async (req, res) => {
 const deleteAccountingEntry = async (req, res) => {
   try {
     const { id, entryId } = req.params; // accountability ID and accounting entry ID
-    const { trancheName } = req.body;
+    const { trancheName, fundingGroup } = req.body;
 
     if (!trancheName) {
       return res.status(400).json({ message: "trancheName is required" });
     }
+
+    // Build array filters to match the correct tranche
+    const arrayFilters = fundingGroup
+      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }]
+      : [{ "t.name": trancheName }];
 
     const updated = await Accountability.findOneAndUpdate(
       { _id: id },
@@ -884,7 +900,7 @@ const deleteAccountingEntry = async (req, res) => {
       },
       {
         new: true,
-        arrayFilters: [{ "t.name": trancheName }],
+        arrayFilters,
         runValidators: true,
       },
     );

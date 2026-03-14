@@ -194,6 +194,36 @@ exports.getBudgets = async (req, res) => {
               },
             },
           },
+          // Per-funding-group budget summary (totalCostSSP per group)
+          fundingGroupsSummary: {
+            $map: {
+              input: { $ifNull: ["$budget.groups", []] },
+              as: "g",
+              in: {
+                name: "$$g.group",
+                totalBudgetSSP: {
+                  $sum: {
+                    $map: {
+                      input: {
+                        $reduce: {
+                          input: { $ifNull: ["$$g.categories", []] },
+                          initialValue: [],
+                          in: {
+                            $concatArrays: [
+                              "$$value",
+                              { $ifNull: ["$$this.items", []] },
+                            ],
+                          },
+                        },
+                      },
+                      as: "item",
+                      in: { $ifNull: ["$$item.totalCostSSP", 0] },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
       {
@@ -208,6 +238,7 @@ exports.getBudgets = async (req, res) => {
           school: 1,
           submittedAmount: 1,
           preparedBy: "$meta.preparation.preparedBy",
+          fundingGroupsSummary: 1,
         },
       },
     ];
