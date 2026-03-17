@@ -2,7 +2,7 @@ const { default: mongoose } = require("mongoose");
 const dbConnect = () => {
   mongoose.set("strictQuery", true);
   mongoose
-    .connect("mongodb://emis-prod01:%40emis-orgmogei21@127.0.0.1:27017/")
+    .connect("mongodb://emis-prod01:%40emis-orgmogei21@127.0.0.1:27018/")
     .then(() => {
       console.log("connection to db successfull...");
     })

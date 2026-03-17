@@ -121,6 +121,52 @@ exports.addBudgetDocument = async (req, res) => {
   }
 };
 
+// Delete a document entry from a specific budget
+exports.deleteBudgetDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { docUrl } = req.params;
+
+    if (!id || !docUrl) {
+      return res.status(400).json({
+        error: "id and docUrl are required",
+      });
+    }
+
+    const budget = await Budget.findById(id);
+    if (!budget) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+
+    if (!Array.isArray(budget.budget?.documents)) {
+      return res.status(404).json({ error: "No documents found" });
+    }
+
+    // Decode the URL since it comes from params
+    const decodedUrl = decodeURIComponent(docUrl);
+
+    // Find and remove the document
+    const initialLength = budget.budget.documents.length;
+    budget.budget.documents = budget.budget.documents.filter(
+      (d) => d.url !== decodedUrl,
+    );
+
+    if (budget.budget.documents.length === initialLength) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    await budget.save();
+
+    res.status(200).json({
+      message: "Document deleted successfully",
+      documents: budget.budget.documents,
+    });
+  } catch (error) {
+    console.error("Error deleting budget document:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Create a new budget
 exports.createBudget = async (req, res) => {
   try {
