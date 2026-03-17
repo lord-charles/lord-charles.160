@@ -45,11 +45,11 @@ const FundingGroupReviewSchema = new mongoose.Schema(
           addedBy: { type: String },
           addedAt: { type: Date, default: Date.now },
         },
-        { _id: false }
+        { _id: false },
       ),
     ],
   },
-  { _id: false }
+  { _id: false },
 );
 
 // BudgetGroupSchema
@@ -67,8 +67,9 @@ const BudgetDocumentSchema = new mongoose.Schema(
     key: { type: String },
     uploadedAt: { type: Date, default: Date.now },
     uploadedBy: { type: String },
+    isCustom: { type: Boolean, default: false },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // BudgetSchema
@@ -89,7 +90,7 @@ const BudgetSchema = new mongoose.Schema({
         addedBy: { type: String },
         addedAt: { type: Date, default: Date.now },
       },
-      { _id: false }
+      { _id: false },
     ),
   ],
   previousYearLedgerAccountedFor: { type: Boolean, default: false },

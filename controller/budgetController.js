@@ -76,7 +76,8 @@ exports.getBudgetDocuments = async (req, res) => {
 exports.addBudgetDocument = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fundingGroup, name, url, key, uploadedBy } = req.body || {};
+    const { fundingGroup, name, url, key, uploadedBy, isCustom } =
+      req.body || {};
 
     if (!fundingGroup || !name || !url) {
       return res.status(400).json({
@@ -102,6 +103,7 @@ exports.addBudgetDocument = async (req, res) => {
       url,
       key: key || undefined,
       uploadedBy: uploadedBy || undefined,
+      isCustom: isCustom || false,
       uploadedAt: new Date(),
     };
 
@@ -369,8 +371,12 @@ exports.reviewBudget = async (req, res) => {
       const byDisplayName = entries.find(
         ([_, config]) =>
           config &&
-          String(config.displayName || "").trim().toLowerCase() ===
-            String(fundingGroup || "").trim().toLowerCase()
+          String(config.displayName || "")
+            .trim()
+            .toLowerCase() ===
+            String(fundingGroup || "")
+              .trim()
+              .toLowerCase(),
       );
       if (byDisplayName) groupConfig = byDisplayName[1];
     }
