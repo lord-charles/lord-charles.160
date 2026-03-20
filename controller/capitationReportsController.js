@@ -1,5 +1,6 @@
 const Budget = require("../models/budget");
 const Accountability = require("../models/accountability");
+const CapitationSettings = require("../models/capitationSettings");
 
 /**
  * Get comprehensive capitation grants reports
@@ -28,10 +29,10 @@ exports.getCapitationReports = async (req, res) => {
 
     // Fetch budgets and accountability records with selective field projection
     // Using lean() for better performance and only selecting needed fields
-    const [budgets, accountabilities] = await Promise.all([
+    const [budgets, accountabilities, settings] = await Promise.all([
       Budget.find(budgetQuery)
         .select(
-          "code school state10 county28 year budget.groups accountability",
+          "code school state10 county28 year schoolType budget.groups accountability",
         )
         .populate({
           path: "accountability",
@@ -43,7 +44,16 @@ exports.getCapitationReports = async (req, res) => {
         .select("code schoolName state10 county28 academicYear tranches")
         .lean()
         .exec(),
+      year
+        ? CapitationSettings.findOne({ academicYear: parseInt(year) })
+            .select("fundingGroups")
+            .lean()
+            .exec()
+        : null,
     ]);
+
+    // Build currency map from funding groups
+    const currencyByFundingGroup = buildCurrencyMap(settings);
 
     // Process data for reports in parallel where possible
     const [
@@ -72,6 +82,7 @@ exports.getCapitationReports = async (req, res) => {
       schoolWiseSummary,
       expenditureByCategory,
       overallStats,
+      currencyByFundingGroup, // Include currency mapping
     };
 
     res.status(200).json(reports);
@@ -80,6 +91,51 @@ exports.getCapitationReports = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * Build currency map from funding groups configuration
+ */
+function buildCurrencyMap(settings) {
+  const map = {};
+
+  if (!settings || !settings.fundingGroups) {
+    return map;
+  }
+
+  const rawFundingGroups = settings.fundingGroups;
+
+  // Handle both Map and plain object
+  const entries =
+    rawFundingGroups instanceof Map
+      ? Array.from(rawFundingGroups.entries())
+      : Object.entries(rawFundingGroups || {});
+
+  entries.forEach(([key, cfg]) => {
+    if (!cfg) return;
+
+    const displayName = String(cfg.displayName || cfg.name || "")
+      .trim()
+      .toLowerCase();
+    if (!displayName) return;
+
+    const schoolCurrencyMap = {};
+    const rules = Array.isArray(cfg.rules) ? cfg.rules : [];
+
+    rules.forEach((rule) => {
+      const st = String(rule?.schoolType || "").toUpperCase();
+      if (!st) return;
+      if (!schoolCurrencyMap[st]) {
+        schoolCurrencyMap[st] = rule.currency || "SSP";
+      }
+    });
+
+    if (Object.keys(schoolCurrencyMap).length > 0) {
+      map[displayName] = schoolCurrencyMap;
+    }
+  });
+
+  return map;
+}
 
 /**
  * Process Budget vs Actual data
