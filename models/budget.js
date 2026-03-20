@@ -164,5 +164,10 @@ const MainSchema = new mongoose.Schema({
 
 MainSchema.index({ code: 1 });
 MainSchema.index({ year: 1 });
+MainSchema.index({ state10: 1 });
+MainSchema.index({ county28: 1 });
+MainSchema.index({ year: 1, state10: 1 });
+MainSchema.index({ year: 1, county28: 1 });
+MainSchema.index({ year: 1, state10: 1, county28: 1 });
 
 module.exports = mongoose.model("Budget", MainSchema);

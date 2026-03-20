@@ -25,7 +25,7 @@ const accountingEntrySchema = new Schema(
     approvedBy: { type: String },
     approvedAt: { type: Date },
   },
-  { _id: true }
+  { _id: true },
 );
 
 // Accountability Schema
@@ -171,5 +171,14 @@ const accountabilityMainSchema = new Schema({
   tranches: { type: [trancheSchema], default: [] },
   notes: { type: String },
 });
+
+// Add indexes for better query performance
+accountabilityMainSchema.index({ code: 1 });
+accountabilityMainSchema.index({ academicYear: 1 });
+accountabilityMainSchema.index({ state10: 1 });
+accountabilityMainSchema.index({ county28: 1 });
+accountabilityMainSchema.index({ academicYear: 1, state10: 1 });
+accountabilityMainSchema.index({ academicYear: 1, county28: 1 });
+accountabilityMainSchema.index({ academicYear: 1, state10: 1, county28: 1 });
 
 module.exports = mongoose.model("Accountability", accountabilityMainSchema);
