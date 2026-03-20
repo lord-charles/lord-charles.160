@@ -65,14 +65,28 @@ exports.getCapitationReports = async (req, res) => {
       expenditureByCategory,
     ] = await Promise.all([
       Promise.resolve(processBudgetVsActual(budgets, fundingGroup)),
-      Promise.resolve(processDisbursementSummary(accountabilities)),
-      Promise.resolve(processAccountabilityStatus(accountabilities)),
-      Promise.resolve(processFundingGroupAnalysis(budgets, accountabilities)),
-      Promise.resolve(processSchoolWiseSummary(budgets, accountabilities)),
-      Promise.resolve(processExpenditureByCategory(accountabilities)),
+      Promise.resolve(
+        processDisbursementSummary(accountabilities, fundingGroup),
+      ),
+      Promise.resolve(
+        processAccountabilityStatus(accountabilities, fundingGroup),
+      ),
+      Promise.resolve(
+        processFundingGroupAnalysis(budgets, accountabilities, fundingGroup),
+      ),
+      Promise.resolve(
+        processSchoolWiseSummary(budgets, accountabilities, fundingGroup),
+      ),
+      Promise.resolve(
+        processExpenditureByCategory(accountabilities, fundingGroup),
+      ),
     ]);
 
-    const overallStats = calculateOverallStats(budgets, accountabilities);
+    const overallStats = calculateOverallStats(
+      budgets,
+      accountabilities,
+      fundingGroup,
+    );
 
     const reports = {
       budgetVsActual,
@@ -140,7 +154,7 @@ function buildCurrencyMap(settings) {
 /**
  * Process Budget vs Actual data
  */
-function processBudgetVsActual(budgets, fundingGroup) {
+function processBudgetVsActual(budgets, fundingGroupFilter) {
   const data = [];
 
   budgets.forEach((budget) => {
@@ -148,12 +162,7 @@ function processBudgetVsActual(budgets, fundingGroup) {
 
     budget.budget.groups.forEach((group) => {
       // Filter by funding group if specified
-      if (
-        fundingGroup &&
-        fundingGroup !== "ALL" &&
-        group.group !== fundingGroup
-      )
-        return;
+      if (fundingGroupFilter && group.group !== fundingGroupFilter) return;
 
       const budgetedAmount = group.categories.reduce((sum, cat) => {
         return (
@@ -196,7 +205,7 @@ function processBudgetVsActual(budgets, fundingGroup) {
 /**
  * Process Disbursement Summary
  */
-function processDisbursementSummary(accountabilities) {
+function processDisbursementSummary(accountabilities, fundingGroupFilter) {
   const summary = {
     totalDisbursed: 0,
     byPaymentMethod: {},
@@ -207,6 +216,11 @@ function processDisbursementSummary(accountabilities) {
 
   accountabilities.forEach((acc) => {
     acc.tranches?.forEach((tranche) => {
+      // Filter by funding group if specified
+      if (fundingGroupFilter && tranche.fundingGroup !== fundingGroupFilter) {
+        return;
+      }
+
       const amount = tranche.amountDisbursed || 0;
       summary.totalDisbursed += amount;
 
@@ -248,9 +262,9 @@ function processDisbursementSummary(accountabilities) {
 /**
  * Process Accountability Status
  */
-function processAccountabilityStatus(accountabilities) {
+function processAccountabilityStatus(accountabilities, fundingGroupFilter) {
   const status = {
-    totalSchools: accountabilities.length,
+    totalSchools: 0,
     fullyAccounted: 0,
     partiallyAccounted: 0,
     notAccounted: 0,
@@ -258,19 +272,30 @@ function processAccountabilityStatus(accountabilities) {
   };
 
   accountabilities.forEach((acc) => {
-    const totalDisbursed =
-      acc.tranches?.reduce((sum, t) => sum + (t.amountDisbursed || 0), 0) || 0;
+    // Filter tranches by funding group if specified
+    const relevantTranches = fundingGroupFilter
+      ? acc.tranches?.filter((t) => t.fundingGroup === fundingGroupFilter) || []
+      : acc.tranches || [];
 
-    const totalAccounted =
-      acc.tranches?.reduce((sum, tranche) => {
-        const entries = tranche.fundsAccountability?.accountingEntries || [];
-        return (
-          sum +
-          entries
-            .filter((e) => e.status === "approved")
-            .reduce((s, e) => s + (e.value || 0), 0)
-        );
-      }, 0) || 0;
+    // Skip if no relevant tranches
+    if (relevantTranches.length === 0) return;
+
+    status.totalSchools++;
+
+    const totalDisbursed = relevantTranches.reduce(
+      (sum, t) => sum + (t.amountDisbursed || 0),
+      0,
+    );
+
+    const totalAccounted = relevantTranches.reduce((sum, tranche) => {
+      const entries = tranche.fundsAccountability?.accountingEntries || [];
+      return (
+        sum +
+        entries
+          .filter((e) => e.status === "approved")
+          .reduce((s, e) => s + (e.value || 0), 0)
+      );
+    }, 0);
 
     const accountingRate = totalDisbursed
       ? (totalAccounted / totalDisbursed) * 100
@@ -303,12 +328,21 @@ function processAccountabilityStatus(accountabilities) {
 /**
  * Process Funding Group Analysis
  */
-function processFundingGroupAnalysis(budgets, accountabilities) {
+function processFundingGroupAnalysis(
+  budgets,
+  accountabilities,
+  fundingGroupFilter,
+) {
   const analysis = {};
 
   // From budgets
   budgets.forEach((budget) => {
     budget.budget?.groups?.forEach((group) => {
+      // Filter by funding group if specified
+      if (fundingGroupFilter && group.group !== fundingGroupFilter) {
+        return;
+      }
+
       if (!analysis[group.group]) {
         analysis[group.group] = {
           budgeted: 0,
@@ -333,6 +367,12 @@ function processFundingGroupAnalysis(budgets, accountabilities) {
   accountabilities.forEach((acc) => {
     acc.tranches?.forEach((tranche) => {
       const group = tranche.fundingGroup || "General";
+
+      // Filter by funding group if specified
+      if (fundingGroupFilter && group !== fundingGroupFilter) {
+        return;
+      }
+
       if (!analysis[group]) {
         analysis[group] = {
           budgeted: 0,
@@ -368,38 +408,57 @@ function processFundingGroupAnalysis(budgets, accountabilities) {
 /**
  * Process School-wise Summary
  */
-function processSchoolWiseSummary(budgets, accountabilities) {
+function processSchoolWiseSummary(
+  budgets,
+  accountabilities,
+  fundingGroupFilter,
+) {
   const summary = [];
   const accMap = new Map(accountabilities.map((a) => [a.code, a]));
 
   budgets.forEach((budget) => {
     const acc = accMap.get(budget.code);
 
-    const totalBudgeted =
-      budget.budget?.groups?.reduce((sum, group) => {
-        return (
-          sum +
-          group.categories.reduce((s, cat) => {
-            return (
-              s + cat.items.reduce((i, item) => i + (item.totalCostSSP || 0), 0)
-            );
-          }, 0)
-        );
-      }, 0) || 0;
+    // Filter budget groups by funding group if specified
+    const relevantGroups = fundingGroupFilter
+      ? budget.budget?.groups?.filter((g) => g.group === fundingGroupFilter) ||
+        []
+      : budget.budget?.groups || [];
 
-    const totalDisbursed =
-      acc?.tranches?.reduce((sum, t) => sum + (t.amountDisbursed || 0), 0) || 0;
+    const totalBudgeted = relevantGroups.reduce((sum, group) => {
+      return (
+        sum +
+        group.categories.reduce((s, cat) => {
+          return (
+            s + cat.items.reduce((i, item) => i + (item.totalCostSSP || 0), 0)
+          );
+        }, 0)
+      );
+    }, 0);
 
-    const totalAccounted =
-      acc?.tranches?.reduce((sum, tranche) => {
-        const entries = tranche.fundsAccountability?.accountingEntries || [];
-        return (
-          sum +
-          entries
-            .filter((e) => e.status === "approved")
-            .reduce((s, e) => s + (e.value || 0), 0)
-        );
-      }, 0) || 0;
+    // Filter accountability tranches by funding group if specified
+    const relevantTranches = fundingGroupFilter
+      ? acc?.tranches?.filter((t) => t.fundingGroup === fundingGroupFilter) ||
+        []
+      : acc?.tranches || [];
+
+    const totalDisbursed = relevantTranches.reduce(
+      (sum, t) => sum + (t.amountDisbursed || 0),
+      0,
+    );
+
+    const totalAccounted = relevantTranches.reduce((sum, tranche) => {
+      const entries = tranche.fundsAccountability?.accountingEntries || [];
+      return (
+        sum +
+        entries
+          .filter((e) => e.status === "approved")
+          .reduce((s, e) => s + (e.value || 0), 0)
+      );
+    }, 0);
+
+    // Skip schools with no data for the selected funding group
+    if (totalBudgeted === 0 && totalDisbursed === 0) return;
 
     summary.push({
       school: budget.school || budget.code,
@@ -425,11 +484,16 @@ function processSchoolWiseSummary(budgets, accountabilities) {
 /**
  * Process Expenditure by Category
  */
-function processExpenditureByCategory(accountabilities) {
+function processExpenditureByCategory(accountabilities, fundingGroupFilter) {
   const categories = {};
 
   accountabilities.forEach((acc) => {
     acc.tranches?.forEach((tranche) => {
+      // Filter by funding group if specified
+      if (fundingGroupFilter && tranche.fundingGroup !== fundingGroupFilter) {
+        return;
+      }
+
       tranche.expenditures?.forEach((exp) => {
         const category = exp.category || "Uncategorized";
         if (!categories[category]) {
@@ -459,11 +523,17 @@ function processExpenditureByCategory(accountabilities) {
 /**
  * Calculate Overall Statistics
  */
-function calculateOverallStats(budgets, accountabilities) {
+function calculateOverallStats(budgets, accountabilities, fundingGroupFilter) {
+  // Filter budget groups by funding group if specified
   const totalBudgeted = budgets.reduce((sum, budget) => {
+    const relevantGroups = fundingGroupFilter
+      ? budget.budget?.groups?.filter((g) => g.group === fundingGroupFilter) ||
+        []
+      : budget.budget?.groups || [];
+
     return (
       sum +
-      (budget.budget?.groups?.reduce((s, group) => {
+      relevantGroups.reduce((s, group) => {
         return (
           s +
           group.categories.reduce((c, cat) => {
@@ -472,21 +542,29 @@ function calculateOverallStats(budgets, accountabilities) {
             );
           }, 0)
         );
-      }, 0) || 0)
+      }, 0)
     );
   }, 0);
 
+  // Filter accountability tranches by funding group if specified
   const totalDisbursed = accountabilities.reduce((sum, acc) => {
+    const relevantTranches = fundingGroupFilter
+      ? acc.tranches?.filter((t) => t.fundingGroup === fundingGroupFilter) || []
+      : acc.tranches || [];
+
     return (
-      sum +
-      (acc.tranches?.reduce((s, t) => s + (t.amountDisbursed || 0), 0) || 0)
+      sum + relevantTranches.reduce((s, t) => s + (t.amountDisbursed || 0), 0)
     );
   }, 0);
 
   const totalAccounted = accountabilities.reduce((sum, acc) => {
+    const relevantTranches = fundingGroupFilter
+      ? acc.tranches?.filter((t) => t.fundingGroup === fundingGroupFilter) || []
+      : acc.tranches || [];
+
     return (
       sum +
-      (acc.tranches?.reduce((s, tranche) => {
+      relevantTranches.reduce((s, tranche) => {
         const entries = tranche.fundsAccountability?.accountingEntries || [];
         return (
           s +
@@ -494,12 +572,25 @@ function calculateOverallStats(budgets, accountabilities) {
             .filter((e) => e.status === "approved")
             .reduce((a, e) => a + (e.value || 0), 0)
         );
-      }, 0) || 0)
+      }, 0)
     );
   }, 0);
 
+  // Count schools with data for the selected funding group
+  const schoolsWithData = new Set();
+  budgets.forEach((budget) => {
+    const relevantGroups = fundingGroupFilter
+      ? budget.budget?.groups?.filter((g) => g.group === fundingGroupFilter) ||
+        []
+      : budget.budget?.groups || [];
+
+    if (relevantGroups.length > 0) {
+      schoolsWithData.add(budget.code);
+    }
+  });
+
   return {
-    totalSchools: budgets.length,
+    totalSchools: schoolsWithData.size,
     totalBudgeted,
     totalDisbursed,
     totalAccounted,
