@@ -3,6 +3,52 @@ const Accountability = require("../models/accountability");
 const CapitationSettings = require("../models/capitationSettings");
 
 /**
+ * Get all funding groups for a year
+ */
+exports.getFundingGroups = async (req, res) => {
+  try {
+    const { year } = req.query;
+
+    if (!year) {
+      return res.status(400).json({ error: "Year is required" });
+    }
+
+    const settings = await CapitationSettings.findOne({
+      academicYear: parseInt(year),
+    })
+      .select("fundingGroups")
+      .lean()
+      .exec();
+
+    if (!settings || !settings.fundingGroups) {
+      return res.status(200).json({ fundingGroups: [] });
+    }
+
+    const fundingGroups = [];
+    const rawFundingGroups = settings.fundingGroups;
+
+    // Handle both Map and plain object
+    const entries =
+      rawFundingGroups instanceof Map
+        ? Array.from(rawFundingGroups.entries())
+        : Object.entries(rawFundingGroups || {});
+
+    entries.forEach(([key, cfg]) => {
+      if (!cfg) return;
+      const displayName = String(cfg.displayName || cfg.name || "").trim();
+      if (displayName) {
+        fundingGroups.push(displayName);
+      }
+    });
+
+    res.status(200).json({ fundingGroups });
+  } catch (error) {
+    console.error("Error fetching funding groups:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
  * Get comprehensive capitation grants reports
  * Optimized with lean queries, selective field projection, and parallel processing
  */
