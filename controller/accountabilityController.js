@@ -1,5 +1,6 @@
 const Accountability = require("../models/accountability");
 const Budget = require("../models/budget");
+const CapitationSettings = require("../models/capitationSettings");
 const FinancialCalculationService = require("../services/financialCalculationService");
 
 // Get all accountability entries
@@ -709,7 +710,8 @@ const addAccountingEntry = async (req, res) => {
 const updateAccountingEntry = async (req, res) => {
   try {
     const { id, entryId } = req.params; // accountability ID and accounting entry ID
-    const { trancheName, fundingGroup, field, value, comment, category } = req.body;
+    const { trancheName, fundingGroup, field, value, comment, category } =
+      req.body;
 
     if (!trancheName) {
       return res.status(400).json({ message: "trancheName is required" });
@@ -735,7 +737,10 @@ const updateAccountingEntry = async (req, res) => {
 
     // Build array filters to match the correct tranche
     const arrayFilters = fundingGroup
-      ? [{ "t.name": trancheName, "t.fundingGroup": fundingGroup }, { "e._id": entryId }]
+      ? [
+          { "t.name": trancheName, "t.fundingGroup": fundingGroup },
+          { "e._id": entryId },
+        ]
       : [{ "t.name": trancheName }, { "e._id": entryId }];
 
     const updated = await Accountability.findOneAndUpdate(
@@ -1172,6 +1177,193 @@ const getDashboardStats = async (req, res) => {
             ) / 10
           : 0,
     };
+
+    // Add funding group statistics and currency mapping
+    const byFundingGroup = {};
+    const currencyByFundingGroup = {};
+
+    // Fetch capitation settings for currency mapping
+    const settings = await CapitationSettings.findOne({
+      academicYear,
+    })
+      .select("fundingGroups")
+      .lean()
+      .exec();
+
+    // Build currency map
+    if (settings && settings.fundingGroups) {
+      const rawFundingGroups = settings.fundingGroups;
+      const entries =
+        rawFundingGroups instanceof Map
+          ? Array.from(rawFundingGroups.entries())
+          : Object.entries(rawFundingGroups || {});
+
+      entries.forEach(([key, cfg]) => {
+        if (!cfg) return;
+        const displayName = String(cfg.displayName || cfg.name || "")
+          .trim()
+          .toLowerCase();
+        if (!displayName) return;
+
+        const schoolCurrencyMap = {};
+        const rules = Array.isArray(cfg.rules) ? cfg.rules : [];
+        rules.forEach((rule) => {
+          const st = String(rule?.schoolType || "").toUpperCase();
+          if (!st) return;
+          if (!schoolCurrencyMap[st]) {
+            schoolCurrencyMap[st] = rule.currency || "SSP";
+          }
+        });
+
+        if (Object.keys(schoolCurrencyMap).length > 0) {
+          currencyByFundingGroup[displayName] = schoolCurrencyMap;
+        }
+      });
+    }
+
+    // Get funding group statistics
+    const fundingGroupStats = await Budget.aggregate([
+      { $match: { year: academicYear } },
+      { $unwind: "$budget.groups" },
+      {
+        $lookup: {
+          from: "accountabilities",
+          localField: "code",
+          foreignField: "code",
+          as: "accountability",
+        },
+      },
+      {
+        $unwind: { path: "$accountability", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $group: {
+          _id: "$budget.groups.group",
+          schoolCodes: { $addToSet: "$code" },
+          totalBudgeted: {
+            $sum: {
+              $sum: {
+                $map: {
+                  input: "$budget.groups.categories",
+                  as: "cat",
+                  in: {
+                    $sum: {
+                      $map: {
+                        input: "$$cat.items",
+                        as: "item",
+                        in: { $ifNull: ["$$item.totalCostSSP", 0] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          totalDisbursed: {
+            $sum: {
+              $sum: {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: { $ifNull: ["$accountability.tranches", []] },
+                      cond: {
+                        $eq: ["$$this.fundingGroup", "$budget.groups.group"],
+                      },
+                    },
+                  },
+                  as: "tranche",
+                  in: { $ifNull: ["$$tranche.amountDisbursed", 0] },
+                },
+              },
+            },
+          },
+          totalAccounted: {
+            $sum: {
+              $sum: {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: { $ifNull: ["$accountability.tranches", []] },
+                      cond: {
+                        $eq: ["$$this.fundingGroup", "$budget.groups.group"],
+                      },
+                    },
+                  },
+                  as: "tranche",
+                  in: {
+                    $sum: {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: {
+                              $ifNull: [
+                                "$$tranche.fundsAccountability.accountingEntries",
+                                [],
+                              ],
+                            },
+                            cond: { $eq: ["$$this.status", "approved"] },
+                          },
+                        },
+                        as: "entry",
+                        in: { $ifNull: ["$$entry.value", 0] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          fundingGroup: "$_id",
+          schoolCount: { $size: "$schoolCodes" },
+          totalBudgeted: 1,
+          totalDisbursed: 1,
+          totalAccounted: 1,
+          utilizationRate: {
+            $cond: [
+              { $gt: ["$totalBudgeted", 0] },
+              {
+                $multiply: [
+                  { $divide: ["$totalDisbursed", "$totalBudgeted"] },
+                  100,
+                ],
+              },
+              0,
+            ],
+          },
+          accountingRate: {
+            $cond: [
+              { $gt: ["$totalDisbursed", 0] },
+              {
+                $multiply: [
+                  { $divide: ["$totalAccounted", "$totalDisbursed"] },
+                  100,
+                ],
+              },
+              0,
+            ],
+          },
+        },
+      },
+    ]);
+
+    // Convert funding group stats to object
+    fundingGroupStats.forEach((group) => {
+      byFundingGroup[group.fundingGroup] = {
+        schoolCount: group.schoolCount,
+        totalBudgeted: Math.round(group.totalBudgeted * 100) / 100,
+        totalDisbursed: Math.round(group.totalDisbursed * 100) / 100,
+        totalAccounted: Math.round(group.totalAccounted * 100) / 100,
+        utilizationRate: Math.round(group.utilizationRate * 10) / 10,
+        accountingRate: Math.round(group.accountingRate * 10) / 10,
+      };
+    });
+
+    result.byFundingGroup = byFundingGroup;
+    result.currencyByFundingGroup = currencyByFundingGroup;
 
     res.status(200).json(result);
   } catch (error) {
