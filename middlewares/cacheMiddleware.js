@@ -27,9 +27,12 @@ const cacheMiddleware = (duration = 600) => {
       // If no cache exists, modify res.json to store the response
       const originalJson = res.json;
       res.json = function (body) {
-        // Store the response in Redis with expiration
-        redisClient.setex(cacheKey, duration, JSON.stringify(body))
-          .catch(err => console.error('Redis cache error:', err));
+        // Only cache successful responses so a transient error isn't
+        // replayed (with a 200 status) for the whole cache duration
+        if (this.statusCode >= 200 && this.statusCode < 300) {
+          redisClient.setex(cacheKey, duration, JSON.stringify(body))
+            .catch(err => console.error('Redis cache error:', err));
+        }
 
         // Call the original res.json with the response body
         return originalJson.call(this, body);
@@ -72,9 +75,12 @@ const cachePostMiddleware = (duration = 600) => {
       // If no cache exists, modify res.json to store the response
       const originalJson = res.json;
       res.json = function (body) {
-        // Store the response in Redis with expiration
-        redisClient.setex(cacheKey, duration, JSON.stringify(body))
-          .catch(err => console.error('Redis cache error:', err));
+        // Only cache successful responses so a transient error isn't
+        // replayed (with a 200 status) for the whole cache duration
+        if (this.statusCode >= 200 && this.statusCode < 300) {
+          redisClient.setex(cacheKey, duration, JSON.stringify(body))
+            .catch(err => console.error('Redis cache error:', err));
+        }
 
         // Call the original res.json with the response body
         return originalJson.call(this, body);

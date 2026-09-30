@@ -321,7 +321,7 @@ const statePupilTotal_2023 = async (req, res) => {
         $group: {
           _id: "$state10",
           totalPupils: { $sum: 1 },
-          ids: { $push: "$_id" }, // Include the MongoDB _id in an array
+          id: { $first: "$_id" },
         },
       },
       {
@@ -329,12 +329,12 @@ const statePupilTotal_2023 = async (req, res) => {
           state: "$_id",
           totalPupils: "$totalPupils",
           _id: 0,
-          id: { $arrayElemAt: ["$ids", 0] }, // Use $arrayElemAt to get the first element of the ids array
+          id: 1,
         },
       },
     ];
 
-    const result = await SchoolData.aggregate(pipeline);
+    const result = await SchoolData.aggregate(pipeline).allowDiskUse(true);
 
     res.status(200).json(result);
   } catch (error) {
