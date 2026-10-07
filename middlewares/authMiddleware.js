@@ -1,6 +1,7 @@
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
+const { getJwtSecret } = require("./accessControl");
 
 const authMiddleware = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -10,7 +11,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
   try {
-    const decoded = jwt.verify(token, process.env.SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const userId = decoded?.userId ?? null;
     if (!userId) {
       return next("Token does not contain user id");

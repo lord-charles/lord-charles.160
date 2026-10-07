@@ -277,7 +277,6 @@ router.get(
 
 router.post(
   "/:id/enrollment/complete",
-  cachePostMiddleware(600),
   schoolController.markEnrollmentComplete
 );
 /**

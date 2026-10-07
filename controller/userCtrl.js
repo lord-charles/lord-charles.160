@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const validateMongodbId = require("../utils/validateMongodbId");
 const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
+const { getJwtSecret } = require("../middlewares/accessControl");
 const userModel = require("../models/userModel");
 
 //Register CHECKED
@@ -107,16 +108,28 @@ const createUser = asyncHandler(async (req, res) => {
 
 //login CHECKED
 const logIn = asyncHandler(async (req, res) => {
-  const secret = "charles-works-smart";
+  const secret = getJwtSecret();
   const { username, password } = req.body;
-  const user = await User.findOne({ username, password });
+  const user = username ? await User.findOne({ username }) : null;
 
-  if (!user) {
-    res.status(404).json({ message: "Wrong username!" });
+  if (
+    !user ||
+    !password ||
+    !user.passwordHash ||
+    !bcrypt.compareSync(password, user.passwordHash)
+  ) {
+    res.status(404).json({ message: "Wrong username or password!" });
     return;
   }
 
-  if (user && bcrypt.compareSync(password, user.passwordHash)) {
+  if (user.isBlocked) {
+    res
+      .status(403)
+      .json({ message: "Your account is blocked. Contact an administrator." });
+    return;
+  }
+
+  {
     const token = jwt.sign(
       {
         userId: user.id,
@@ -148,8 +161,6 @@ const logIn = asyncHandler(async (req, res) => {
       role: user.role || null,
       token,
     });
-  } else {
-    res.status(404).json({ message: "Wrong password!" });
   }
 });
 
@@ -224,7 +235,9 @@ const getUsers = async (req, res) => {
       "SeniorTeacher",
     ];
 
-    const response = await User.find({ userType: { $nin: excludedUserTypes } });
+    const response = await User.find({
+      userType: { $nin: excludedUserTypes },
+    }).select("-passwordHash -passwordResetToken -passwordResetExpires");
 
     res.status(200).json(response);
   } catch (error) {
@@ -573,7 +586,7 @@ const verifyToken = asyncHandler(async (req, res) => {
 
   const token = authHeader.split(" ")[1];
   try {
-    const decoded = jwt.verify(token, process.env.SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const userId = decoded?.userId ?? null;
     if (!userId) {
       return res.status(404).send("Token does not contain user id");

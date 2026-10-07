@@ -28,6 +28,8 @@ const censusRoutes = require("./routes/census");
 const capitationSettings = require("./routes/capitationSettings");
 const capitationReportsRoutes = require("./routes/capitationReportsRoutes");
 const attendanceAnalyticsRoutes = require("./routes/attendanceAnalytics");
+const { accessControl } = require("./middlewares/accessControl");
+const { clearCache } = require("./middlewares/cacheMiddleware");
 
 // Swagger
 const swaggerUi = require("swagger-ui-express");
@@ -76,6 +78,23 @@ app.use(morgan("dev"));
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+// Authentication + module read/write permissions for every API route
+app.use("/express", accessControl);
+
+// Drop cached user lists after any successful user write
+app.use("/express/user", (req, res, next) => {
+  if (req.method !== "GET") {
+    res.on("finish", () => {
+      if (res.statusCode < 300) {
+        clearCache(["/express/user/users", "/express/user/getUserByCriteria"]).catch(
+          () => {}
+        );
+      }
+    });
+  }
+  next();
+});
 
 // API Routes
 app.use("/express/data-set", dataSet);
