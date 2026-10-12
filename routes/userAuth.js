@@ -1,3 +1,4 @@
+const { getUserSummary } = require("../controller/userSummaryCtrl");
 const router = require("express").Router();
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 
@@ -316,6 +317,7 @@ const {
  */
 
 // User endpoints
+router.get("/users/summary", getUserSummary);
 router.post("/register", createUser);
 router.post("/login", logIn);
 router.get("/users/get-all", cacheMiddleware(600), getUsers);

@@ -1,5 +1,9 @@
 const SchoolData = require("../models/2023Data");
-const CTCriteria = require("../models/CTCriteria");
+const {
+    activeCriteria,
+    eligibilityConditions,
+    resolveYear,
+} = require("../services/ctCriteriaService");
 
 
 exports.getEligibleLearners = async (req, res) => {
@@ -12,39 +16,13 @@ exports.getEligibleLearners = async (req, res) => {
             });
         }
 
-        const ctCriteria = await CTCriteria.find({ isActive: true });
-        const eligibleMap = {};
-        ctCriteria.forEach(c => {
-            eligibleMap[c.educationType] = c.classes.map(cls => ({
-                className: cls.className,
-                requiresDisability: cls.requiresDisability
-            }));
-        });
-
-        // Build $or array for eligible learners
-        const orConditions = [];
-        Object.entries(eligibleMap).forEach(([educationType, classes]) => {
-            classes.forEach(cls => {
-                // Male
-                orConditions.push({
-                    education: educationType,
-                    class: cls.className,
-                    gender: "M",
-                    ...(cls.requiresDisability.male
-                        ? { isWithDisability: true }
-                        : {})
-                });
-                // Female
-                orConditions.push({
-                    education: educationType,
-                    class: cls.className,
-                    gender: "F",
-                    ...(cls.requiresDisability.female
-                        ? { isWithDisability: true }
-                        : {})
-                });
-            });
-        });
+        // Active criteria for the requested year (?year=, default current)
+        const ctCriteria = await activeCriteria(resolveYear(req));
+        const orConditions = await eligibilityConditions(ctCriteria);
+        if (!orConditions.length) {
+            // No criteria set up for this year: nobody is eligible
+            orConditions.push({ _id: null });
+        }
 
         const query = {
             code,
@@ -96,38 +74,13 @@ exports.getEligibleLearnersStats = async (req, res) => {
         if (code) params.code = code;
 
         // Find all active CT criteria
-        const ctCriteria = await CTCriteria.find({ isActive: true });
-        const eligibleMap = {};
-        ctCriteria.forEach(c => {
-            eligibleMap[c.educationType] = c.classes.map(cls => ({
-                className: cls.className,
-                requiresDisability: cls.requiresDisability
-            }));
-        });
-        // Build $or array for eligible learners
-        const orConditions = [];
-        Object.entries(eligibleMap).forEach(([educationType, classes]) => {
-            classes.forEach(cls => {
-                // Male
-                orConditions.push({
-                    education: educationType,
-                    class: cls.className,
-                    gender: "M",
-                    ...(cls.requiresDisability.male
-                        ? { isWithDisability: true }
-                        : {})
-                });
-                // Female
-                orConditions.push({
-                    education: educationType,
-                    class: cls.className,
-                    gender: "F",
-                    ...(cls.requiresDisability.female
-                        ? { isWithDisability: true }
-                        : {})
-                });
-            });
-        });
+        // Active criteria for the requested year (?year=, default current)
+        const ctCriteria = await activeCriteria(resolveYear(req));
+        const orConditions = await eligibilityConditions(ctCriteria);
+        if (!orConditions.length) {
+            // No criteria set up for this year: nobody is eligible
+            orConditions.push({ _id: null });
+        }
         // Only validated learners + filters
         const matchStage = {
             ...params,
@@ -249,38 +202,13 @@ exports.schoolWithEligibleLearners = async (req, res) => {
                 .json({ success: false, error: "Payam name is required" });
         }
 
-        const ctCriteria = await CTCriteria.find({ isActive: true });
-        const eligibleMap = {};
-        ctCriteria.forEach(c => {
-            eligibleMap[c.educationType] = c.classes.map(cls => ({
-                className: cls.className,
-                requiresDisability: cls.requiresDisability
-            }));
-        });
-
-        const orConditions = [];
-        Object.entries(eligibleMap).forEach(([educationType, classes]) => {
-            classes.forEach(cls => {
-                // Male
-                orConditions.push({
-                    education: educationType,
-                    class: cls.className,
-                    gender: "M",
-                    ...(cls.requiresDisability.male
-                        ? { isWithDisability: true }
-                        : {})
-                });
-                // Female
-                orConditions.push({
-                    education: educationType,
-                    class: cls.className,
-                    gender: "F",
-                    ...(cls.requiresDisability.female
-                        ? { isWithDisability: true }
-                        : {})
-                });
-            });
-        });
+        // Active criteria for the requested year (?year=, default current)
+        const ctCriteria = await activeCriteria(resolveYear(req));
+        const orConditions = await eligibilityConditions(ctCriteria);
+        if (!orConditions.length) {
+            // No criteria set up for this year: nobody is eligible
+            orConditions.push({ _id: null });
+        }
 
         const matchStage = {
             payam28,

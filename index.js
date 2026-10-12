@@ -1,3 +1,9 @@
+// Compatibility fix for Node.js 25+ where SlowBuffer was removed
+const buffer = require("buffer");
+if (!buffer.SlowBuffer) {
+  buffer.SlowBuffer = buffer.Buffer;
+}
+
 const app = require("express")();
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
@@ -29,6 +35,7 @@ const capitationSettings = require("./routes/capitationSettings");
 const capitationReportsRoutes = require("./routes/capitationReportsRoutes");
 const attendanceAnalyticsRoutes = require("./routes/attendanceAnalytics");
 const { accessControl } = require("./middlewares/accessControl");
+const { auditLog } = require("./middlewares/auditLog");
 const { clearCache } = require("./middlewares/cacheMiddleware");
 
 // Swagger
@@ -72,6 +79,10 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 // Connect to Database
 dbConnect();
+// Promotion runs cannot resume after a restart; mark them so they can be retried
+require("./services/promotionService")
+  .markInterruptedRuns()
+  .catch((err) => console.error("[promotion] startup check failed:", err.message));
 
 // Apply Middleware
 app.use(morgan("dev"));
@@ -82,6 +93,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Authentication + module read/write permissions for every API route
 app.use("/express", accessControl);
 
+// Audit trail for user management and sign-ins
+app.use("/express", auditLog);
+
 // Drop cached user lists after any successful user write
 app.use("/express/user", (req, res, next) => {
   if (req.method !== "GET") {
@@ -90,6 +104,21 @@ app.use("/express/user", (req, res, next) => {
         clearCache(["/express/user/users", "/express/user/getUserByCriteria"]).catch(
           () => {}
         );
+      }
+    });
+  }
+  next();
+});
+
+// Eligibility results depend on the criteria; drop them after criteria changes
+app.use("/express/ct/criteria", (req, res, next) => {
+  if (req.method !== "GET") {
+    res.on("finish", () => {
+      if (res.statusCode < 300) {
+        clearCache(
+          ["/express/ct/eligible", "/express/ct/stat-card", "/express/disability-eligibility"],
+          true
+        ).catch(() => {});
       }
     });
   }
@@ -115,6 +144,7 @@ app.use("/express/census", censusRoutes);
 app.use("/express/capitation-settings", capitationSettings);
 app.use("/express/capitation-reports", capitationReportsRoutes);
 app.use("/express/attendance-analytics", attendanceAnalyticsRoutes);
+app.use("/express/promotion", require("./routes/promotion"));
 
 // Swagger Documentation Route
 app.use("/express/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

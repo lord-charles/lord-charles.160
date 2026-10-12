@@ -1,5 +1,6 @@
 const CashTransfer = require("../models/ct");
 const CTCriteria = require("../models/CTCriteria");
+const { matchesTargeting } = require("../services/ctCriteriaService");
 const mongoose = require("mongoose");
 const SchoolData = require("../models/2023Data");
 const School = require("../models/school-data");
@@ -45,11 +46,27 @@ exports.createCashTransfer = async (req, res) => {
       return res.status(404).json({ error: "Learner not found" });
     }
 
-    const criteria = await CTCriteria.findOne({
+    // Get school ownership dynamically
+    const schoolInfo = await School.findOne({ code: learner.code }).select(
+      "schoolOwnerShip"
+    );
+    const schoolOwnership = schoolInfo?.schoolOwnerShip || "Public";
+
+    // Criteria for this year whose targeting covers the learner's school
+    const candidates = await CTCriteria.find({
       tranche: tranche,
       educationType: learner.education,
       isActive: true,
-    });
+      academicYear: new Date().getFullYear(),
+    }).lean();
+    const criteria = candidates.find((c) =>
+      matchesTargeting(c, {
+        state10: learner.state10,
+        county28: learner.county28,
+        payam28: learner.payam28,
+        ownership: schoolOwnership,
+      })
+    );
 
     if (!criteria) {
       return res.status(400).json({
@@ -66,12 +83,6 @@ exports.createCashTransfer = async (req, res) => {
         .status(400)
         .json({ error: "CT Criteria not found for this learner's class" });
     }
-
-    // Get school ownership dynamically
-    const schoolInfo = await School.findOne({ code: learner.code }).select(
-      "schoolOwnerShip"
-    );
-    const schoolOwnership = schoolInfo?.schoolOwnerShip || "Public";
 
     const cashTransferData = {
       tranche: tranche,
@@ -242,6 +253,7 @@ exports.getStatCardData = async (req, res) => {
     const criteriaData = await CTCriteria.find({
       tranche: parseInt(tranche || 1),
       isActive: true,
+      academicYear: parseInt(year) || new Date().getFullYear(),
     });
 
     // Create amount lookup map
@@ -255,36 +267,53 @@ exports.getStatCardData = async (req, res) => {
       });
     });
 
-    // Calculate total disbursed amount separately
-    const disbursedRecords = await CashTransfer.find({
-      ...matchConditions,
-      "amounts.approved.isDisbursed": true,
-    }).select("learner.classInfo.class learner.gender learner.disabilities");
+    // Total disbursed: count disbursed learners per class/gender/disability in
+    // the database (a few rows) instead of loading every record into Node
+    const disbursedGroups = await CashTransfer.aggregate([
+      { $match: { ...matchConditions, "amounts.approved.isDisbursed": true } },
+      {
+        $group: {
+          _id: {
+            class: "$learner.classInfo.class",
+            gender: "$learner.gender",
+            hasDisability: {
+              $anyElementTrue: [
+                {
+                  $map: {
+                    input: {
+                      $objectToArray: {
+                        $ifNull: [
+                          { $arrayElemAt: ["$learner.disabilities.disabilities", 0] },
+                          {},
+                        ],
+                      },
+                    },
+                    as: "d",
+                    in: {
+                      $and: [{ $isNumber: "$$d.v" }, { $gt: ["$$d.v", 1] }],
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
 
     let totalAmountDisbursed = 0;
-    disbursedRecords.forEach((record) => {
-      const learnerClass = record.learner?.classInfo?.class;
-      const gender = record.learner?.gender;
-      const disabilities = record.learner?.disabilities?.[0]?.disabilities;
-
-      if (learnerClass && amountMap[learnerClass]) {
-        const classData = amountMap[learnerClass];
-
-        // Check if learner qualifies for payment
-        let qualifies = false;
-        if (gender === "F" && !classData.requiresDisability.female) {
-          qualifies = true;
-        } else if (gender === "M" && classData.requiresDisability.male) {
-          // Check if male has disability
-          const hasDisability =
-            disabilities && Object.values(disabilities).some((val) => val > 1);
-          if (hasDisability) qualifies = true;
-        }
-
-        if (qualifies) {
-          totalAmountDisbursed += classData.amount;
-        }
-      }
+    disbursedGroups.forEach(({ _id, count }) => {
+      const classData = amountMap[_id.class];
+      if (!classData) return;
+      // Same payment rule as before: girls unless the class requires a
+      // disability for girls; boys only when required and they have one
+      const qualifies =
+        (_id.gender === "F" && !classData.requiresDisability.female) ||
+        (_id.gender === "M" &&
+          classData.requiresDisability.male &&
+          _id.hasDisability);
+      if (qualifies) totalAmountDisbursed += classData.amount * count;
     });
 
     // Simple aggregation pipeline for other stats
@@ -982,7 +1011,10 @@ exports.disburseCash = async (req, res) => {
     const { paymentWitnesses, dateDisbursed, disbursedBy } = req.body;
 
     // Find the active tranche from CTCriteria
-    const activeCriteria = await CTCriteria.findOne({ isActive: true });
+    const activeCriteria = await CTCriteria.findOne({
+      isActive: true,
+      academicYear: new Date().getFullYear(),
+    });
     if (!activeCriteria) {
       return res.status(404).json({ error: "No active tranche found" });
     }
@@ -1138,7 +1170,7 @@ exports.downloadCTBatch = async (req, res) => {
     const [docs, criteriaData] = await Promise.all([
       query.lean(),
       // Pre-fetch all active criteria to avoid multiple queries
-      CTCriteria.find({ isActive: true }).lean(),
+      CTCriteria.find({ isActive: true, academicYear: currentYear }).lean(),
     ]);
 
     // Early return if no documents found

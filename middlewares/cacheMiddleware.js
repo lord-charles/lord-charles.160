@@ -1,98 +1,102 @@
 const redisClient = require('../config/redisConfig');
 
 /**
- * Redis caching middleware for GET requests
- * @param {number} duration - Cache duration in seconds (default: 600 seconds / 10 minutes)
+ * Requests computing a response right now, by cache key. A second request for
+ * the same key waits for the first instead of re-running the same (often
+ * heavy) query, so an expired key does not stampede the database.
  */
-const cacheMiddleware = (duration = 600) => {
+const inFlight = new Map();
+
+const createCachingMiddleware = (method, keyFor, duration) => {
   return async (req, res, next) => {
-    // Only cache GET requests
-    if (req.method !== 'GET') {
+    if (req.method !== method) return next();
+
+    const cacheKey = keyFor(req);
+
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        res.set('X-Cache', 'HIT');
+        return res.json(JSON.parse(cached));
+      }
+
+      const pending = inFlight.get(cacheKey);
+      if (pending) {
+        const body = await pending.catch(() => undefined);
+        if (body !== undefined) {
+          res.set('X-Cache', 'SHARED');
+          return res.json(body);
+        }
+        // The first request failed: compute this one normally
+      }
+    } catch (error) {
+      console.error('Cache middleware error:', error);
       return next();
     }
 
-    // Generate a unique cache key based on the full URL and query parameters
-    const cacheKey = `api:${req.originalUrl || req.url}`;
+    let settle;
+    const promise = new Promise((resolve, reject) => {
+      settle = { resolve, reject };
+    });
+    promise.catch(() => {}); // waiters handle rejection themselves
+    inFlight.set(cacheKey, promise);
 
-    try {
-      // Try to get cached response
-      const cachedResponse = await redisClient.get(cacheKey);
+    const done = (body, ok) => {
+      if (inFlight.get(cacheKey) !== promise) return;
+      inFlight.delete(cacheKey);
+      if (ok) settle.resolve(body);
+      else settle.reject(new Error('not cacheable'));
+    };
 
-      if (cachedResponse) {
-        // Return cached response
-        const parsedResponse = JSON.parse(cachedResponse);
-        return res.json(parsedResponse);
+    const originalJson = res.json;
+    res.json = function (body) {
+      // Only cache successful responses so a transient error isn't
+      // replayed (with a 200 status) for the whole cache duration
+      const ok = this.statusCode >= 200 && this.statusCode < 300;
+      if (ok) {
+        redisClient
+          .setex(cacheKey, duration, JSON.stringify(body))
+          .catch((err) => console.error('Redis cache error:', err));
       }
+      done(body, ok);
+      res.set('X-Cache', 'MISS');
+      return originalJson.call(this, body);
+    };
+    // Responses that never reach res.json (errors, aborted requests)
+    res.on('close', () => done(undefined, false));
 
-      // If no cache exists, modify res.json to store the response
-      const originalJson = res.json;
-      res.json = function (body) {
-        // Only cache successful responses so a transient error isn't
-        // replayed (with a 200 status) for the whole cache duration
-        if (this.statusCode >= 200 && this.statusCode < 300) {
-          redisClient.setex(cacheKey, duration, JSON.stringify(body))
-            .catch(err => console.error('Redis cache error:', err));
-        }
-
-        // Call the original res.json with the response body
-        return originalJson.call(this, body);
-      };
-
-      next();
-    } catch (error) {
-      console.error('Cache middleware error:', error);
-      // If there's an error with Redis, continue without caching
-      next();
-    }
+    next();
   };
 };
 
 /**
- * Redis caching middleware for specific POST requests
+ * Redis caching middleware for GET requests
  * @param {number} duration - Cache duration in seconds (default: 600 seconds / 10 minutes)
- * @returns {Function} Express middleware
  */
-const cachePostMiddleware = (duration = 600) => {
-  return async (req, res, next) => {
-    if (req.method !== 'POST') {
-      return next();
-    }
+const cacheMiddleware = (duration = 600) =>
+  createCachingMiddleware('GET', (req) => `api:${req.originalUrl || req.url}`, duration);
 
-    try {
-      // Generate a unique cache key based on the URL and request body
-      const bodyHash = JSON.stringify(req.body);
-      const cacheKey = `api:post:${req.originalUrl}:${bodyHash}`;
+/**
+ * Redis caching middleware for specific POST requests (keyed by URL + body)
+ * @param {number} duration - Cache duration in seconds (default: 600 seconds / 10 minutes)
+ */
+const cachePostMiddleware = (duration = 600) =>
+  createCachingMiddleware(
+    'POST',
+    (req) => `api:post:${req.originalUrl}:${JSON.stringify(req.body)}`,
+    duration
+  );
 
-      // Try to get cached response
-      const cachedResponse = await redisClient.get(cacheKey);
-
-      if (cachedResponse) {
-        // Return cached response
-        const parsedResponse = JSON.parse(cachedResponse);
-        return res.json(parsedResponse);
-      }
-
-      // If no cache exists, modify res.json to store the response
-      const originalJson = res.json;
-      res.json = function (body) {
-        // Only cache successful responses so a transient error isn't
-        // replayed (with a 200 status) for the whole cache duration
-        if (this.statusCode >= 200 && this.statusCode < 300) {
-          redisClient.setex(cacheKey, duration, JSON.stringify(body))
-            .catch(err => console.error('Redis cache error:', err));
-        }
-
-        // Call the original res.json with the response body
-        return originalJson.call(this, body);
-      };
-
-      next();
-    } catch (error) {
-      console.error('POST Cache middleware error:', error);
-      // If there's an error with Redis, continue without caching
-      next();
-    }
-  };
+// SCAN instead of KEYS: KEYS blocks Redis while it walks every key
+const scanKeys = async (pattern) => {
+  const found = [];
+  let cursor = '0';
+  do {
+    const [next, keys] = await redisClient.scan(cursor, 'MATCH', pattern, 'COUNT', 500);
+    cursor = next;
+    found.push(...keys);
+  } while (cursor !== '0');
+  return found;
 };
 
 /**
@@ -107,13 +111,13 @@ const clearCache = async (routes, includePost = false) => {
     }
 
     const keys = await Promise.all(
-      routes.flatMap(route => [
-        redisClient.keys(`api:${route}*`),
-        ...(includePost ? [redisClient.keys(`api:post:${route}*`)] : [])
+      routes.flatMap((route) => [
+        scanKeys(`api:${route}*`),
+        ...(includePost ? [scanKeys(`api:post:${route}*`)] : []),
       ])
     );
 
-    const flatKeys = keys.flat();
+    const flatKeys = [...new Set(keys.flat())];
     if (flatKeys.length > 0) {
       await redisClient.del(...flatKeys);
       console.log(`Cleared cache for routes: ${routes.join(', ')}`);
@@ -127,5 +131,5 @@ const clearCache = async (routes, includePost = false) => {
 module.exports = {
   cacheMiddleware,
   cachePostMiddleware,
-  clearCache
+  clearCache,
 };

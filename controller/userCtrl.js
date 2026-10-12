@@ -6,6 +6,7 @@ const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
 const { getJwtSecret } = require("../middlewares/accessControl");
 const userModel = require("../models/userModel");
+const { clientIp } = require("../middlewares/auditLog");
 
 //Register CHECKED
 const createUser = asyncHandler(async (req, res) => {
@@ -128,6 +129,12 @@ const logIn = asyncHandler(async (req, res) => {
       .json({ message: "Your account is blocked. Contact an administrator." });
     return;
   }
+
+  // Fire-and-forget: a failed write must not block sign-in
+  User.updateOne(
+    { _id: user._id },
+    { $set: { lastLoginAt: new Date(), lastLoginIp: clientIp(req) } }
+  ).catch((err) => console.error("[logIn] lastLoginAt update failed:", err.message));
 
   {
     const token = jwt.sign(
@@ -618,9 +625,12 @@ const blockUser = asyncHandler(async (req, res) => {
     req.params.id,
     {
       isBlocked: true,
+      blockedAt: new Date(),
+      blockedBy: req.authUser?._id || null,
+      blockedReason: (req.body?.reason || "").trim() || null,
     },
     { new: true }
-  );
+  ).select("-passwordHash -passwordResetToken -passwordResetExpires");
   if (!user) {
     res.status(404).send("user not found");
   } else {
@@ -636,9 +646,10 @@ const unblockUser = asyncHandler(async (req, res) => {
     req.params.id,
     {
       isBlocked: false,
+      $unset: { blockedAt: 1, blockedBy: 1, blockedReason: 1 },
     },
     { new: true }
-  );
+  ).select("-passwordHash -passwordResetToken -passwordResetExpires");
   if (!user) {
     res.status(404).send("user not found");
   } else {
@@ -733,7 +744,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
   const user = await User.findOne({
     passwordResetToken: hashedToken,
-    passwordResetToken: { $gt: Date.now() },
+    passwordResetExpires: { $gt: Date.now() },
   });
   if (!user) {
     res.status(404).json({ message: "token expired, please try again later" });
@@ -742,7 +753,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save();
-    res.status(200).json({ message: "password updated successfully", user });
+    res.status(200).json({ message: "password updated successfully" });
   }
 });
 

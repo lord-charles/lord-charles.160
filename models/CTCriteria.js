@@ -28,6 +28,15 @@ const ctcriteriaSchema = new mongoose.Schema(
       required: true,
     },
     currency: { type: String, required: true, default: "SSP" },
+    // Criteria apply to one academic year only; a new year starts empty
+    academicYear: { type: Number, required: true, index: true },
+    // Who qualifies. An empty list means "all" for that dimension.
+    targeting: {
+      ownership: { type: [String], default: [] },
+      states: { type: [String], default: [] },
+      counties: { type: [String], default: [] },
+      payams: { type: [String], default: [] },
+    },
     createdBy: String,
     updatedBy: String,
   },

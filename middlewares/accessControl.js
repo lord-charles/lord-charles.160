@@ -70,8 +70,11 @@ const R = "read";
  * Routes not listed are open (reads and query-style POSTs).
  */
 const RULES = [
+  // ---- Learner promotion: Super Admin only ----
+  ["*", /^\/promotion(\/|$)/, "superAdmin", W],
   // ---- Users & roles ----
   ["GET", /^\/user\/users\/get-all\/?$/, ["Users"], R],
+  ["GET", /^\/user\/users\/summary\/?$/, ["Users"], R],
   ["GET", /^\/user\/users\/get-email\/?$/, ["Users"], R],
   ["GET", /^\/user\/users\/get\/all\/count\/?$/, ["Users"], R],
   ["POST", /^\/user\/register\/?$/, "userWrite", W, { legacy: true }],
@@ -122,6 +125,7 @@ const RULES = [
   ["DELETE", /^\/ct\/[^/]+\/?$/, ["Cash Transfers"], W],
   ["POST", /^\/ct\/disburse\/[^/]+\/?$/, ["Cash Transfers"], W, { legacy: true }],
   ["POST", /^\/ct\/criteria\/?$/, ["Cash Transfers"], W],
+  ["POST", /^\/ct\/criteria\/copy\/?$/, ["Cash Transfers"], W],
   ["PATCH", /^\/ct\/criteria\/[^/]+\/?$/, ["Cash Transfers"], W],
   ["DELETE", /^\/ct\/criteria\/[^/]+\/?$/, ["Cash Transfers"], W],
   ["POST", /^\/disability-eligibility\/validateLwd\/[^/]+\/?$/, ["Cash Transfers"], W, { legacy: true }],
@@ -148,7 +152,7 @@ const RULES = [
 ];
 
 const findRule = (method, path) =>
-  RULES.find(([m, re]) => m === method && re.test(path));
+  RULES.find(([m, re]) => (m === "*" || m === method) && re.test(path));
 
 const deny = (res, status, message, extra = {}) =>
   res.status(status).json({ success: false, message, ...extra });
@@ -248,6 +252,13 @@ const accessControl = async (req, res, next) => {
 
     if (!user && !(opts.legacy && !requireAll)) {
       return deny(res, 401, "Authentication required.");
+    }
+
+    if (modules === "superAdmin") {
+      if (!isSuperAdmin(user)) {
+        return deny(res, 403, "Only a Super Admin can do this.");
+      }
+      return next();
     }
 
     if (modules === "userWrite") {

@@ -39,6 +39,8 @@ const schoolDataSchema = new mongoose.Schema(
           classChanged: { type: Boolean, default: false },
         },
         date: { type: Date, default: Date.now },
+        // Set when written by a bulk promotion run (used to undo it)
+        promotionRunId: { type: mongoose.Schema.Types.ObjectId },
       },
     ],
     isCTValidated: [
@@ -243,6 +245,8 @@ const schoolDataSchema = new mongoose.Schema(
           required: false,
           default: "",
         },
+        // Set when written by a bulk promotion run (used to undo it)
+        promotionRunId: { type: mongoose.Schema.Types.ObjectId },
         createdAt: {
           type: Date,
           default: Date.now,

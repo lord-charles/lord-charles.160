@@ -7,7 +7,8 @@ const ctCriteriaController = require("../controller/ctcriteria");
 
 // CRUD routes
 router.post("/", cashTransferController.createCashTransfer);
-router.get("/", cacheMiddleware(600));
+// GET / (list all transfers) is intentionally not exposed: it would return
+// every record and pass raw query params to MongoDB.
 router.get("/:id", cashTransferController.getCashTransferById);
 router.patch("/:id", cashTransferController.updateCashTransfer);
 router.delete("/:id", cashTransferController.deleteCashTransfer);
@@ -41,7 +42,8 @@ router.get(
 );
 router.get(
   "/eligible/learners/stats",
-  cacheMiddleware(600),
+  // Heavy aggregate over all learners; cleared whenever criteria change
+  cacheMiddleware(3600),
   ctEligibleController.getEligibleLearnersStats
 );
 
@@ -54,6 +56,7 @@ router.get(
 
 // CTCriteria CRUD routes
 router.post("/criteria", ctCriteriaController.createCTCriteria);
+router.post("/criteria/copy", ctCriteriaController.copyCTCriteria);
 router.get("/get/criteria", ctCriteriaController.getAllCTCriteria);
 router.get("/get/criteria/:id", ctCriteriaController.getCTCriteriaById);
 router.patch("/criteria/:id", ctCriteriaController.updateCTCriteria);

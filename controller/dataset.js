@@ -897,6 +897,20 @@ const generateReferenceCode = async (schoolCode, grade, year) => {
     throw error;
   }
 };
+/**
+ * True when the learner's history records a promotion in `year` that was not
+ * later revoked or reversed by a demotion in the same year.
+ */
+const isPromotedInYear = (learner, year) => {
+  let promoted = false;
+  for (const h of learner.academicHistory || []) {
+    if (Number(h.year) !== Number(year)) continue;
+    if (h.status?.promoted) promoted = true;
+    if (h.status?.promotionRevoked || h.status?.demoted) promoted = false;
+  }
+  return promoted;
+};
+
 const updateSchoolDataFieldsBulk = async (req, res) => {
   try {
     const { ids, loggedInUser, updateFields } = req.body;
@@ -978,6 +992,23 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     // Get all students data first
     let studentsData = await SchoolData.find({ _id: { $in: ids } });
 
+    // A learner can be promoted only once per academic year: repeated taps in
+    // the app or a promotion after a bulk run must not move them up again
+    let alreadyPromoted = 0;
+    if (updateFields.progress?.status === "Promoted") {
+      const year = Number(updateFields.progress.year) || currentDate.getFullYear();
+      const before = studentsData.length;
+      studentsData = studentsData.filter((s) => !isPromotedInYear(s, year));
+      alreadyPromoted = before - studentsData.length;
+      if (studentsData.length === 0) {
+        // Same message the app already shows as "already updated"
+        return res.status(404).json({
+          message: "No school data updated",
+          alreadyPromoted,
+        });
+      }
+    }
+
     // Handle class changes based on status
     if (updateFields.progress && updateFields.progress.status) {
       const validStatuses = [
@@ -1056,7 +1087,9 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
         if (transferUpdateOperations.length > 0) {
           await SchoolData.bulkWrite(transferUpdateOperations);
           // Refresh students data after school updates
-          studentsData = await SchoolData.find({ _id: { $in: ids } });
+          studentsData = await SchoolData.find({
+            _id: { $in: studentsData.map((st) => st._id) },
+          });
         }
       }
 
@@ -1104,7 +1137,9 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
       if (classUpdateOperations.length > 0) {
         await SchoolData.bulkWrite(classUpdateOperations);
         // Refresh students data after class updates
-        studentsData = await SchoolData.find({ _id: { $in: ids } });
+        studentsData = await SchoolData.find({
+            _id: { $in: studentsData.map((st) => st._id) },
+          });
       }
     }
 
@@ -1244,6 +1279,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
     res.status(200).json({
       message: "School data updated successfully",
       modifiedCount: result.modifiedCount,
+      alreadyPromoted,
     });
   } catch (error) {
     console.error("Error updating school data:", error);

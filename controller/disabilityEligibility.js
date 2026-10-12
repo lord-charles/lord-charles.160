@@ -1,5 +1,5 @@
 const SchoolData = require("../models/2023Data");
-const CTCriteria = require("../models/CTCriteria");
+const { activeCriteria, resolveYear } = require("../services/ctCriteriaService");
 
 // Get counties with eligible learners based on disability criteria
 const getEligibleCountiesWithDisability = async (req, res) => {
@@ -23,7 +23,7 @@ const getEligibleCountiesWithDisability = async (req, res) => {
 
     if (ct) {
       // Get active disability criteria
-      const criteria = await CTCriteria.find({ isActive: true });
+      const criteria = await activeCriteria(resolveYear(req));
       if (!criteria || criteria.length === 0) {
         return res.status(404).json({
           success: false,
@@ -87,7 +87,7 @@ const getEligiblePayamsWithDisability = async (req, res) => {
     if (lwd) match.isWithDisability = true;
 
     if (ct) {
-      const criteria = await CTCriteria.find({ isActive: true });
+      const criteria = await activeCriteria(resolveYear(req));
       if (!criteria || criteria.length === 0) {
         return res.status(404).json({
           success: false,
@@ -154,7 +154,7 @@ const getEligibleSchoolsWithDisability = async (req, res) => {
       additionalMatch.isWithDisability = true;
     }
     if (ct) {
-      const criteria = await CTCriteria.find({ isActive: true });
+      const criteria = await activeCriteria(resolveYear(req));
       if (!criteria || criteria.length === 0) {
         return res.status(404).json({
           success: false,
@@ -219,7 +219,7 @@ const getEligibleStudentsInSchool = async (req, res) => {
 
     let query = { code, isDroppedOut: false };
     if (ct) {
-      const criteria = await CTCriteria.find({ isActive: true });
+      const criteria = await activeCriteria(resolveYear(req));
       if (!criteria || criteria.length === 0) {
         return res.status(404).json({
           success: false,

@@ -122,6 +122,11 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
+    lastLoginAt: Date,
+    lastLoginIp: String,
+    blockedAt: Date,
+    blockedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    blockedReason: String,
   },
 
   {
