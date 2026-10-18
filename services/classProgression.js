@@ -1,5 +1,10 @@
 /**
- * Next-class rules for promotion. Class names in the data are inconsistent
+ * Next-class rules for promotion.
+ *
+ * A learner in a final grade moves to a holding class (P9, S5 or ECD4) and
+ * gets a `transition` record, which tells them apart from the many older
+ * P9/S5/ECD4 records created before transitions existed. Holding classes are
+ * never promoted again; a later transition step moves learners on. Class names in the data are inconsistent
  * (e.g. "Level2", "Level2(P3&P4)", "Level2(P2&3)"), so every known spelling
  * maps to a standard class. Classes that do not exist in the system (P9, S5,
  * ECD4, Level7…) are reported as unknown and never touched.
@@ -15,28 +20,34 @@ const ALP_STANDARD = {
 };
 
 const SEQUENCES = [
-  { prefix: "P", max: 8 },
-  { prefix: "S", max: 4 },
-  { prefix: "ECD", max: 3 },
+  // nextLevel: where learners finishing this sequence go; null = finished
+  { prefix: "P", max: 8, holding: "P9", nextLevel: "SEC" },
+  { prefix: "S", max: 4, holding: "S5", nextLevel: null },
+  { prefix: "ECD", max: 3, holding: "ECD4", nextLevel: "PRI" },
 ];
+
+const HOLDING_CLASSES = SEQUENCES.map((s) => s.holding);
 
 /**
  * @returns {{ status: "promote", standard, next }
- *          | { status: "final", standard }
+ *          | { status: "final", standard, next, transition: { status, nextLevel } }
+ *          | { status: "holding", standard }
  *          | { status: "unknown" }}
  */
 function classRule(rawClass) {
   const cls = String(rawClass || "").trim();
   if (!cls) return { status: "unknown" };
 
-  for (const { prefix, max } of SEQUENCES) {
+  for (const { prefix, max, holding, nextLevel } of SEQUENCES) {
     const m = cls.match(new RegExp(`^${prefix}(\\d+)$`, "i"));
     if (m) {
       const n = parseInt(m[1], 10);
+      // P9/S5/ECD4: finished, waiting for (or past) the next level
+      if (n === max + 1) return { status: "holding", standard: holding };
       if (n < 1 || n > max) return { status: "unknown" };
       const standard = `${prefix}${n}`;
       return n === max
-        ? { status: "final", standard }
+        ? { status: "final", standard, next: holding, transition: transitionFor(nextLevel) }
         : { status: "promote", standard, next: `${prefix}${n + 1}` };
     }
   }
@@ -47,11 +58,21 @@ function classRule(rawClass) {
     const n = parseInt(level[1], 10);
     if (!ALP_STANDARD[n]) return { status: "unknown" };
     // Levels 1-4 are primary ALP, 5-6 secondary; 4 and 6 end a cycle
-    if (n === 4 || n === 6) return { status: "final", standard: ALP_STANDARD[n] };
+    // Level 4 equals P7/P8 and Level 6 equals S3/S4, so they finish the same way
+    if (n === 4)
+      return { status: "final", standard: ALP_STANDARD[n], next: "P9", transition: transitionFor("SEC") };
+    if (n === 6)
+      return { status: "final", standard: ALP_STANDARD[n], next: "S5", transition: transitionFor(null) };
     return { status: "promote", standard: ALP_STANDARD[n], next: ALP_STANDARD[n + 1] };
   }
 
   return { status: "unknown" };
 }
 
-module.exports = { classRule };
+function transitionFor(nextLevel) {
+  return nextLevel
+    ? { status: "awaiting", nextLevel }
+    : { status: "completed", nextLevel: null };
+}
+
+module.exports = { classRule, HOLDING_CLASSES };

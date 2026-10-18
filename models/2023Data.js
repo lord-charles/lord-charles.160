@@ -25,6 +25,17 @@ const schoolDataSchema = new mongoose.Schema(
     lastName: String,
     eieStatus: String,
     isPromoted: { type: Boolean, default: false },
+    // Set when a learner finishes a level (P8, S4, ECD3, ALP Level 4/6) and
+    // moves to a holding class (P9, S5, ECD4). Older P9/S5/ECD4 records
+    // have no transition and are not real transitions.
+    transition: {
+      status: { type: String, enum: ["awaiting", "completed", "transitioned"] },
+      fromClass: String,
+      nextLevel: String, // SEC, PRI, or null when the learner finished school
+      year: Number,
+      date: Date,
+      promotionRunId: { type: mongoose.Schema.Types.ObjectId },
+    },
     isDroppedOut: { type: Boolean, default: false },
     academicHistory: [
       {

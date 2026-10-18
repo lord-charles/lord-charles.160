@@ -104,6 +104,7 @@ async function previewPromotion(rawScope, year) {
   const transitions = {};
   const finalGrades = {};
   const unknownClasses = {};
+  const holdingClasses = {};
   let toPromote = 0;
   let toComplete = 0;
 
@@ -114,15 +115,19 @@ async function previewPromotion(rawScope, year) {
       transitions[key] = (transitions[key] || 0) + count;
       toPromote += count;
     } else if (rule.status === "final") {
-      finalGrades[rule.standard] = (finalGrades[rule.standard] || 0) + count;
+      const key = `${rule.standard} → ${rule.next}`;
+      finalGrades[key] = (finalGrades[key] || 0) + count;
       toComplete += count;
+    } else if (rule.status === "holding") {
+      holdingClasses[rule.standard] = (holdingClasses[rule.standard] || 0) + count;
     } else {
       const key = cls || "(no class)";
       unknownClasses[key] = (unknownClasses[key] || 0) + count;
     }
   }
 
-  const unknownTotal = Object.values(unknownClasses).reduce((a, b) => a + b, 0);
+  const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+  const unknownTotal = sum(unknownClasses);
 
   return {
     academicYear: year,
@@ -136,8 +141,10 @@ async function previewPromotion(rawScope, year) {
       droppedOut,
       alreadyPromoted,
       unknownClass: unknownTotal,
+      inHoldingClass: sum(holdingClasses),
     },
     unknownClasses,
+    holdingClasses,
   };
 }
 
@@ -164,15 +171,32 @@ async function applyBatch(run, learners, by) {
   let promoted = 0;
   let completed = 0;
   let unknown = 0;
+  let holding = 0;
 
   for (const l of learners) {
     const rule = classRule(l.class);
-    if (rule.status === "unknown") {
-      unknown++;
+    if (rule.status === "unknown" || rule.status === "holding") {
+      if (rule.status === "holding") holding++;
+      else unknown++;
       continue;
     }
     const isFinal = rule.status === "final";
-    const toClass = isFinal ? l.class : rule.next;
+    const toClass = rule.next;
+    const set = {
+      class: toClass,
+      isPromoted: true,
+      modifiedBy: by,
+      lastModifiedDate: date,
+    };
+    if (isFinal) {
+      set.transition = {
+        ...rule.transition,
+        fromClass: l.class,
+        year: run.academicYear,
+        date,
+        promotionRunId: run._id,
+      };
+    }
 
     ops.push({
       updateOne: {
@@ -184,12 +208,7 @@ async function applyBatch(run, learners, by) {
           ...notPromotedIn(run.academicYear),
         },
         update: {
-          $set: {
-            class: toClass,
-            isPromoted: true,
-            modifiedBy: by,
-            lastModifiedDate: date,
-          },
+          $set: set,
           $push: {
             academicHistory: historyEntry(run.academicYear, run._id, date),
             progress: {
@@ -200,9 +219,11 @@ async function applyBatch(run, learners, by) {
               school: l.school || "",
               status: "Promoted",
               isAwaitingTransition: isFinal,
-              remarks: isFinal
-                ? "Learner promoted - Ready for transition to next level"
-                : "Learner promoted to next grade",
+              remarks: !isFinal
+                ? "Learner promoted to next grade"
+                : rule.transition.nextLevel
+                ? `Finished ${l.class} - awaiting transition to ${rule.transition.nextLevel}`
+                : `Finished ${l.class} - completed school`,
               promotionRunId: run._id,
               createdAt: date,
             },
@@ -226,7 +247,7 @@ async function applyBatch(run, learners, by) {
     await PromotionRunItem.insertMany(items, { ordered: false });
     await SchoolData.bulkWrite(ops, { ordered: false });
   }
-  return { promoted, completed, unknown };
+  return { promoted, completed, unknown, holding };
 }
 
 /** Runs in the background; progress is saved on the run document. */
@@ -240,7 +261,7 @@ async function executeRun(run, by) {
 
     let batch = [];
     const flush = async () => {
-      const { promoted, completed, unknown } = await applyBatch(run, batch, by);
+      const { promoted, completed, unknown, holding } = await applyBatch(run, batch, by);
       await PromotionRun.updateOne(
         { _id: run._id },
         {
@@ -249,6 +270,7 @@ async function executeRun(run, by) {
             promoted,
             completedFinalGrade: completed,
             "skipped.unknownClass": unknown,
+            "skipped.inHoldingClass": holding,
           },
         }
       );
@@ -298,6 +320,7 @@ async function startRun(rawScope, year, user) {
       droppedOut: preview.skipped.droppedOut,
       alreadyPromoted: preview.skipped.alreadyPromoted,
       unknownClass: 0, // counted while running
+      inHoldingClass: 0,
     },
     createdBy: user?._id,
     createdByUsername: user?.username,
@@ -346,6 +369,7 @@ async function undoRun(runId, user) {
               },
               update: {
                 $set: { class: it.fromClass, lastModifiedDate: new Date() },
+                ...(it.finalGrade ? { $unset: { transition: "" } } : {}),
                 $pull: {
                   academicHistory: { promotionRunId: run._id },
                   progress: { promotionRunId: run._id },

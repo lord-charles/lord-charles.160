@@ -710,6 +710,7 @@ const getLearnersV2 = async (req, res) => {
           class: { $first: "$class" },
           dob: { $first: "$dob" },
           isPromoted: { $first: "$isPromoted" },
+          transition: { $first: "$transition" },
           isDroppedOut: { $first: "$isDroppedOut" },
           disabilities: { $first: "$disabilities" },
           hasDisability: { $first: "$hasDisability" },
@@ -733,6 +734,7 @@ const getLearnersV2 = async (req, res) => {
           class: 1,
           dob: 1,
           isPromoted: 1,
+          transition: 1,
           isDroppedOut: 1,
           disabilities: 1,
           hasDisability: 1,
@@ -901,6 +903,8 @@ const generateReferenceCode = async (schoolCode, grade, year) => {
  * True when the learner's history records a promotion in `year` that was not
  * later revoked or reversed by a demotion in the same year.
  */
+const { classRule } = require("../services/classProgression");
+
 const isPromotedInYear = (learner, year) => {
   let promoted = false;
   for (const h of learner.academicHistory || []) {
@@ -991,6 +995,9 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
 
     // Get all students data first
     let studentsData = await SchoolData.find({ _id: { $in: ids } });
+
+    // Learners moved to a holding class (P9/S5/ECD4) by this request
+    const transitionedIds = new Set();
 
     // A learner can be promoted only once per academic year: repeated taps in
     // the app or a promotion after a bulk run must not move them up again
@@ -1095,16 +1102,28 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
 
       const classUpdateOperations = studentsData
         .map((student) => {
-          const isFinal = isInFinalGrade(student.class);
           let nextClass = null;
+          let transition = null;
 
           switch (updateFields.progress.status) {
-            case "Promoted":
-              // Only update class if not in final grade
-              if (!isFinal) {
-                nextClass = getNextClass(student.class, false);
+            case "Promoted": {
+              // Same rules as the bulk promotion tool: final grades move to
+              // a holding class (P9/S5/ECD4) with a transition record;
+              // holding and unrecognised classes stay where they are
+              const rule = classRule(student.class);
+              if (rule.status === "promote") nextClass = rule.next;
+              if (rule.status === "final") {
+                nextClass = rule.next;
+                transition = {
+                  ...rule.transition,
+                  fromClass: student.class,
+                  year: Number(updateFields.progress.year) || currentDate.getFullYear(),
+                  date: currentDate,
+                };
+                transitionedIds.add(String(student._id));
               }
               break;
+            }
             case "Demoted":
               nextClass = getNextClass(student.class, true);
               break;
@@ -1125,6 +1144,7 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
                     class: nextClass,
                     modifiedBy: loggedInUser,
                     lastModifiedDate: currentDate,
+                    ...(transition ? { transition } : {}),
                   },
                 },
               },
@@ -1167,8 +1187,10 @@ const updateSchoolDataFieldsBulk = async (req, res) => {
 
       // If there's a progress entry, update its fields
       if (updatedFields.progress) {
-        // Check if current grade is a final grade
-        const isFinal = isInFinalGrade(student.class);
+        // Finished a level in this request (class is now P9/S5/ECD4), or
+        // was already in a final grade for other statuses
+        const isFinal =
+          transitionedIds.has(String(student._id)) || isInFinalGrade(student.class);
 
         // Set isAwaitingTransition based on status and grade
         updatedFields.progress.isAwaitingTransition =
