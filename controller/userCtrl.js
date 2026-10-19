@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const { getJwtSecret } = require("../middlewares/accessControl");
 const userModel = require("../models/userModel");
 const { clientIp } = require("../middlewares/auditLog");
+const { mobileAccessFor } = require("../services/mobileAccess");
 
 //Register CHECKED
 const createUser = asyncHandler(async (req, res) => {
@@ -108,8 +109,75 @@ const createUser = asyncHandler(async (req, res) => {
 });
 
 //login CHECKED
+/**
+ * Login token. The mobile app decodes it offline (with the shared secret) and
+ * keeps it indefinitely, so mobileAccess inside it is what works offline.
+ */
+const issueToken = (user) => {
+  const mobileAccess = mobileAccessFor(user);
+  const token = jwt.sign(
+    {
+      userId: user.id || String(user._id),
+      isAdmin: user.isAdmin,
+      statesAsigned: user.statesAsigned,
+      dutyAssigned: user.dutyAssigned,
+      userType: user.userType,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      username: user.username,
+      payam28: user.payam28 || "",
+      state10: user.state10 || "",
+      county28: user.county28 || "",
+      schoolType: user.schoolType || "",
+      mobileAccess,
+    },
+    getJwtSecret(),
+    { expiresIn: "1d" }
+  );
+  return { token, mobileAccess };
+};
+
+// Tokens older than this cannot be refreshed; the user must sign in again
+const REFRESH_WINDOW_DAYS = 90;
+
+/**
+ * POST /user/token/refresh { token }
+ * Used by the mobile app when it is online: returns a fresh token with the
+ * user's current details and mobile access. Expired tokens are accepted
+ * (devices stay offline for long periods) if correctly signed and recent.
+ */
+const refreshToken = asyncHandler(async (req, res) => {
+  const token = String(req.body?.token || "");
+  let decoded;
+  try {
+    decoded = jwt.verify(token, getJwtSecret(), { ignoreExpiration: true });
+  } catch (e) {
+    return res
+      .status(401)
+      .json({ code: "INVALID", message: "Invalid session. Please log in again." });
+  }
+  const ageDays = (Date.now() / 1000 - (decoded.iat || 0)) / 86400;
+  if (!decoded.userId || ageDays > REFRESH_WINDOW_DAYS) {
+    return res
+      .status(401)
+      .json({ code: "TOO_OLD", message: "Session too old. Please log in again." });
+  }
+  const user = await User.findById(decoded.userId).select("-passwordHash");
+  if (!user) {
+    return res
+      .status(401)
+      .json({ code: "NOT_FOUND", message: "Account not found. Please log in again." });
+  }
+  if (user.isBlocked) {
+    return res
+      .status(403)
+      .json({ code: "BLOCKED", message: "Your account is blocked. Contact an administrator." });
+  }
+  const fresh = issueToken(user);
+  res.status(200).json(fresh);
+});
+
 const logIn = asyncHandler(async (req, res) => {
-  const secret = getJwtSecret();
   const { username, password } = req.body;
   const user = username ? await User.findOne({ username }) : null;
 
@@ -136,39 +204,21 @@ const logIn = asyncHandler(async (req, res) => {
     { $set: { lastLoginAt: new Date(), lastLoginIp: clientIp(req) } }
   ).catch((err) => console.error("[logIn] lastLoginAt update failed:", err.message));
 
-  {
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        isAdmin: user.isAdmin,
-        statesAsigned: user.statesAsigned,
-        dutyAssigned: user.dutyAssigned,
-        userType: user.userType,
-        firstname: user.firstname,
-        lastname: user.lastname,
-        username: user.username,
-        payam28: user.payam28 || "",
-        state10: user.state10 || "",
-        county28: user.county28 || "",
-        schoolType: user.schoolType || "",
-      },
-      secret,
-      { expiresIn: "1d" }
-    );
-    res.status(200).json({
-      // legacy fields
-      user: user.username,
-      // structured user info for NextAuth / frontend
-      _id: user._id,
-      username: user.username,
-      email: user.email || "",
-      userType: user.userType,
-      firstname: user.firstname,
-      lastname: user.lastname,
-      role: user.role || null,
-      token,
-    });
-  }
+  const { token, mobileAccess } = issueToken(user);
+  res.status(200).json({
+    // legacy fields
+    user: user.username,
+    // structured user info for NextAuth / frontend
+    _id: user._id,
+    username: user.username,
+    email: user.email || "",
+    userType: user.userType,
+    firstname: user.firstname,
+    lastname: user.lastname,
+    role: user.role || null,
+    mobileAccess,
+    token,
+  });
 });
 
 // const getUsers = async (req, res) => {
@@ -1460,6 +1510,7 @@ const getTeachersReports = async (req, res) => {
 module.exports = {
   createUser,
   logIn,
+  refreshToken,
   getUsers,
   getUserById,
   getUserByEmail,

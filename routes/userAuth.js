@@ -5,6 +5,7 @@ const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const {
   createUser,
   logIn,
+  refreshToken,
   getUsers,
   getUserById,
   getUserByEmail,
@@ -320,6 +321,7 @@ const {
 router.get("/users/summary", getUserSummary);
 router.post("/register", createUser);
 router.post("/login", logIn);
+router.post("/token/refresh", refreshToken);
 router.get("/users/get-all", cacheMiddleware(600), getUsers);
 router.get("/users/get/:id", getUserById);
 router.get("/users/get-email/", cacheMiddleware(600), getUserByEmail);
