@@ -1,5 +1,11 @@
 const SchoolData = require("../models/2023Data");
-const { activeCriteria, resolveYear } = require("../services/ctCriteriaService");
+const {
+  activeCriteria,
+  resolveYear,
+  openSchoolCodes,
+  isOpenStatus,
+} = require("../services/ctCriteriaService");
+const School = require("../models/school-data");
 
 // Get counties with eligible learners based on disability criteria
 const getEligibleCountiesWithDisability = async (req, res) => {
@@ -34,6 +40,8 @@ const getEligibleCountiesWithDisability = async (req, res) => {
       const classesWithDisability = criteria
         .flatMap(c => c.classes.filter(cls => cls.requiresDisability.male).map(cls => cls.className));
       match.class = { $in: classesWithDisability };
+      // Cash transfers only cover open schools
+      match.code = { $in: await openSchoolCodes() };
       match.$or = [
         { gender: "M", isWithDisability: true },
         { gender: "F" }
@@ -97,6 +105,8 @@ const getEligiblePayamsWithDisability = async (req, res) => {
       const classesWithDisability = criteria
         .flatMap(c => c.classes.filter(cls => cls.requiresDisability.male).map(cls => cls.className));
       match.class = { $in: classesWithDisability };
+      // Cash transfers only cover open schools
+      match.code = { $in: await openSchoolCodes() };
       match.$or = [
         { gender: "M", isWithDisability: true },
         { gender: "F" }
@@ -163,6 +173,8 @@ const getEligibleSchoolsWithDisability = async (req, res) => {
       }
       const classesWithDisability = criteria.flatMap(c => c.classes.filter(cls => cls.requiresDisability.male).map(cls => cls.className));
       matchConditions.push({ $in: ["$class", classesWithDisability] });
+      // Cash transfers only cover open schools
+      additionalMatch.code = { $in: await openSchoolCodes() };
       additionalMatch.$or = [
         { gender: "M", isWithDisability: true },
         { gender: "F" }
@@ -228,6 +240,11 @@ const getEligibleStudentsInSchool = async (req, res) => {
       }
       const classesWithDisability = criteria.flatMap(c => c.classes.filter(cls => cls.requiresDisability.male).map(cls => cls.className));
       query.class = { $in: classesWithDisability };
+      // Cash transfers only cover open schools: a closed school has none
+      const school = await School.findOne({ code }).select("schoolStatus").lean();
+      if (!isOpenStatus(school?.schoolStatus?.isOpen)) {
+        return res.status(200).json([]);
+      }
       query.$or = [
         { gender: "M", isWithDisability: true },
         { gender: "F" }

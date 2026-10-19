@@ -1,0 +1,387 @@
+[
+ {
+  "$match": {
+   "isDroppedOut": {
+    "$ne": true
+   },
+   "$and": [
+    {
+     "$or": [
+      {
+       "gender": "F"
+      },
+      {
+       "gender": "M",
+       "isWithDisability": true
+      }
+     ]
+    },
+    {
+     "$or": [
+      {
+       "education": "PRI",
+       "class": {
+        "$in": [
+         "P7",
+         "P8"
+        ]
+       },
+       "state10": "CES",
+       "county28": "Juba",
+       "payam28": {
+        "$in": [
+         "Northern Bari",
+         "Munuki",
+         "Juba Town",
+         "Kator"
+        ]
+       }
+      },
+      {
+       "education": "SEC",
+       "class": {
+        "$in": [
+         "S1",
+         "S2",
+         "S3",
+         "S4"
+        ]
+       },
+       "state10": "CES",
+       "county28": "Juba",
+       "payam28": {
+        "$in": [
+         "Juba Town",
+         "Kator",
+         "Munuki",
+         "Northern Bari",
+         "Rejaf"
+        ]
+       }
+      },
+      {
+       "education": "ALP",
+       "class": "Level4(P7&P8)",
+       "state10": "CES",
+       "county28": "Juba",
+       "payam28": {
+        "$in": [
+         "Northern Bari",
+         "Munuki",
+         "Rejaf",
+         "Juba Town",
+         "Kator"
+        ]
+       }
+      },
+      {
+       "education": {
+        "$in": [
+         "PRI",
+         "SEC",
+         "ALP"
+        ]
+       },
+       "class": {
+        "$in": [
+         "P7",
+         "P8",
+         "S1",
+         "S2",
+         "S3",
+         "S4",
+         "Level4(P7&P8)"
+        ]
+       },
+       "state10": "CES",
+       "county28": "Juba",
+       "payam28": {
+        "$in": [
+         "Bungu",
+         "Dolo",
+         "Ganji",
+         "Gondokoro",
+         "Lirya",
+         "Lobonok",
+         "Lokiliri",
+         "Makuack",
+         "Mangala South",
+         "Rokon",
+         "Tijor",
+         "Wonduruba"
+        ]
+       }
+      },
+      {
+       "education": {
+        "$in": [
+         "PRI",
+         "SEC",
+         "ALP"
+        ]
+       },
+       "class": {
+        "$in": [
+         "P7",
+         "P8",
+         "S1",
+         "S2",
+         "S3",
+         "S4",
+         "Level4(P7&P8)"
+        ]
+       },
+       "state10": {
+        "$in": [
+         "CES",
+         "EES",
+         "JGL",
+         "LKS",
+         "NBG",
+         "RAA",
+         "UNS",
+         "UTY",
+         "WBG"
+        ]
+       },
+       "county28": {
+        "$in": [
+         "Aweil East",
+         "Aweil South",
+         "Bor",
+         "Jur River",
+         "Kajo-Keji",
+         "Magwi",
+         "Malakal",
+         "Renk",
+         "Rubkona",
+         "Rumbek Centre",
+         "Ruweng",
+         "Terekeka",
+         "Torit",
+         "Wau",
+         "Yirol West"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "$lookup": {
+   "from": "schooldata",
+   "localField": "code",
+   "foreignField": "code",
+   "as": "sch",
+   "pipeline": [
+    {
+     "$project": {
+      "_id": 0,
+      "schoolOwnerShip": 1,
+      "schoolStatus.isOpen": 1
+     }
+    },
+    {
+     "$limit": 1
+    }
+   ]
+  }
+ },
+ {
+  "$addFields": {
+   "ownership": {
+    "$first": "$sch.schoolOwnerShip"
+   },
+   "schoolOpen": {
+    "$first": "$sch.schoolStatus.isOpen"
+   }
+  }
+ },
+ {
+  "$match": {
+   "schoolOpen": {
+    "$regex": "^(open|fully functional)$",
+    "$options": "i"
+   }
+  }
+ },
+ {
+  "$match": {
+   "$or": [
+    {
+     "county28": "Juba",
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "county28": {
+      "$ne": "Juba"
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "county28": "Juba",
+     "payam28": {
+      "$nin": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    }
+   ]
+  }
+ },
+ {
+  "$facet": {
+   "totals": [
+    {
+     "$group": {
+      "_id": null,
+      "learners": {
+       "$sum": 1
+      },
+      "schools": {
+       "$addToSet": "$code"
+      },
+      "male": {
+       "$sum": {
+        "$cond": [
+         {
+          "$eq": [
+           "$gender",
+           "M"
+          ]
+         },
+         1,
+         0
+        ]
+       }
+      },
+      "female": {
+       "$sum": {
+        "$cond": [
+         {
+          "$eq": [
+           "$gender",
+           "F"
+          ]
+         },
+         1,
+         0
+        ]
+       }
+      }
+     }
+    },
+    {
+     "$project": {
+      "_id": 0,
+      "learners": 1,
+      "male": 1,
+      "female": 1,
+      "schools": {
+       "$size": "$schools"
+      }
+     }
+    }
+   ],
+   "byState": [
+    {
+     "$group": {
+      "_id": "$state10",
+      "learners": {
+       "$sum": 1
+      },
+      "schools": {
+       "$addToSet": "$code"
+      }
+     }
+    },
+    {
+     "$project": {
+      "learners": 1,
+      "schools": {
+       "$size": "$schools"
+      }
+     }
+    },
+    {
+     "$sort": {
+      "learners": -1
+     }
+    }
+   ],
+   "byClass": [
+    {
+     "$group": {
+      "_id": {
+       "education": "$education",
+       "class": "$class"
+      },
+      "learners": {
+       "$sum": 1
+      }
+     }
+    },
+    {
+     "$sort": {
+      "_id.education": 1,
+      "_id.class": 1
+     }
+    }
+   ],
+   "byOwnership": [
+    {
+     "$group": {
+      "_id": "$ownership",
+      "learners": {
+       "$sum": 1
+      },
+      "schools": {
+       "$addToSet": "$code"
+      }
+     }
+    },
+    {
+     "$project": {
+      "learners": 1,
+      "schools": {
+       "$size": "$schools"
+      }
+     }
+    }
+   ]
+  }
+ }
+]

@@ -1,6 +1,38 @@
 const CTCriteria = require("../models/CTCriteria");
 const School = require("../models/school-data");
 
+/**
+ * Only learners in open schools qualify for cash transfers. A school counts
+ * as open when schoolStatus.isOpen is "open" (any case) or the older
+ * "Fully Functional" value; closed or unknown status schools are excluded.
+ */
+const OPEN_STATUS = /^(open|fully functional)$/i;
+const isOpenStatus = (status) => OPEN_STATUS.test(String(status || "").trim());
+
+const OPEN_CODES_TTL_MS = 10 * 60 * 1000;
+let openCodesCache = { at: 0, codes: null, pending: null };
+
+/** Codes of open schools, cached in memory for 10 minutes. */
+const openSchoolCodes = async () => {
+  if (openCodesCache.codes && Date.now() - openCodesCache.at < OPEN_CODES_TTL_MS) {
+    return openCodesCache.codes;
+  }
+  if (!openCodesCache.pending) {
+    openCodesCache.pending = School.distinct("code", {
+      "schoolStatus.isOpen": OPEN_STATUS,
+    })
+      .then((codes) => {
+        openCodesCache = { at: Date.now(), codes, pending: null };
+        return codes;
+      })
+      .catch((err) => {
+        openCodesCache.pending = null;
+        throw err;
+      });
+  }
+  return openCodesCache.pending;
+};
+
 /** Year from ?year= / body.year, defaulting to the current year. */
 const resolveYear = (req) =>
   parseInt(req?.query?.year ?? req?.body?.year, 10) || new Date().getFullYear();
@@ -17,8 +49,9 @@ const hasTargeting = (t) =>
  * Ownership lives on the school, so it becomes a list of school codes.
  */
 const targetingFilter = async (t, codeCache = new Map()) => {
-  if (!hasTargeting(t)) return {};
-  const filter = {};
+  const open = await openSchoolCodes();
+  if (!hasTargeting(t)) return { code: { $in: open } };
+  const filter = { code: { $in: open } };
   if (t.states?.length) filter.state10 = { $in: t.states };
   if (t.counties?.length) filter.county28 = { $in: t.counties };
   if (t.payams?.length) filter.payam28 = { $in: t.payams };
@@ -30,7 +63,8 @@ const targetingFilter = async (t, codeCache = new Map()) => {
         await School.distinct("code", { schoolOwnerShip: { $in: t.ownership } })
       );
     }
-    filter.code = { $in: codeCache.get(key) };
+    const openSet = new Set(open);
+    filter.code = { $in: codeCache.get(key).filter((c) => openSet.has(c)) };
   }
   return filter;
 };
@@ -73,6 +107,8 @@ const matchesTargeting = (c, { state10, county28, payam28, ownership }) => {
 };
 
 module.exports = {
+  isOpenStatus,
+  openSchoolCodes,
   resolveYear,
   activeCriteria,
   eligibilityConditions,

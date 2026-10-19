@@ -1,6 +1,6 @@
 const CashTransfer = require("../models/ct");
 const CTCriteria = require("../models/CTCriteria");
-const { matchesTargeting } = require("../services/ctCriteriaService");
+const { matchesTargeting, isOpenStatus } = require("../services/ctCriteriaService");
 const mongoose = require("mongoose");
 const SchoolData = require("../models/2023Data");
 const School = require("../models/school-data");
@@ -48,9 +48,16 @@ exports.createCashTransfer = async (req, res) => {
 
     // Get school ownership dynamically
     const schoolInfo = await School.findOne({ code: learner.code }).select(
-      "schoolOwnerShip"
+      "schoolOwnerShip schoolStatus"
     );
     const schoolOwnership = schoolInfo?.schoolOwnerShip || "Public";
+
+    // Cash transfers are only for learners in open schools
+    if (!isOpenStatus(schoolInfo?.schoolStatus?.isOpen)) {
+      return res.status(400).json({
+        error: "This learner's school is not open, so it is not eligible for cash transfers",
+      });
+    }
 
     // Criteria for this year whose targeting covers the learner's school
     const candidates = await CTCriteria.find({
