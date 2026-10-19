@@ -4,167 +4,1311 @@
    "isDroppedOut": {
     "$ne": true
    },
-   "$and": [
+   "$or": [
     {
-     "$or": [
-      {
-       "gender": "F"
-      },
-      {
-       "gender": "M",
-       "isWithDisability": true
-      }
-     ]
+     "education": "PRI",
+     "class": "P7",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator"
+      ]
+     }
     },
     {
-     "$or": [
-      {
-       "education": "PRI",
-       "class": {
-        "$in": [
-         "P7",
-         "P8"
-        ]
-       },
-       "state10": "CES",
-       "county28": "Juba",
-       "payam28": {
-        "$in": [
-         "Northern Bari",
-         "Munuki",
-         "Juba Town",
-         "Kator"
-        ]
-       }
-      },
-      {
-       "education": "SEC",
-       "class": {
-        "$in": [
-         "S1",
-         "S2",
-         "S3",
-         "S4"
-        ]
-       },
-       "state10": "CES",
-       "county28": "Juba",
-       "payam28": {
-        "$in": [
-         "Juba Town",
-         "Kator",
-         "Munuki",
-         "Northern Bari",
-         "Rejaf"
-        ]
-       }
-      },
-      {
-       "education": "ALP",
-       "class": "Level4(P7&P8)",
-       "state10": "CES",
-       "county28": "Juba",
-       "payam28": {
-        "$in": [
-         "Northern Bari",
-         "Munuki",
-         "Rejaf",
-         "Juba Town",
-         "Kator"
-        ]
-       }
-      },
-      {
-       "education": {
-        "$in": [
-         "PRI",
-         "SEC",
-         "ALP"
-        ]
-       },
-       "class": {
-        "$in": [
-         "P7",
-         "P8",
-         "S1",
-         "S2",
-         "S3",
-         "S4",
-         "Level4(P7&P8)"
-        ]
-       },
-       "state10": "CES",
-       "county28": "Juba",
-       "payam28": {
-        "$in": [
-         "Bungu",
-         "Dolo",
-         "Ganji",
-         "Gondokoro",
-         "Lirya",
-         "Lobonok",
-         "Lokiliri",
-         "Makuack",
-         "Mangala South",
-         "Rokon",
-         "Tijor",
-         "Wonduruba"
-        ]
-       }
-      },
-      {
-       "education": {
-        "$in": [
-         "PRI",
-         "SEC",
-         "ALP"
-        ]
-       },
-       "class": {
-        "$in": [
-         "P7",
-         "P8",
-         "S1",
-         "S2",
-         "S3",
-         "S4",
-         "Level4(P7&P8)"
-        ]
-       },
-       "state10": {
-        "$in": [
-         "CES",
-         "EES",
-         "JGL",
-         "LKS",
-         "NBG",
-         "RAA",
-         "UNS",
-         "UTY",
-         "WBG"
-        ]
-       },
-       "county28": {
-        "$in": [
-         "Aweil East",
-         "Aweil South",
-         "Bor",
-         "Jur River",
-         "Kajo-Keji",
-         "Magwi",
-         "Malakal",
-         "Renk",
-         "Rubkona",
-         "Rumbek Centre",
-         "Ruweng",
-         "Terekeka",
-         "Torit",
-         "Wau",
-         "Yirol West"
-        ]
-       }
-      }
-     ]
+     "education": "PRI",
+     "class": "P7",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Rejaf",
+       "Juba Town",
+       "Kator"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Rejaf",
+       "Juba Town",
+       "Kator"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P7",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P7",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P7",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG",
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Torit",
+       "Wau",
+       "Yirol West",
+       "Kajo-Keji",
+       "Terekeka"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P7",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG",
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Torit",
+       "Wau",
+       "Yirol West",
+       "Kajo-Keji",
+       "Terekeka"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG",
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Torit",
+       "Wau",
+       "Yirol West",
+       "Kajo-Keji",
+       "Terekeka"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG",
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Torit",
+       "Wau",
+       "Yirol West",
+       "Kajo-Keji",
+       "Terekeka"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Renk",
+       "Rubkona",
+       "Rumbek Centre",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Renk",
+       "Rubkona",
+       "Rumbek Centre",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     }
     }
    ]
   }
@@ -194,14 +1338,14 @@
    "ownership": {
     "$first": "$sch.schoolOwnerShip"
    },
-   "schoolOpen": {
+   "schoolStatus": {
     "$first": "$sch.schoolStatus.isOpen"
    }
   }
  },
  {
   "$match": {
-   "schoolOpen": {
+   "schoolStatus": {
     "$regex": "^(open|fully functional)$",
     "$options": "i"
    }
@@ -211,13 +1355,144 @@
   "$match": {
    "$or": [
     {
-     "county28": "Juba",
+     "education": "PRI",
+     "class": "P7",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
      "payam28": {
       "$in": [
        "Northern Bari",
        "Munuki",
        "Juba Town",
+       "Kator"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P7",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Juba Town",
+       "Kator"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
        "Kator",
+       "Munuki",
+       "Northern Bari",
        "Rejaf"
       ]
      },
@@ -229,8 +1504,309 @@
      }
     },
     {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
      "county28": {
-      "$ne": "Juba"
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Juba Town",
+       "Kator",
+       "Munuki",
+       "Northern Bari",
+       "Rejaf"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Rejaf",
+       "Juba Town",
+       "Kator"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Northern Bari",
+       "Munuki",
+       "Rejaf",
+       "Juba Town",
+       "Kator"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P7",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
      },
      "ownership": {
       "$in": [
@@ -241,14 +1817,1118 @@
      }
     },
     {
-     "county28": "Juba",
+     "education": "PRI",
+     "class": "P7",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
      "payam28": {
-      "$nin": [
-       "Northern Bari",
-       "Munuki",
-       "Juba Town",
-       "Kator",
-       "Rejaf"
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Juba"
+      ]
+     },
+     "payam28": {
+      "$in": [
+       "Bungu",
+       "Dolo",
+       "Ganji",
+       "Gondokoro",
+       "Lirya",
+       "Lobonok",
+       "Lokiliri",
+       "Makuack",
+       "Mangala South",
+       "Rokon",
+       "Tijor",
+       "Wonduruba"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P7",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG",
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Torit",
+       "Wau",
+       "Yirol West",
+       "Kajo-Keji",
+       "Terekeka"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P7",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG",
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Torit",
+       "Wau",
+       "Yirol West",
+       "Kajo-Keji",
+       "Terekeka"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG",
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Torit",
+       "Wau",
+       "Yirol West",
+       "Kajo-Keji",
+       "Terekeka"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "PRI",
+     "class": "P8",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG",
+       "CES"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Torit",
+       "Wau",
+       "Yirol West",
+       "Kajo-Keji",
+       "Terekeka"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S1",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S2",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S3",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "SEC",
+     "class": "S4",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Rubkona",
+       "Rumbek Centre",
+       "Renk",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "M",
+     "isWithDisability": true,
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Renk",
+       "Rubkona",
+       "Rumbek Centre",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
+      ]
+     },
+     "ownership": {
+      "$in": [
+       "Public",
+       "Faith-Based",
+       "Community"
+      ]
+     }
+    },
+    {
+     "education": "ALP",
+     "class": "Level4(P7&P8)",
+     "gender": "F",
+     "state10": {
+      "$in": [
+       "CES",
+       "EES",
+       "JGL",
+       "LKS",
+       "NBG",
+       "RAA",
+       "UNS",
+       "UTY",
+       "WBG"
+      ]
+     },
+     "county28": {
+      "$in": [
+       "Aweil East",
+       "Aweil South",
+       "Bor",
+       "Jur River",
+       "Kajo-Keji",
+       "Magwi",
+       "Malakal",
+       "Renk",
+       "Rubkona",
+       "Rumbek Centre",
+       "Ruweng",
+       "Terekeka",
+       "Torit",
+       "Wau",
+       "Yirol West"
       ]
      },
      "ownership": {
@@ -301,6 +2981,15 @@
          0
         ]
        }
+      },
+      "withDisability": {
+       "$sum": {
+        "$cond": [
+         "$isWithDisability",
+         1,
+         0
+        ]
+       }
       }
      }
     },
@@ -310,6 +2999,7 @@
       "learners": 1,
       "male": 1,
       "female": 1,
+      "withDisability": 1,
       "schools": {
        "$size": "$schools"
       }
@@ -379,6 +3069,11 @@
       "schools": {
        "$size": "$schools"
       }
+     }
+    },
+    {
+     "$sort": {
+      "learners": -1
      }
     }
    ]
