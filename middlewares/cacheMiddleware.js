@@ -132,4 +132,5 @@ module.exports = {
   cacheMiddleware,
   cachePostMiddleware,
   clearCache,
+  scanKeys,
 };

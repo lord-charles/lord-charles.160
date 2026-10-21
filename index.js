@@ -110,6 +110,12 @@ app.use("/express/user", (req, res, next) => {
   next();
 });
 
+// Learner changes clear the cached lists of the schools/areas they touched
+app.use(
+  "/express/data-set",
+  require("./middlewares/learnerCacheInvalidation").learnerCacheInvalidation
+);
+
 // Eligibility results depend on the criteria; drop them after criteria changes
 app.use("/express/ct/criteria", (req, res, next) => {
   if (req.method !== "GET") {
