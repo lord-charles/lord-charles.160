@@ -1754,6 +1754,8 @@ const payamSchoolDownload = async (req, res) => {
       eieStatus: 1,
       isCTValidated: 1,
       transition: 1,
+      // Latest transfer only: enough for the app to show where they came from
+      lastTransfer: { $arrayElemAt: ["$transfers", -1] },
     };
 
     // Calculate skip value based on pagination
