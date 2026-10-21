@@ -1756,6 +1756,13 @@ const payamSchoolDownload = async (req, res) => {
       transition: 1,
       // Latest transfer only: enough for the app to show where they came from
       lastTransfer: { $arrayElemAt: ["$transfers", -1] },
+      // This year's progress (promoted, repeated, ...) for status offline
+      progress: {
+        $filter: {
+          input: { $ifNull: ["$progress", []] },
+          cond: { $eq: ["$$this.year", new Date().getFullYear()] },
+        },
+      },
     };
 
     // Calculate skip value based on pagination
