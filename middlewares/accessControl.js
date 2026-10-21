@@ -110,6 +110,7 @@ const RULES = [
   ["POST", /^\/data-set\/registerLearnerDuringSync\/?$/, ["Learners", "Live Enrollment"], W, { legacy: true }],
   ["PATCH", /^\/data-set\/2023_data\/students\/[^/]+\/?$/, ["Learners"], W, { legacy: true }],
   ["PATCH", /^\/data-set\/2023_data\/update\/bulk\/?$/, ["Learners"], W, { legacy: true }],
+  ["POST", /^\/data-set\/learners\/transfer\/?$/, ["Learners"], W, { legacy: true }],
   ["PATCH", /^\/data-set\/2023_data\/update\/bulkStates\/?$/, ["Learners"], W],
   ["DELETE", /^\/data-set\/student\/delete\/[^/]+\/?$/, ["Learners"], W],
   ["PATCH", /^\/data-set\/updateSchoolDataLearnerUniqueID\/?$/, ["Learners"], W],

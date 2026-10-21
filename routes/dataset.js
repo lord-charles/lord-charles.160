@@ -242,6 +242,9 @@ router.post(
 );
 
 router.post("/updateDocuments", updateDocuments);
+
+// Learner transfers recorded on devices (offline) and synced in batches
+router.post("/learners/transfer", require("../controller/learnerTransferCtrl").transferLearners);
 router.post("/updateSchoolData", updateSchoolData);
 router.post("/updateSchoolsDocuments", updateSchoolsDocuments);
 

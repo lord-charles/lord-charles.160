@@ -25,6 +25,22 @@ const schoolDataSchema = new mongoose.Schema(
     lastName: String,
     eieStatus: String,
     isPromoted: { type: Boolean, default: false },
+    // School transfers, newest last. clientId comes from the device that
+    // recorded the transfer, so a retried sync is recognised.
+    transfers: [
+      {
+        clientId: { type: String },
+        fromCode: String,
+        fromSchool: String,
+        toCode: String,
+        toSchool: String,
+        reason: String,
+        date: Date, // when it happened (as recorded on the device)
+        recordedBy: String,
+        recordedAt: { type: Date, default: Date.now },
+        startedLevel: String, // e.g. SEC when the transfer completed a transition
+      },
+    ],
     // Set when a learner finishes a level (P8, S4, ECD3, ALP Level 4/6) and
     // moves to a holding class (P9, S5, ECD4). Older P9/S5/ECD4 records
     // have no transition and are not real transitions.

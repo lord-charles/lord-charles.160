@@ -159,6 +159,12 @@ router.get("/check-code/:code", schoolController.checkCodeAvailability);
  *         description: Server error.
  */
 router.get("/schools", cacheMiddleware(600), schoolController.getAllSchools);
+// Light list of every school for the mobile app to keep offline
+router.get(
+  "/directory",
+  cacheMiddleware(3600),
+  require("../controller/learnerTransferCtrl").schoolDirectory
+);
 
 /**
  * @swagger

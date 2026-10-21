@@ -1753,6 +1753,7 @@ const payamSchoolDownload = async (req, res) => {
       isWithDisability: 1,
       eieStatus: 1,
       isCTValidated: 1,
+      transition: 1,
     };
 
     // Calculate skip value based on pagination
@@ -1764,7 +1765,10 @@ const payamSchoolDownload = async (req, res) => {
     // If ct is true, filter by classes from active CTCriteria
     let ctClassNames = [];
     if (ct) {
-      const ctDocs = await CTCriteria.find({ isActive: true });
+      const ctDocs = await CTCriteria.find({
+        isActive: true,
+        academicYear: new Date().getFullYear(),
+      });
       ctDocs.forEach((doc) => {
         if (Array.isArray(doc.classes)) {
           doc.classes.forEach((cls) => {
@@ -3358,6 +3362,7 @@ const overallMaleFemaleStat = async (req, res) => {
 };
 
 module.exports = {
+  generateReferenceCode,
   dataSet,
   countyPupilTotal,
   countyPayamPupilTotals,

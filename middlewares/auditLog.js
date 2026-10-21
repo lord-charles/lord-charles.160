@@ -18,6 +18,7 @@ const AUDITED = [
   ["PUT", /^\/roles\/([^/]+)\/?$/, "role_update", "role"],
   ["DELETE", /^\/roles\/([^/]+)\/?$/, "role_delete", "role"],
   ["POST", /^\/promotion\/runs\/?$/, "promotion_run", "promotion"],
+  ["POST", /^\/data-set\/learners\/transfer\/?$/, "learner_transfer", "learner"],
   ["POST", /^\/promotion\/runs\/([^/]+)\/undo\/?$/, "promotion_undo", "promotion"],
 ];
 
