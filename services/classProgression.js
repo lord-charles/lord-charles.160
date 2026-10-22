@@ -69,10 +69,37 @@ function classRule(rawClass) {
   return { status: "unknown" };
 }
 
+/**
+ * Classes a learner can be placed in (holding classes P9/S5/ECD4 excluded),
+ * with the education level each belongs to.
+ */
+const ENROLMENT_CLASSES = [
+  ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ class: `P${n}`, education: "PRI" })),
+  ...[1, 2, 3, 4].map((n) => ({ class: `S${n}`, education: "SEC" })),
+  ...[1, 2, 3].map((n) => ({ class: `ECD${n}`, education: "ECD" })),
+  ...[1, 2, 3, 4].map((n) => ({ class: ALP_STANDARD[n], education: "ALP" })),
+  ...[5, 6].map((n) => ({ class: ALP_STANDARD[n], education: "ASP" })),
+];
+
+/**
+ * Standard class and education for a class picked at transfer, or null if
+ * it is not a class learners can be placed in. ALP/ASP/CGS learners keep
+ * their programme when moving between levels of it.
+ */
+function placementFor(rawClass, currentEducation) {
+  const rule = classRule(rawClass);
+  if (rule.status !== "promote" && rule.status !== "final") return null;
+  const entry = ENROLMENT_CLASSES.find((c) => c.class === rule.standard);
+  if (!entry) return null;
+  const isLevel = /^level/i.test(entry.class);
+  const keepsProgramme = isLevel && ["ALP", "ASP", "CGS"].includes(currentEducation);
+  return { class: entry.class, education: keepsProgramme ? currentEducation : entry.education };
+}
+
 function transitionFor(nextLevel) {
   return nextLevel
     ? { status: "awaiting", nextLevel }
     : { status: "completed", nextLevel: null };
 }
 
-module.exports = { classRule, HOLDING_CLASSES };
+module.exports = { classRule, HOLDING_CLASSES, ENROLMENT_CLASSES, placementFor };

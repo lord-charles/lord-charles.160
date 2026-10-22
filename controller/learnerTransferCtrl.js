@@ -3,6 +3,7 @@ const School = require("../models/school-data");
 const { transferLearner } = require("../services/learnerTransfer");
 const { isOpenStatus } = require("../services/ctCriteriaService");
 const { generateReferenceCode } = require("./dataset");
+const { ENROLMENT_CLASSES } = require("../services/classProgression");
 
 const MAX_BATCH = 200;
 
@@ -47,6 +48,8 @@ const schoolDirectory = asyncHandler(async (req, res) => {
     .lean();
   res.json({
     updatedAt: new Date().toISOString(),
+    // Classes a transferred learner can be placed in
+    classes: ENROLMENT_CLASSES,
     schools: schools.map((s) => ({
       code: s.code,
       name: s.schoolName,

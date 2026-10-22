@@ -38,7 +38,9 @@ const schoolDataSchema = new mongoose.Schema(
         date: Date, // when it happened (as recorded on the device)
         recordedBy: String,
         recordedAt: { type: Date, default: Date.now },
-        startedLevel: String, // e.g. SEC when the transfer completed a transition
+        fromClass: String,
+        toClass: String,
+        startedLevel: String, // e.g. SEC when the move changed the level
       },
     ],
     // Set when a learner finishes a level (P8, S4, ECD3, ALP Level 4/6) and

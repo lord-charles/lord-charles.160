@@ -1,6 +1,7 @@
 const SchoolData = require("../models/2023Data");
 const School = require("../models/school-data");
 const { isOpenStatus } = require("./ctCriteriaService");
+const { placementFor, HOLDING_CLASSES } = require("./classProgression");
 
 // Class a learner starts in when a transfer completes their transition
 const FIRST_CLASS = { SEC: { class: "S1", education: "SEC" }, PRI: { class: "P1", education: "PRI" } };
@@ -13,7 +14,11 @@ const FIRST_CLASS = { SEC: { class: "S1", education: "SEC" }, PRI: { class: "P1"
  * The destination's location (state, county, payam) always comes from the
  * school record, never from the device.
  *
- * @param {{ clientId, learnerId, fromCode?, toCode, reason?, date?, startNextLevel? }} t
+ * toClass places the learner in that class at the new school (its level
+ * sets the education, e.g. S1 -> SEC); without it they keep their class.
+ * startNextLevel is the older way to say "S1/P1 for a transition learner".
+ *
+ * @param {{ clientId, learnerId, fromCode?, toCode, toClass?, reason?, date?, startNextLevel? }} t
  * @returns {{ status: "transferred" | "already" | "conflict" | "error", message, learner? }}
  */
 async function transferLearner(t, { recordedBy, generateReferenceCode }) {
@@ -55,16 +60,31 @@ async function transferLearner(t, { recordedBy, generateReferenceCode }) {
     return { status: "error", message: `${dest.schoolName} is closed` };
   }
 
-  // Optionally start the next level at the new school (P9 -> S1, ECD4 -> P1)
-  let levelStart = null;
-  if (t.startNextLevel) {
+  // Class at the new school: chosen, or S1/P1 for a transition (older
+  // apps), or unchanged
+  let placement = null;
+  if (t.toClass) {
+    placement = placementFor(t.toClass, learner.education);
+    if (!placement) return { status: "error", message: `${t.toClass} is not a valid class` };
+  } else if (t.startNextLevel) {
     if (learner.transition?.status !== "awaiting" || !FIRST_CLASS[learner.transition?.nextLevel]) {
       return { status: "error", message: "Learner is not awaiting a transition" };
     }
-    levelStart = FIRST_CLASS[learner.transition.nextLevel];
+    placement = FIRST_CLASS[learner.transition.nextLevel];
   }
+  if (placement && placement.class === learner.class && placement.education === learner.education) {
+    placement = null; // same class: nothing to change
+  }
+  // A learner waiting in P9/S5/ECD4 who is placed in a real class has
+  // made their transition
+  const completesTransition =
+    !!placement &&
+    learner.transition?.status === "awaiting" &&
+    !HOLDING_CLASSES.includes(placement.class);
+  const levelStart = placement;
 
   const year = new Date().getFullYear();
+  // The reference is built from the class at the new school (e.g. 26ABFS101)
   const newClass = levelStart?.class || learner.class;
   const date = t.date ? new Date(t.date) : new Date();
   const reference = await generateReferenceCode(dest.code, newClass, year);
@@ -83,8 +103,8 @@ async function transferLearner(t, { recordedBy, generateReferenceCode }) {
   if (levelStart) {
     set.class = levelStart.class;
     set.education = levelStart.education;
-    set["transition.status"] = "transitioned";
   }
+  if (completesTransition) set["transition.status"] = "transitioned";
 
   const res = await SchoolData.updateOne(
     // Guards against a concurrent move or a duplicate of this transfer
@@ -102,7 +122,13 @@ async function transferLearner(t, { recordedBy, generateReferenceCode }) {
           date,
           recordedBy,
           recordedAt: now,
-          startedLevel: levelStart?.education,
+          fromClass: learner.class,
+          toClass: newClass,
+          // Set when the move put the learner in another level (PRI -> SEC)
+          startedLevel:
+            levelStart && levelStart.education !== learner.education
+              ? levelStart.education
+              : undefined,
         },
         progress: {
           year,
@@ -113,7 +139,7 @@ async function transferLearner(t, { recordedBy, generateReferenceCode }) {
           reference,
           status: "Transferred",
           remarks: `Transferred from ${learner.school} (${learner.code}) to ${dest.schoolName} (${dest.code})${
-            levelStart ? `, starting ${levelStart.class}` : ""
+            levelStart ? `, class ${learner.class} -> ${levelStart.class}` : ""
           }${t.reason ? `. Reason: ${t.reason}` : ""}`,
           createdAt: now,
         },
