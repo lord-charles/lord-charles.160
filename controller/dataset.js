@@ -904,6 +904,7 @@ const generateReferenceCode = async (schoolCode, grade, year) => {
  * later revoked or reversed by a demotion in the same year.
  */
 const { classRule } = require("../services/classProgression");
+const { nextLearnerUniqueId } = require("../services/learnerUniqueId");
 
 const isPromotedInYear = (learner, year) => {
   let promoted = false;
@@ -1420,22 +1421,6 @@ const registerStudent2024 = async (req, res) => {
       }
     }
 
-    const generateUniqueCode = () => {
-      const currentDate = new Date();
-      const year = String(currentDate.getFullYear()).slice(-2);
-      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-      const day = String(currentDate.getDate()).padStart(2, "0");
-      let hours = String(currentDate.getHours() + 3).padStart(2, "0");
-      const minutes = String(currentDate.getMinutes()).padStart(2, "0");
-      const seconds = String(currentDate.getSeconds()).padStart(2, "0");
-
-      if (hours > 12) {
-        hours -= 12;
-      }
-
-      return `${year}${month}${day}${hours}${minutes}${seconds}`;
-    };
-
     const generateReferenceCode = async (schoolCode, grade, year) => {
       try {
         const counter = await ReferenceCounter.findOneAndUpdate(
@@ -1477,7 +1462,7 @@ const registerStudent2024 = async (req, res) => {
       houseHold,
       pregnantOrNursing,
       reference: await generateReferenceCode(code, studentClass, year),
-      learnerUniqueID: generateUniqueCode(code, studentClass, year),
+      learnerUniqueID: await nextLearnerUniqueId(),
       modifiedBy,
       progress,
       eieStatus,
@@ -1569,22 +1554,6 @@ const registerLearnerDuringSync = async (req, res) => {
       }
     }
 
-    const generateUniqueCode = () => {
-      const currentDate = new Date();
-      const year = String(currentDate.getFullYear()).slice(-2); // Get the last two digits of the year
-      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-      const day = String(currentDate.getDate()).padStart(2, "0");
-      let hours = String(currentDate.getHours() + 3).padStart(2, "0");
-      const minutes = String(currentDate.getMinutes()).padStart(2, "0");
-      const seconds = String(currentDate.getSeconds()).padStart(2, "0");
-
-      if (hours > 12) {
-        hours -= 12;
-      }
-
-      return `${year}${month}${day}${hours}${minutes}${seconds}`;
-    };
-
     const generateReferenceCode = async (schoolCode, grade, year) => {
       try {
         const counter = await ReferenceCounter.findOneAndUpdate(
@@ -1674,7 +1643,7 @@ const registerLearnerDuringSync = async (req, res) => {
       pregnantOrNursing,
       eieStatus,
       reference: await generateReferenceCode(code, studentClass, year),
-      learnerUniqueID: generateUniqueCode(code, studentClass, year),
+      learnerUniqueID: await nextLearnerUniqueId(),
       progress,
       modifiedBy,
       eieStatus,
