@@ -1714,6 +1714,15 @@ const deleteStudentById = async (req, res) => {
   }
 };
 
+// Yearly entries need a year on the phone: its database rejects the whole
+// page of learners if one entry has none
+const withYear = (field) => ({
+  $filter: {
+    input: { $ifNull: [field, []] },
+    cond: { $isNumber: "$$this.year" },
+  },
+});
+
 const payamSchoolDownload = async (req, res) => {
   try {
     const { payam28, county28, page, ct } = req.body;
@@ -1748,11 +1757,11 @@ const payamSchoolDownload = async (req, res) => {
       houseHold: 1,
       pregnantOrNursing: 1,
       isValidated: 1,
-      isDisbursed: 1,
+      isDisbursed: withYear("$isDisbursed"),
       CTEFSerialNumber: 1,
       isWithDisability: 1,
       eieStatus: 1,
-      isCTValidated: 1,
+      isCTValidated: withYear("$isCTValidated"),
       transition: 1,
       // Latest transfer only: enough for the app to show where they came from
       lastTransfer: { $arrayElemAt: ["$transfers", -1] },
